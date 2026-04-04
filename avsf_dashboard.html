@@ -1,0 +1,2777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AVSF Dashboard - Vendor Master Tracking</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Professional Color Palette */
+            --primary: #0f766e;
+            --primary-light: #14b8a6;
+            --primary-dark: #0d5e56;
+            --secondary: #f59e0b;
+            
+            /* Neutrals */
+            --bg-main: #fafaf9;
+            --bg-card: #ffffff;
+            --bg-hover: #f5f5f4;
+            --border: #e7e5e4;
+            
+            /* Text */
+            --text-primary: #1c1917;
+            --text-secondary: #57534e;
+            --text-tertiary: #78716c;
+            
+            /* Status */
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --info: #3b82f6;
+            
+            /* Shadows */
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-main);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0;
+        }
+
+        /* Header with Gradient */
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            padding: 2rem 2rem 3rem;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 0;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+            border-radius: 50%;
+            transform: translate(30%, -30%);
+        }
+
+        header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+            position: relative;
+            z-index: 1;
+            color: white;
+        }
+
+        header .subtitle {
+            font-size: 1rem;
+            opacity: 0.95;
+            font-weight: 400;
+            position: relative;
+            z-index: 1;
+            color: white;
+        }
+
+        /* Content Area */
+        .content-wrapper {
+            max-width: 1400px;
+            margin: -2rem auto 2rem;
+            padding: 0 2rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .metric-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid rgba(0,0,0,0.05);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .metric-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+            border-color: var(--primary-light);
+        }
+
+        .metric-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-tertiary);
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1;
+        }
+
+        .metric-card.completed .metric-value { color: var(--success); }
+        .metric-card.rejected .metric-value { color: var(--error); }
+        .metric-card.pending .metric-value { color: var(--warning); }
+        .metric-card.processing .metric-value { color: var(--info); }
+        .metric-card.idoc-error .metric-value { color: #be185d; }
+
+        /* Main Content Grid */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            .content-wrapper {
+                padding: 0 1rem;
+            }
+        }
+
+        /* Data Section */
+        .data-section {
+            background: var(--bg-card);
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+
+        .section-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .section-title {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        /* Controls */
+        .controls {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 1.25rem;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid rgba(0,0,0,0.05);
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        /* Buttons */
+        .btn {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.875rem;
+            font-weight: 600;
+            padding: 0.625rem 1.25rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-secondary {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: white;
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-success:hover {
+            background: #059669;
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-icon {
+            background: var(--bg-hover);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+            padding: 0.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1.125rem;
+        }
+
+        .btn-icon:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* Form Elements */
+        .search-box, .filter-select, .form-input, .form-select {
+            padding: 0.75rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .search-box {
+            width: 200px;
+            min-width: 150px;
+            flex: 1;
+        }
+
+        .search-box:focus, .filter-select:focus, .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.1);
+        }
+
+        /* Table Styles */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+            min-width: 1050px;
+        }
+        td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
+        td:nth-child(2) { max-width: 180px; } /* Vendor name can wrap */
+
+        thead {
+            background: var(--bg-hover);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 2px solid var(--border);
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            color: var(--text-primary);
+        }
+
+        tbody tr {
+            transition: background 0.15s;
+        }
+
+        tbody tr:hover {
+            background: var(--bg-hover);
+        }
+
+        /* Status Badges */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-completed { background: #d1fae5; color: #065f46; }
+        .status-rejected { background: #fee2e2; color: #991b1b; }
+        .status-pending { background: #fef3c7; color: #92400e; }
+        .status-processing { background: #dbeafe; color: #1e40af; }
+        .status-idoc-error { background: #fecaca; color: #7f1d1d; }
+        .status-buyer-response { background: #e0e7ff; color: #3730a3; }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .chart-card {
+            background: var(--bg-card);
+            padding: 1.25rem;
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .chart-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+
+        .chart-container {
+            height: 200px;
+            position: relative;
+        }
+
+        canvas {
+            max-width: 100%;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .modal.active {
+            display: flex;
+            animation: fadeIn 0.2s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+            animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes slideUp {
+            from { 
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            padding: 2rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-tertiary);
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .close-btn:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6b7280;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .metrics-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>📋 AVSF Dashboard</h1>
+        <p class="subtitle">Automated Vendor Setup Forms - Track, validate, and manage SAP vendor master data requests</p>
+        <div id="syncStatus" style="margin-top:0.5rem;font-size:0.8rem;opacity:0.9;">🔄 Connecting to Firebase...</div>
+    </header>
+
+    <div class="container">
+        <div class="content-wrapper">
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Total AVSFs</div>
+                    <div class="metric-value" id="totalCount">0</div>
+                </div>
+                <div class="metric-card completed">
+                    <div class="metric-label">Completed</div>
+                    <div class="metric-value" id="completedCount">0</div>
+                </div>
+                <div class="metric-card rejected">
+                    <div class="metric-label">Rejected</div>
+                    <div class="metric-value" id="rejectedCount">0</div>
+                </div>
+                <div class="metric-card processing">
+                    <div class="metric-label">Processing</div>
+                    <div class="metric-value" id="processingCount">0</div>
+                </div>
+                <div class="metric-card pending">
+                    <div class="metric-label">Pending Buyer</div>
+                    <div class="metric-value" id="pendingBuyerCount">0</div>
+                </div>
+                <div class="metric-card idoc-error">
+                    <div class="metric-label">IDOC Errors</div>
+                    <div class="metric-value" id="idocErrorCount">0</div>
+                </div>
+            </div>
+
+        <div class="main-content">
+            <div class="data-section">
+                <div class="controls">
+                    <div class="filter-group">
+                        <input type="text" class="search-box" id="searchBox" placeholder="Search vendor name, number...">
+                        <select class="filter-select" id="statusFilter">
+                            <option value="">All Statuses</option>
+                            <option value="COMPLETED">Completed</option>
+                            <option value="REJECTED">Rejected</option>
+                            <option value="PROCESSING">Processing</option>
+                            <option value="PENDING_BUYER">Pending Buyer Response</option>
+                            <option value="IDOC_ERROR">IDOC Error</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="openAddModal()">+ Add AVSF</button>
+                        <button class="btn btn-primary" onclick="openImportModal()">📧 Import from Email</button>
+                        <button class="btn btn-primary" onclick="openValidationToolsModal()">🔧 Validation Tools</button>
+                    </div>
+                    <div class="filter-group" style="margin-top:0.5rem;">
+                        <button class="btn btn-success" onclick="exportAllData()" title="Export all data as JSON">📤 Export JSON</button>
+                        <button class="btn btn-secondary" onclick="importDataFile()" title="Import JSON from colleague">📥 Import JSON</button>
+                        <button class="btn btn-secondary" onclick="exportData()" title="Export as CSV for Excel">📊 Export CSV</button>
+                    </div>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table id="avsfTable">
+                        <colgroup>
+                            <col style="width:100px">
+                            <col style="width:180px">
+                            <col style="width:110px">
+                            <col style="width:80px">
+                            <col style="width:70px">
+                            <col style="width:110px">
+                            <col style="width:90px">
+                            <col style="width:90px">
+                            <col style="width:90px">
+                            <col style="width:130px">
+                            <col style="width:100px">
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th>Request #</th>
+                                <th>Vendor</th>
+                                <th>Vendor #</th>
+                                <th>Co. Code</th>
+                                <th>Country</th>
+                                <th>Status</th>
+                                <th>Checklist</th>
+                                <th>Entry</th>
+                                <th>Completed</th>
+                                <th>Requestor</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="emptyState" class="empty-state" style="display: none;">
+                    <div class="empty-state-icon">📋</div>
+                    <h3>No AVSFs Yet</h3>
+                    <p>Click "Add AVSF" to start tracking your vendor setup forms</p>
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <div class="chart-card">
+                    <div class="chart-title">Status Distribution</div>
+                    <div class="chart-container">
+                        <canvas id="statusChart"></canvas>
+                        <div id="statusChartEmpty" style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;color:#9ca3af;font-size:13px;text-align:center;">No data yet<br>Add your first AVSF</div>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <div class="chart-title">Daily Activity (Last 7 Days)</div>
+                    <div class="chart-container">
+                        <canvas id="activityChart"></canvas>
+                        <div id="activityChartEmpty" style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;color:#9ca3af;font-size:13px;text-align:center;">No activity in last 7 days</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div class="modal" id="avsfModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Add New AVSF</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+            <form id="avsfForm">
+                <input type="hidden" id="editIndex">
+
+                <!-- Tab Navigation -->
+                <div style="display:flex;border-bottom:2px solid var(--border);margin-bottom:1.25rem;gap:4px;">
+                    <button type="button" id="tab1Btn" onclick="switchFormTab(1)"
+                        style="padding:8px 16px;border:none;background:var(--primary);color:white;font-weight:600;font-size:13px;border-radius:6px 6px 0 0;cursor:pointer;">
+                        📋 Core Info
+                    </button>
+                    <button type="button" id="tab2Btn" onclick="switchFormTab(2)"
+                        style="padding:8px 16px;border:none;background:var(--bg-hover);color:var(--text-secondary);font-weight:600;font-size:13px;border-radius:6px 6px 0 0;cursor:pointer;">
+                        🏭 CC / Plant
+                    </button>
+                    <button type="button" id="tab3Btn" onclick="switchFormTab(3)"
+                        style="padding:8px 16px;border:none;background:var(--bg-hover);color:var(--text-secondary);font-weight:600;font-size:13px;border-radius:6px 6px 0 0;cursor:pointer;">
+                        💳 Payment
+                    </button>
+                </div>
+
+                <!-- Tab 1: Core Info -->
+                <div id="formTab1">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Request Number *</label>
+                            <input type="text" class="form-input" id="requestNo" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Request Type</label>
+                            <select class="form-select" id="requestType" onchange="toggleEXReminder()">
+                                <option value="CR">CR - Creation</option>
+                                <option value="EX">EX - Extend</option>
+                                <option value="MO">MO - Modify</option>
+                                <option value="CP">CP - Partner Functions</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="exReminder" style="display:none;background:#fef3c7;border-left:4px solid #f59e0b;padding:12px 15px;margin-bottom:15px;border-radius:4px;">
+                        <div style="display:flex;align-items:start;gap:10px;">
+                            <span style="font-size:18px;">⚠️</span>
+                            <div style="font-size:13px;color:#92400e;">
+                                <strong>EX Request Reminder:</strong> Check FBL1N for recent activity → Send to Audit for unblock if needed
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Vendor Name *</label>
+                        <input type="text" class="form-input" id="vendorName" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Vendor Number</label>
+                            <input type="text" class="form-input" id="vendorNumber">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Country</label>
+                            <input type="text" class="form-input" id="country" placeholder="e.g., US, MX, DE">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Company Code *</label>
+                            <input type="text" class="form-input" id="companyCode" required onchange="updateRequirementsInfo()">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Status *</label>
+                            <select class="form-select" id="status" required onchange="checkCompletionRequirements()">
+                                <option value="PROCESSING">Processing</option>
+                                <option value="COMPLETED">Completed</option>
+                                <option value="REJECTED">Rejected</option>
+                                <option value="PENDING_BUYER">Pending Buyer Response</option>
+                                <option value="IDOC_ERROR">IDOC Error</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Requestor Name</label>
+                            <input type="text" class="form-input" id="requestorName">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Approver Name</label>
+                            <input type="text" class="form-input" id="approverName">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Entry Date</label>
+                            <input type="date" class="form-input" id="entryDate">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Completion Date</label>
+                            <input type="date" class="form-input" id="completionDate">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-input" id="notes" rows="2" placeholder="Additional notes or comments" style="resize:vertical;"></textarea>
+                    </div>
+                </div>
+
+                <!-- Tab 2: CC / Plant -->
+                <div id="formTab2" style="display:none;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Account Group</label>
+                            <select class="form-select" id="accountGroup">
+                                <option value="">-- Select --</option>
+                                <option value="ZEXT">ZEXT - External</option>
+                                <option value="ZDOM">ZDOM - Domestic</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Plant Code</label>
+                            <input type="text" class="form-input" id="plantCode" placeholder="e.g., 1265">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Tax Number</label>
+                            <input type="text" class="form-input" id="taxNumber" placeholder="Tax ID / EIN">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Tax Number 2</label>
+                            <input type="text" class="form-input" id="taxNumber2" placeholder="Secondary tax ID">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Reconciliation Account</label>
+                            <input type="text" class="form-input" id="reconAccount" placeholder="e.g., 160000">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Sort Key</label>
+                            <input type="text" class="form-input" id="sortKey" placeholder="e.g., 001">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Withholding Tax</label>
+                            <select class="form-select" id="withholdingTax">
+                                <option value="No">No</option>
+                                <option value="Yes">Yes</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Payment Terms</label>
+                            <select class="form-select" id="paymentTerms">
+                                <option value="">-- Select --</option>
+                                <option value="Z007">Z007 - 7 Days</option>
+                                <option value="Z030">Z030 - 30 Days</option>
+                                <option value="Z090">Z090 - 90 Days</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Additional Plant Notes</label>
+                        <textarea class="form-input" id="plantNotes" rows="2" placeholder="Any CC or plant-specific notes" style="resize:vertical;"></textarea>
+                    </div>
+                </div>
+
+                <!-- Tab 3: Payment Method -->
+                <div id="formTab3" style="display:none;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Payment Method</label>
+                            <select class="form-select" id="paymentMethod">
+                                <option value="">-- Select --</option>
+                                <option value="ACH">ACH</option>
+                                <option value="Wire Transfer">Wire Transfer</option>
+                                <option value="Check">Check</option>
+                                <option value="EFT">EFT</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Currency</label>
+                            <input type="text" class="form-input" id="currency" placeholder="e.g., USD, EUR, MXN">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Bank Name</label>
+                            <input type="text" class="form-input" id="bankName" placeholder="Bank name">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Bank Key</label>
+                            <input type="text" class="form-input" id="bankKey" placeholder="Routing / Bank Key">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Bank Account Number</label>
+                            <input type="text" class="form-input" id="bankAccount" placeholder="Account number">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">BIC / SWIFT</label>
+                            <input type="text" class="form-input" id="bicSwift" placeholder="e.g., CHASUS33">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">IBAN</label>
+                        <input type="text" class="form-input" id="ibanNumber" placeholder="e.g., DE89370400440532013000" style="font-family:monospace;">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">VAT Number</label>
+                            <input type="text" class="form-input" id="vatNumber" placeholder="e.g., DE812569069">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Tax Number 5</label>
+                            <input type="text" class="form-input" id="taxNumber5" placeholder="Tax Number 5 (APAC)">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Payment Notes</label>
+                        <textarea class="form-input" id="paymentNotes" rows="2" placeholder="Bank instructions or payment notes" style="resize:vertical;"></textarea>
+                    </div>
+                </div>
+
+                <div style="display:flex;gap:10px;margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border);">
+                    <button type="submit" class="btn btn-primary" style="flex:1;">Save AVSF</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                </div>
+            </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Modal -->
+    <div class="modal" id="importModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Import from SAP Workflow Email</h2>
+                <button class="close-btn" onclick="closeImportModal()">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+            <div style="margin-bottom: 20px;">
+                <p style="color: #6b7280; font-size: 14px; margin-bottom: 10px;">
+                    <strong>📧 Single or Batch Import:</strong> Paste one or multiple SAP Workflow emails below. Each email will be processed automatically.
+                </p>
+                <p style="color: #6b7280; font-size: 13px; margin-bottom: 15px;">
+                    💡 <strong>Note:</strong> Vendor numbers will be auto-formatted (leading zeros removed). If the email doesn't contain a vendor number, you can add it later by editing the entry after checking ZMMVEND_DIS.
+                </p>
+                
+                <div class="form-group">
+                    <label class="form-label">Email Content or Data String (Single or Multiple)</label>
+                    <textarea class="form-input" id="importText" rows="10" 
+                              placeholder="Paste one or more emails here. You can copy multiple emails from Outlook at once!
+
+Example formats accepted:
+- Full SAP Workflow email body
+- Tab-delimited data lines
+- Multiple emails separated by blank lines"></textarea>
+                </div>
+
+                <div id="importPreview" style="display: none; margin-top: 15px; padding: 15px; background: #f9fafb; border-radius: 6px;">
+                    <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 10px; color: #333;">
+                        <span id="importCount"></span> Found - Preview:
+                    </h3>
+                    <div id="importPreviewContent" style="font-size: 13px; color: #374151; max-height: 300px; overflow-y: auto;"></div>
+                </div>
+
+                <div id="importError" style="display: none; margin-top: 15px; padding: 15px; background: #fee2e2; border-radius: 6px; color: #991b1b;">
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-primary" onclick="parseAndPreview()" style="flex: 1;">Preview Import</button>
+                <button class="btn btn-primary" onclick="confirmImport()" id="confirmImportBtn" style="flex: 1;" disabled>Add to Dashboard</button>
+                <button class="btn btn-secondary" onclick="closeImportModal()">Cancel</button>
+            </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Requirements Checklist Modal -->
+    <div class="modal" id="requirementsModal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2 class="modal-title" id="requirementsModalTitle">Requirements Checklist</h2>
+                <button class="close-btn" onclick="closeRequirementsModal()">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+            <div id="requirementsContent" style="margin-bottom: 20px;">
+                <!-- Dynamically populated based on company code -->
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-primary" onclick="saveRequirements()" style="flex: 1;">Save Checklist</button>
+                <button class="btn btn-secondary" onclick="closeRequirementsModal()">Cancel</button>
+            </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Validation Tools Modal -->
+    <div class="modal" id="validationToolsModal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2 class="modal-title">🔧 Validation Tools</h2>
+                <button class="close-btn" onclick="closeValidationToolsModal()">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+            <div style="margin-bottom: 20px;">
+                <p style="color: #6b7280; font-size: 14px;">
+                    Validate IBAN and VAT numbers for audit documentation. Results can be exported as PDF.
+                </p>
+            </div>
+
+            <!-- Vendor Selection for Context -->
+            <div style="background: #f9fafb; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+                <label style="font-size: 13px; font-weight: 600; color: #374151; display: block; margin-bottom: 8px;">
+                    Select AVSF (Optional - for PDF reference)
+                </label>
+                <select id="validationAVSFSelect" class="form-select" onchange="updateVendorNameForValidation()">
+                    <option value="">-- Or enter vendor name manually below --</option>
+                </select>
+                <div style="margin-top: 10px;">
+                    <input type="text" id="manualVendorName" class="form-input" placeholder="Or enter vendor name manually" 
+                           style="font-size: 13px;">
+                </div>
+            </div>
+
+            <!-- Tab Navigation -->
+            <div style="display: flex; border-bottom: 2px solid #e5e7eb; margin-bottom: 20px;">
+                <button id="ibanTab" onclick="switchValidationTab('iban')" 
+                        style="flex: 1; padding: 12px; border: none; background: #3b82f6; color: white; font-weight: 600; cursor: pointer; border-radius: 6px 6px 0 0; font-size: 14px;">
+                    📊 IBAN Validator
+                </button>
+                <button id="vatTab" onclick="switchValidationTab('vat')" 
+                        style="flex: 1; padding: 12px; border: none; background: #f3f4f6; color: #6b7280; font-weight: 600; cursor: pointer; border-radius: 6px 6px 0 0; font-size: 14px; margin-left: 4px;">
+                    📋 VAT Validator
+                </button>
+            </div>
+
+            <!-- IBAN Tab Content -->
+            <div id="ibanTabContent" style="display: block;">
+                <div style="background: #f0f9ff; padding: 20px; border-radius: 8px; border: 2px solid #3b82f6;">
+                    
+                    <!-- API Mode Selection -->
+                    <div style="background: white; padding: 12px; border-radius: 6px; margin-bottom: 15px; border: 2px solid #e5e7eb;">
+                        <div style="font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 8px;">
+                            Validation Mode:
+                        </div>
+                        <div style="display: flex; gap: 15px;">
+                            <label style="display: flex; align-items: center; cursor: pointer;">
+                                <input type="radio" name="ibanApiMode" value="auto" checked onchange="updateIbanModeInfo()" 
+                                       style="margin-right: 6px;">
+                                <span style="font-size: 13px; color: #374151;">
+                                    <strong>🆓 Smart (Recommended)</strong> - Free first, premium if needed
+                                </span>
+                            </label>
+                            <label style="display: flex; align-items: center; cursor: pointer;">
+                                <input type="radio" name="ibanApiMode" value="premium" onchange="updateIbanModeInfo()" 
+                                       style="margin-right: 6px;">
+                                <span style="font-size: 13px; color: #374151;">
+                                    <strong>⭐ Premium</strong> - Best data (uses 1/100)
+                                </span>
+                            </label>
+                        </div>
+                        <div id="ibanModeInfo" style="font-size: 11px; color: #6b7280; margin-top: 6px;">
+                            Using free unlimited API first, premium only if data is missing
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
+                        <label style="font-size: 13px; font-weight: 600; color: #374151; display: block; margin-bottom: 8px;">
+                            Enter IBAN
+                        </label>
+                        <input type="text" id="ibanInputMain" placeholder="e.g., DE89370400440532013000" 
+                               style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 14px; font-family: monospace;">
+                    </div>
+
+                    <button onclick="validateIBANMain()" class="btn btn-primary" style="width: 100%; margin-bottom: 15px;">
+                        Validate IBAN
+                    </button>
+
+                    <div id="ibanResultMain" style="min-height: 60px;"></div>
+
+                    <button id="ibanPdfBtn" onclick="exportIBANPDF()" class="btn btn-secondary" style="width: 100%; display: none;">
+                        📄 Export IBAN Validation as PDF
+                    </button>
+                </div>
+            </div>
+
+            <!-- VAT Tab Content -->
+            <div id="vatTabContent" style="display: none;">
+                <div style="background: #f0fdf4; padding: 20px; border-radius: 8px; border: 2px solid #10b981;">
+                    
+                    <!-- API Mode Selection -->
+                    <div style="background: white; padding: 12px; border-radius: 6px; margin-bottom: 15px; border: 2px solid #e5e7eb;">
+                        <div style="font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 8px;">
+                            Validation Mode:
+                        </div>
+                        <div style="display: flex; gap: 15px;">
+                            <label style="display: flex; align-items: center; cursor: pointer;">
+                                <input type="radio" name="vatApiMode" value="auto" checked onchange="updateVatModeInfo()" 
+                                       style="margin-right: 6px;">
+                                <span style="font-size: 13px; color: #374151;">
+                                    <strong>🆓 Smart (Recommended)</strong> - Free first, premium if needed
+                                </span>
+                            </label>
+                            <label style="display: flex; align-items: center; cursor: pointer;">
+                                <input type="radio" name="vatApiMode" value="premium" onchange="updateVatModeInfo()" 
+                                       style="margin-right: 6px;">
+                                <span style="font-size: 13px; color: #374151;">
+                                    <strong>⭐ Premium</strong> - Best data (uses 1/100)
+                                </span>
+                            </label>
+                        </div>
+                        <div id="vatModeInfo" style="font-size: 11px; color: #6b7280; margin-top: 6px;">
+                            Using free unlimited EU VIES first, premium only if data is missing
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
+                        <label style="font-size: 13px; font-weight: 600; color: #374151; display: block; margin-bottom: 8px;">
+                            Enter VAT Number
+                        </label>
+                        <input type="text" id="vatInputMain" placeholder="e.g., DE812569069" 
+                               style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 14px; font-family: monospace;">
+                    </div>
+
+                    <button onclick="validateVATMain()" class="btn btn-primary" style="width: 100%; margin-bottom: 15px;">
+                        Validate VAT Number
+                    </button>
+
+                    <div id="vatResultMain" style="min-height: 60px;"></div>
+
+                    <button id="vatPdfBtn" onclick="exportVATPDF()" class="btn btn-secondary" style="width: 100%; display: none;">
+                        📄 Export VAT Validation as PDF
+                    </button>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <button class="btn btn-secondary" onclick="closeValidationToolsModal()" style="width: 100%;">Close</button>
+            </div>
+            </div>
+        </div>
+    </div>
+
+        </div><!-- /content-wrapper -->
+
+    <!-- Hidden API Configuration Fields -->
+    <input type="text" id="abstractApiKey" style="display: none;">
+    <input type="text" id="abstractVatApiKey" style="display: none;">
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+        // Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyCv8ZoIR0O9LE2Vj0lXkVgXnsQnvWMhRH8",
+            authDomain: "avsf-dashboard.firebaseapp.com",
+            projectId: "avsf-dashboard",
+            storageBucket: "avsf-dashboard.firebasestorage.app",
+            messagingSenderId: "672269085021",
+            appId: "1:672269085021:web:5d862e4f7e300825c360b4"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Data storage
+        let avsfs = [];
+        let statusChart, activityChart;
+
+        // Real-time sync from Firestore
+        function initializeRealtimeSync() {
+            const statusEl = document.getElementById('syncStatus');
+            db.collection('avsfs').orderBy('entryDate', 'desc').onSnapshot((snapshot) => {
+                avsfs = snapshot.docs.map(doc => ({ ...doc.data(), _id: doc.id }));
+                refresh();
+                statusEl.textContent = '🟢 Live · synced ' + new Date().toLocaleTimeString();
+            }, (error) => {
+                console.error('Firebase error:', error);
+                statusEl.textContent = '🔴 Offline — check connection';
+            });
+        }
+
+        // Update metrics
+        function updateMetrics() {
+            const total = avsfs.length;
+            const completed = avsfs.filter(a => a.status === 'COMPLETED').length;
+            const rejected = avsfs.filter(a => a.status === 'REJECTED').length;
+            const processing = avsfs.filter(a => a.status === 'PROCESSING').length;
+            const pendingBuyer = avsfs.filter(a => a.status === 'PENDING_BUYER').length;
+            const idocError = avsfs.filter(a => a.status === 'IDOC_ERROR').length;
+
+            document.getElementById('totalCount').textContent = total;
+            document.getElementById('completedCount').textContent = completed;
+            document.getElementById('rejectedCount').textContent = rejected;
+            document.getElementById('processingCount').textContent = processing;
+            document.getElementById('pendingBuyerCount').textContent = pendingBuyer;
+            document.getElementById('idocErrorCount').textContent = idocError;
+        }
+
+        // Render table
+        function renderTable(data = avsfs) {
+            const tbody = document.getElementById('tableBody');
+            const emptyState = document.getElementById('emptyState');
+            const table = document.getElementById('avsfTable');
+
+            if (data.length === 0) {
+                tbody.innerHTML = '';
+                table.style.display = 'none';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            table.style.display = '';
+            emptyState.style.display = 'none';
+
+            tbody.innerHTML = data.map((avsf) => {
+                const reqStatus = getRequirementsStatus(avsf);
+                return `
+                <tr>
+                    <td><strong>${formatRequestNumber(avsf.requestNo)}</strong></td>
+                    <td>${avsf.vendorName}</td>
+                    <td>${avsf.vendorNumber || '-'}</td>
+                    <td>${avsf.companyCode}</td>
+                    <td>${avsf.country || '-'}</td>
+                    <td><span class="status-badge status-${avsf.status.toLowerCase().replace('_', '-')}">${getStatusLabel(avsf.status)}</span></td>
+                    <td>
+                        <span onclick="openRequirementsModal('${avsf.requestNo}')"
+                              style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;background:${reqStatus.color};color:white;white-space:nowrap;">
+                            ${reqStatus.icon} ${reqStatus.text}
+                        </span>
+                    </td>
+                    <td>${formatDate(avsf.entryDate)}</td>
+                    <td>${formatDate(avsf.completionDate)}</td>
+                    <td>${avsf.requestorName || '-'}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn-icon" onclick="editAvsf('${avsf.requestNo}')">✏️ Edit</button>
+                            <button class="btn-icon" onclick="deleteAvsf('${avsf.requestNo}')">🗑️</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            }).join('');
+        }
+
+        // Get status label
+        function getStatusLabel(status) {
+            const labels = {
+                'COMPLETED': 'Completed',
+                'REJECTED': 'Rejected',
+                'PROCESSING': 'Processing',
+                'PENDING_BUYER': 'Pending Buyer',
+                'IDOC_ERROR': 'IDOC Error'
+            };
+            return labels[status] || status;
+        }
+
+        // Get request type label
+        function getRequestTypeLabel(type) {
+            // Return just the type code without description
+            return type || 'N/A';
+        }
+
+        // Format request number (remove leading zeros)
+        function formatRequestNumber(requestNo) {
+            if (!requestNo) return '';
+            return requestNo.replace(/^0+/, '') || '0';
+        }
+
+        // Format date
+        function formatDate(dateString) {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
+        }
+
+        // Update charts
+        function updateCharts() {
+            updateStatusChart();
+            updateActivityChart();
+        }
+
+        // Status distribution chart
+        function updateStatusChart() {
+            const statusCounts = {
+                'COMPLETED': avsfs.filter(a => a.status === 'COMPLETED').length,
+                'REJECTED': avsfs.filter(a => a.status === 'REJECTED').length,
+                'PROCESSING': avsfs.filter(a => a.status === 'PROCESSING').length,
+                'PENDING_BUYER': avsfs.filter(a => a.status === 'PENDING_BUYER').length,
+                'IDOC_ERROR': avsfs.filter(a => a.status === 'IDOC_ERROR').length
+            };
+
+            const hasData = Object.values(statusCounts).some(v => v > 0);
+            const emptyEl = document.getElementById('statusChartEmpty');
+            if (emptyEl) emptyEl.style.display = hasData ? 'none' : 'flex';
+            if (!hasData) {
+                if (statusChart) { statusChart.destroy(); statusChart = null; }
+                return;
+            }
+
+            const ctx = document.getElementById('statusChart').getContext('2d');
+            if (statusChart) {
+                statusChart.destroy();
+            }
+
+            statusChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Completed', 'Rejected', 'Processing', 'Pending Buyer', 'IDOC Error'],
+                    datasets: [{
+                        data: Object.values(statusCounts),
+                        backgroundColor: [
+                            '#10b981',
+                            '#ef4444',
+                            '#3b82f6',
+                            '#f59e0b',
+                            '#dc2626'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                boxWidth: 12,
+                                font: { size: 11 }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Activity chart (last 7 days)
+        function updateActivityChart() {
+            const last7Days = [];
+            const today = new Date();
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date(today);
+                date.setDate(date.getDate() - i);
+                last7Days.push(date.toISOString().split('T')[0]);
+            }
+
+            const counts = last7Days.map(date => {
+                return avsfs.filter(a => a.entryDate === date).length;
+            });
+
+            const labels = last7Days.map(date => {
+                const d = new Date(date);
+                return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            });
+
+            const hasData = counts.some(v => v > 0);
+            const emptyEl = document.getElementById('activityChartEmpty');
+            if (emptyEl) emptyEl.style.display = hasData ? 'none' : 'flex';
+            if (!hasData) {
+                if (activityChart) { activityChart.destroy(); activityChart = null; }
+                return;
+            }
+
+            const ctx = document.getElementById('activityChart').getContext('2d');
+            if (activityChart) {
+                activityChart.destroy();
+            }
+
+            activityChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'AVSFs Entered',
+                        data: counts,
+                        backgroundColor: '#667eea'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1 }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Modal functions
+        function switchFormTab(tab) {
+            [1,2,3].forEach(t => {
+                document.getElementById(`formTab${t}`).style.display = t === tab ? 'block' : 'none';
+                const btn = document.getElementById(`tab${t}Btn`);
+                btn.style.background = t === tab ? 'var(--primary)' : 'var(--bg-hover)';
+                btn.style.color = t === tab ? 'white' : 'var(--text-secondary)';
+            });
+        }
+
+        function openAddModal() {
+            document.getElementById('modalTitle').textContent = 'Add New AVSF';
+            document.getElementById('avsfForm').reset();
+            document.getElementById('editIndex').value = '';
+            document.getElementById('entryDate').valueAsDate = new Date();
+            switchFormTab(1);
+            document.getElementById('avsfModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('avsfModal').classList.remove('active');
+        }
+
+        function editAvsf(requestNo) {
+            const avsf = avsfs.find(a => a.requestNo === requestNo);
+            if (!avsf) return;
+            document.getElementById('modalTitle').textContent = 'Edit AVSF';
+            document.getElementById('editIndex').value = avsf.requestNo;
+            
+            document.getElementById('requestNo').value = avsf.requestNo;
+            document.getElementById('requestType').value = avsf.requestType;
+            document.getElementById('vendorName').value = avsf.vendorName;
+            document.getElementById('vendorNumber').value = avsf.vendorNumber || '';
+            document.getElementById('companyCode').value = avsf.companyCode;
+            document.getElementById('country').value = avsf.country || '';
+            document.getElementById('status').value = avsf.status;
+            document.getElementById('requestorName').value = avsf.requestorName || '';
+            document.getElementById('approverName').value = avsf.approverName || '';
+            document.getElementById('entryDate').value = avsf.entryDate || '';
+            document.getElementById('completionDate').value = avsf.completionDate || '';
+            document.getElementById('notes').value = avsf.notes || '';
+            // Tab 2
+            document.getElementById('accountGroup').value = avsf.accountGroup || '';
+            document.getElementById('plantCode').value = avsf.plantCode || '';
+            document.getElementById('taxNumber').value = avsf.taxNumber || '';
+            document.getElementById('taxNumber2').value = avsf.taxNumber2 || '';
+            document.getElementById('reconAccount').value = avsf.reconAccount || '';
+            document.getElementById('sortKey').value = avsf.sortKey || '';
+            document.getElementById('withholdingTax').value = avsf.withholdingTax || 'No';
+            document.getElementById('paymentTerms').value = avsf.paymentTerms || '';
+            document.getElementById('plantNotes').value = avsf.plantNotes || '';
+            // Tab 3
+            document.getElementById('paymentMethod').value = avsf.paymentMethod || '';
+            document.getElementById('currency').value = avsf.currency || '';
+            document.getElementById('bankName').value = avsf.bankName || '';
+            document.getElementById('bankKey').value = avsf.bankKey || '';
+            document.getElementById('bankAccount').value = avsf.bankAccount || '';
+            document.getElementById('bicSwift').value = avsf.bicSwift || '';
+            document.getElementById('ibanNumber').value = avsf.ibanNumber || '';
+            document.getElementById('vatNumber').value = avsf.vatNumber || '';
+            document.getElementById('taxNumber5').value = avsf.taxNumber5 || '';
+            document.getElementById('paymentNotes').value = avsf.paymentNotes || '';
+            switchFormTab(1);
+
+            // Show EX reminder if request type is EX
+            toggleEXReminder();
+
+            document.getElementById('avsfModal').classList.add('active');
+        }
+
+        async function deleteAvsf(requestNo) {
+            if (confirm('Are you sure you want to delete this AVSF?')) {
+                await db.collection('avsfs').doc(requestNo).delete();
+            }
+        }
+
+        // Form submission
+        document.getElementById('avsfForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            if (!checkCompletionRequirements()) return;
+
+            const avsf = {
+                requestNo: document.getElementById('requestNo').value,
+                requestType: document.getElementById('requestType').value,
+                vendorName: document.getElementById('vendorName').value,
+                vendorNumber: document.getElementById('vendorNumber').value,
+                companyCode: document.getElementById('companyCode').value,
+                country: document.getElementById('country').value,
+                status: document.getElementById('status').value,
+                requestorName: document.getElementById('requestorName').value,
+                approverName: document.getElementById('approverName').value,
+                entryDate: document.getElementById('entryDate').value,
+                completionDate: document.getElementById('completionDate').value,
+                notes: document.getElementById('notes').value,
+                // Tab 2 - CC/Plant
+                accountGroup: document.getElementById('accountGroup').value,
+                plantCode: document.getElementById('plantCode').value,
+                taxNumber: document.getElementById('taxNumber').value,
+                taxNumber2: document.getElementById('taxNumber2').value,
+                reconAccount: document.getElementById('reconAccount').value,
+                sortKey: document.getElementById('sortKey').value,
+                withholdingTax: document.getElementById('withholdingTax').value,
+                paymentTerms: document.getElementById('paymentTerms').value,
+                plantNotes: document.getElementById('plantNotes').value,
+                // Tab 3 - Payment
+                paymentMethod: document.getElementById('paymentMethod').value,
+                currency: document.getElementById('currency').value,
+                bankName: document.getElementById('bankName').value,
+                bankKey: document.getElementById('bankKey').value,
+                bankAccount: document.getElementById('bankAccount').value,
+                bicSwift: document.getElementById('bicSwift').value,
+                ibanNumber: document.getElementById('ibanNumber').value,
+                vatNumber: document.getElementById('vatNumber').value,
+                taxNumber5: document.getElementById('taxNumber5').value,
+                paymentNotes: document.getElementById('paymentNotes').value,
+                requirements: {}
+            };
+
+            const editRequestNo = document.getElementById('editIndex').value;
+            if (editRequestNo !== '') {
+                const existing = avsfs.find(a => a.requestNo === editRequestNo);
+                avsf.requirements = existing ? (existing.requirements || {}) : {};
+            }
+
+            await db.collection('avsfs').doc(avsf.requestNo).set(avsf);
+            closeModal();
+        });
+
+        // Search and filter
+        document.getElementById('searchBox').addEventListener('input', applyFilters);
+        document.getElementById('statusFilter').addEventListener('change', applyFilters);
+
+        function applyFilters() {
+            const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+
+            let filtered = avsfs;
+
+            if (searchTerm) {
+                filtered = filtered.filter(a => 
+                    a.vendorName.toLowerCase().includes(searchTerm) ||
+                    (a.vendorNumber || '').toLowerCase().includes(searchTerm) ||
+                    a.requestNo.toLowerCase().includes(searchTerm)
+                );
+            }
+
+            if (statusFilter) {
+                filtered = filtered.filter(a => a.status === statusFilter);
+            }
+
+            renderTable(filtered);
+        }
+
+        // Export data
+        function exportData() {
+            const csv = convertToCSV(avsfs);
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `AVSF_Export_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+        }
+
+        function convertToCSV(data) {
+            const headers = ['Request No', 'Request Type', 'Vendor Name', 'Vendor Number', 'Company Code', 
+                           'Status', 'Requestor', 'Approver', 'Entry Date', 'Completion Date', 
+                           'Payment Terms', 'Notes'];
+            
+            const rows = data.map(a => [
+                a.requestNo, a.requestType, a.vendorName, a.vendorNumber, a.companyCode,
+                a.status, a.requestorName, a.approverName, a.entryDate, a.completionDate,
+                a.paymentTerms, a.notes
+            ]);
+
+            return [headers, ...rows].map(row => row.join(',')).join('\n');
+        }
+
+        // Export all data as JSON (for team sharing)
+        function exportAllData() {
+            const exportData = {
+                avsfs: avsfs,
+                exportDate: new Date().toISOString(),
+                exportedBy: 'AVSF Dashboard',
+                version: '1.0'
+            };
+            
+            const json = JSON.stringify(exportData, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `avsf_data_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            
+            alert(`✓ Data exported!\n\nFile: avsf_data_${new Date().toISOString().split('T')[0]}.json\n\nShare this file with your colleagues via OneDrive/Teams.\nThey can import it using the "📥 Import Data" button.`);
+        }
+
+        // Import data from JSON file (merge with existing)
+        function importDataFile() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+
+            input.onchange = e => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = async event => {
+                    try {
+                        const importedData = JSON.parse(event.target.result);
+
+                        if (!importedData.avsfs || !Array.isArray(importedData.avsfs)) {
+                            alert('❌ Invalid file format. Please select a valid AVSF data export file.');
+                            return;
+                        }
+
+                        let newCount = 0;
+                        let updatedCount = 0;
+
+                        for (const imported of importedData.avsfs) {
+                            const docRef = db.collection('avsfs').doc(imported.requestNo);
+                            const docSnap = await docRef.get();
+
+                            if (!docSnap.exists) {
+                                await docRef.set(imported);
+                                newCount++;
+                            } else {
+                                const existing = docSnap.data();
+                                const importedDate = new Date(imported.entryDate);
+                                const existingDate = new Date(existing.entryDate);
+                                if (importedDate >= existingDate) {
+                                    imported.requirements = { ...existing.requirements, ...imported.requirements };
+                                    await docRef.set(imported, { merge: true });
+                                    updatedCount++;
+                                }
+                            }
+                        }
+
+                        alert(`✓ Data imported successfully!\n\n${newCount} new entries added\n${updatedCount} entries updated`);
+                    } catch (error) {
+                        alert('❌ Error importing file: ' + error.message);
+                    }
+                };
+                reader.readAsText(file);
+            };
+
+            input.click();
+        }
+
+        // Refresh all
+        function refresh() {
+            updateMetrics();
+            renderTable();
+            updateCharts();
+        }
+
+        // Import Modal Functions
+        let parsedImportData = null;
+
+        function openImportModal() {
+            document.getElementById('importModal').classList.add('active');
+            document.getElementById('importText').value = '';
+            document.getElementById('importPreview').style.display = 'none';
+            document.getElementById('importError').style.display = 'none';
+            document.getElementById('confirmImportBtn').disabled = true;
+            parsedImportData = null;
+        }
+
+        function closeImportModal() {
+            document.getElementById('importModal').classList.remove('active');
+        }
+
+        function parseAndPreview() {
+            const text = document.getElementById('importText').value.trim();
+            const errorDiv = document.getElementById('importError');
+            const previewDiv = document.getElementById('importPreview');
+            const confirmBtn = document.getElementById('confirmImportBtn');
+
+            errorDiv.style.display = 'none';
+            previewDiv.style.display = 'none';
+            confirmBtn.disabled = true;
+            parsedImportData = null;
+
+            if (!text) {
+                errorDiv.textContent = 'Please paste email content or data string.';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                // Try to parse the data (now handles multiple emails)
+                const parsed = parseEmailData(text);
+                
+                if (!parsed || parsed.length === 0) {
+                    errorDiv.textContent = 'Could not extract vendor request data. Please make sure you copied the complete email content or data line.';
+                    errorDiv.style.display = 'block';
+                    return;
+                }
+
+                // Store parsed data (now an array)
+                parsedImportData = parsed;
+                
+                // Update count
+                const countSpan = document.getElementById('importCount');
+                countSpan.textContent = `${parsed.length} AVSF${parsed.length > 1 ? 's' : ''}`;
+                
+                // Show preview for all entries
+                const previewContent = document.getElementById('importPreviewContent');
+                previewContent.innerHTML = parsed.map((item, index) => `
+                    <div style="margin-bottom: ${index < parsed.length - 1 ? '20px' : '0'}; padding-bottom: ${index < parsed.length - 1 ? '20px' : '0'}; border-bottom: ${index < parsed.length - 1 ? '2px solid #e5e7eb' : 'none'};">
+                        <div style="font-weight: 600; color: #667eea; margin-bottom: 8px;">
+                            ${index + 1}. Request ${formatRequestNumber(item.requestNo)}
+                        </div>
+                        <div style="display: grid; grid-template-columns: 150px 1fr; gap: 6px; font-size: 12px;">
+                            <strong>Vendor Name:</strong> <span>${item.vendorName}</span>
+                            <strong>AVSF Type:</strong> <span style="color: #667eea; font-weight: 600;">${getRequestTypeLabel(item.requestType)}</span>
+                            <strong>Vendor Number:</strong> <span style="color: ${item.vendorNumber ? '#10b981' : '#f59e0b'};">${item.vendorNumber || 'Not in email - Add later in SAP'}</span>
+                            <strong>Company Code:</strong> <span>${item.companyCode}</span>
+                            <strong>Status:</strong> <span>${getStatusLabel(item.status)}</span>
+                            <strong>Requestor:</strong> <span>${item.requestorName || 'N/A'}</span>
+                            <strong>Entry Date:</strong> <span>${formatDate(item.entryDate)}</span>
+                            ${item.paymentTerms ? `<strong>Payment Terms:</strong> <span>${item.paymentTerms}</span>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+                
+                previewDiv.style.display = 'block';
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = `Add ${parsed.length} AVSF${parsed.length > 1 ? 's' : ''} to Dashboard`;
+
+            } catch (error) {
+                errorDiv.textContent = 'Error parsing data: ' + error.message;
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        function parseEmailData(text) {
+            const results = [];
+            
+            // Split by common email separators (multiple blank lines, or email headers)
+            const emailBlocks = text.split(/\n\s*\n\s*\n|\n-{10,}\n|From:.*?\n/);
+            
+            for (let block of emailBlocks) {
+                if (!block.trim()) continue;
+                
+                // Try to find vendor request number in this block
+                const requestMatch = block.match(/Vendor Request (\d+)/i);
+                
+                // Look for tab-delimited data line
+                const lines = block.split('\n');
+                let dataLine = null;
+                
+                for (let line of lines) {
+                    if (line.match(/^\d{10}\t/)) {
+                        dataLine = line;
+                        break;
+                    }
+                }
+
+                let parsed = null;
+                
+                if (dataLine) {
+                    parsed = parseTabDelimitedData(dataLine);
+                } else if (requestMatch) {
+                    parsed = parseFromEmailBody(block);
+                }
+                
+                if (parsed) {
+                    results.push(parsed);
+                }
+            }
+            
+            // If no results from splitting, try treating as single email
+            if (results.length === 0) {
+                const requestMatch = text.match(/Vendor Request (\d+)/i);
+                const lines = text.split('\n');
+                let dataLine = null;
+                
+                for (let line of lines) {
+                    if (line.match(/^\d{10}\t/)) {
+                        dataLine = line;
+                        break;
+                    }
+                }
+                
+                if (dataLine) {
+                    const parsed = parseTabDelimitedData(dataLine);
+                    if (parsed) results.push(parsed);
+                } else if (requestMatch) {
+                    const parsed = parseFromEmailBody(text);
+                    if (parsed) results.push(parsed);
+                }
+            }
+            
+            return results.length > 0 ? results : null;
+        }
+
+        function formatVendorNumber(vendorNum) {
+            // Remove leading zeros from vendor number
+            if (!vendorNum) return '';
+            return vendorNum.replace(/^0+/, '') || '0'; // Keep at least one zero if all zeros
+        }
+
+        function parseTabDelimitedData(line) {
+            const fields = line.split('\t');
+            
+            if (fields.length < 6) {
+                return null;
+            }
+
+            // Map status codes
+            const statusMap = {
+                'COMPLETED': 'COMPLETED',
+                'APPR_AWAIT': 'PROCESSING',
+                'REJECTED': 'REJECTED',
+                'PENDING': 'PENDING_BUYER',
+                'ERROR': 'IDOC_ERROR'
+            };
+
+            const rawStatus = fields[6] || 'PROCESSING';
+            const status = statusMap[rawStatus] || 'PROCESSING';
+
+            // Format vendor number (remove leading zeros)
+            const vendorNumber = formatVendorNumber(fields[3]);
+
+            return {
+                requestNo: fields[0] || '',
+                requestType: fields[1] || 'CR',
+                vendorName: fields[4] || '',
+                vendorNumber: vendorNumber,
+                companyCode: fields[5] || '',
+                country: fields[12] || '',
+                status: status,
+                requestorName: fields[8] || '',
+                approverName: fields[9] || '',
+                entryDate: convertDate(fields[7]) || getTodayDate(),
+                completionDate: '',
+                paymentTerms: fields[26] || '',
+                notes: 'Imported from SAP Workflow email',
+                requirements: {}
+            };
+        }
+
+        function parseFromEmailBody(text) {
+            // Extract information from email body format
+            const requestMatch = text.match(/Request Number:\s*(\d+)/i);
+            const vendorMatch = text.match(/Vendor:\s*([^\n\r]+)/i);
+            const dateMatch = text.match(/Request Date:\s*(\d{2}\.\d{2}\.\d{4})/i);
+            const requestorMatch = text.match(/Requestor:\s*([^\n\r]+)/i);
+            const typeMatch = text.match(/Request Type:\s*([^\n\r]+)/i);
+            const companyMatch = text.match(/Company Code (\d+)/i);
+
+            if (!requestMatch) {
+                return null;
+            }
+
+            // Map status based on email content
+            let status = 'PROCESSING';
+            if (text.toLowerCase().includes('requires your processing') || 
+                text.toLowerCase().includes('submitted for your approval')) {
+                status = 'PROCESSING';
+            }
+
+            return {
+                requestNo: requestMatch[1],
+                requestType: typeMatch ? typeMatch[1] : 'MO',
+                vendorName: vendorMatch ? vendorMatch[1].trim() : '',
+                vendorNumber: '',
+                companyCode: companyMatch ? companyMatch[1] : '',
+                country: '',
+                status: status,
+                requestorName: requestorMatch ? requestorMatch[1].trim() : '',
+                approverName: '',
+                entryDate: dateMatch ? convertDate(dateMatch[1]) : getTodayDate(),
+                completionDate: '',
+                paymentTerms: '',
+                notes: 'Imported from SAP Workflow email',
+                requirements: {}
+            };
+        }
+
+        function convertDate(dateStr) {
+            // Handle formats: DD.MM.YYYY or MM/DD/YYYY
+            if (!dateStr) return '';
+            
+            if (dateStr.includes('.')) {
+                // DD.MM.YYYY format
+                const parts = dateStr.split('.');
+                if (parts.length === 3) {
+                    return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                }
+            } else if (dateStr.includes('/')) {
+                // MM/DD/YYYY format
+                const parts = dateStr.split('/');
+                if (parts.length === 3) {
+                    return `${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
+                }
+            }
+            
+            return dateStr;
+        }
+
+        function getTodayDate() {
+            const today = new Date();
+            return today.toISOString().split('T')[0];
+        }
+
+        async function confirmImport() {
+            if (!parsedImportData || parsedImportData.length === 0) return;
+
+            let added = 0;
+            let updated = 0;
+            let skipped = 0;
+
+            for (let entry of parsedImportData) {
+                const docRef = db.collection('avsfs').doc(entry.requestNo);
+                const docSnap = await docRef.get();
+
+                if (docSnap.exists) {
+                    const shouldUpdate = parsedImportData.length === 1 ?
+                        confirm(`Request ${entry.requestNo} already exists. Do you want to update it?`) :
+                        true;
+                    if (shouldUpdate) {
+                        await docRef.set(entry, { merge: true });
+                        updated++;
+                    } else {
+                        skipped++;
+                    }
+                } else {
+                    await docRef.set(entry);
+                    added++;
+                }
+            }
+
+            closeImportModal();
+
+            const messages = [];
+            if (added > 0) messages.push(`${added} new AVSF${added > 1 ? 's' : ''} added`);
+            if (updated > 0) messages.push(`${updated} updated`);
+            if (skipped > 0) messages.push(`${skipped} skipped`);
+
+            alert(`✅ Import Complete!\n\n${messages.join(', ')}`);
+        }
+
+        // Requirements Management
+        let currentRequirementsIndex = null;
+
+        function getRequirementsList(companyCode, country = '') {
+            if (!companyCode) return [];
+            
+            const prefix = companyCode.charAt(0);
+            const europeanCountries = ['SE', 'DE', 'NL', 'FR', 'IT', 'ES', 'BE', 'AT', 'PT', 'IE', 'FI', 'DK', 'PL', 'CZ', 'RO', 'HU', 'GR', 'SK', 'BG', 'HR', 'SI', 'LT', 'LV', 'EE', 'CY', 'LU', 'MT'];
+            const isEuropean = europeanCountries.includes(country.toUpperCase());
+            
+            switch(prefix) {
+                case '1': // US, CAN, MEX
+                    return [
+                        { id: 'dps', label: 'DPS Attached' },
+                        { id: 'taxNum2', label: 'Tax Number 2 Entered' },
+                        { id: 'wht', label: 'Withholding Tax Setup' }
+                    ];
+                case '2': // EMEA
+                    const emeaReqs = [
+                        { id: 'dps', label: 'DPS Attached' },
+                        { id: 'vat', label: 'VAT Attached' },
+                        { id: 'vatReg', label: 'VAT Reg No Filled Out' }
+                    ];
+                    // Add IBAN check for European countries
+                    if (isEuropean) {
+                        emeaReqs.push({ id: 'iban', label: 'IBAN Check' });
+                    }
+                    return emeaReqs;
+                case '3': // APAC
+                    return [
+                        { id: 'dps', label: 'DPS Attached' },
+                        { id: 'taxNum5', label: 'Tax Number 5 Filled Out' }
+                    ];
+                default:
+                    return [];
+            }
+        }
+
+        function getRequirementsStatus(avsf) {
+            const requirements = getRequirementsList(avsf.companyCode, avsf.country);
+            if (requirements.length === 0) {
+                return { icon: '○', text: 'N/A', color: '#9ca3af' };
+            }
+
+            const checklist = avsf.requirements || {};
+            const completed = requirements.filter(req => checklist[req.id]).length;
+            const total = requirements.length;
+
+            if (completed === total) {
+                return { icon: '✓', text: `${completed}/${total}`, color: '#10b981' };
+            } else if (completed > 0) {
+                return { icon: '⚠', text: `${completed}/${total}`, color: '#f59e0b' };
+            } else {
+                return { icon: '○', text: `${completed}/${total}`, color: '#9ca3af' };
+            }
+        }
+
+        function openRequirementsModal(requestNo) {
+            const avsf = avsfs.find(a => a.requestNo === requestNo);
+            if (!avsf) return;
+            currentRequirementsIndex = avsfs.indexOf(avsf);
+            const requirements = getRequirementsList(avsf.companyCode, avsf.country);
+
+            document.getElementById('requirementsModalTitle').textContent = 
+                `Requirements for ${formatRequestNumber(avsf.requestNo)} - ${avsf.vendorName}`;
+
+            const checklist = avsf.requirements || {};
+            const content = document.getElementById('requirementsContent');
+
+            if (requirements.length === 0) {
+                content.innerHTML = '<p style="color: #6b7280;">No specific requirements for this company code.</p>';
+            } else {
+                const region = avsf.companyCode.charAt(0) === '1' ? 'US/CAN/MEX' :
+                              avsf.companyCode.charAt(0) === '2' ? 'EMEA' : 'APAC';
+                
+                content.innerHTML = `
+                    <div style="background: #f9fafb; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
+                        <strong>Company Code ${avsf.companyCode}</strong> (${region}) ${avsf.country ? `- ${avsf.country}` : ''}
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        ${requirements.map(req => `
+                            <div style="margin-bottom: 12px;">
+                                <label style="display: flex; align-items: center; cursor: pointer; font-size: 14px;">
+                                    <input type="checkbox" id="req_${req.id}" ${checklist[req.id] ? 'checked' : ''} 
+                                           style="margin-right: 10px; width: 18px; height: 18px; cursor: pointer;">
+                                    <span>${req.label}</span>
+                                </label>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            document.getElementById('requirementsModal').classList.add('active');
+        }
+
+        function closeRequirementsModal() {
+            document.getElementById('requirementsModal').classList.remove('active');
+            currentRequirementsIndex = null;
+        }
+
+        async function saveRequirements() {
+            if (currentRequirementsIndex === null) return;
+
+            const avsf = avsfs[currentRequirementsIndex];
+            const requirements = getRequirementsList(avsf.companyCode, avsf.country);
+
+            const checklist = {};
+            requirements.forEach(req => {
+                const checkbox = document.getElementById(`req_${req.id}`);
+                if (checkbox) checklist[req.id] = checkbox.checked;
+            });
+
+            await db.collection('avsfs').doc(avsf.requestNo).update({ requirements: checklist });
+            closeRequirementsModal();
+        }
+
+        function checkCompletionRequirements() {
+            const status = document.getElementById('status').value;
+            const companyCode = document.getElementById('companyCode').value;
+            const country = document.getElementById('country').value;
+            const editRequestNo = document.getElementById('editIndex').value;
+
+            if (status === 'COMPLETED' && companyCode) {
+                const requirements = getRequirementsList(companyCode, country);
+
+                if (requirements.length > 0) {
+                    let currentChecklist = {};
+                    if (editRequestNo !== '') {
+                        const existing = avsfs.find(a => a.requestNo === editRequestNo);
+                        currentChecklist = existing ? (existing.requirements || {}) : {};
+                    }
+
+                    const completed = requirements.filter(req => currentChecklist[req.id]).length;
+                    
+                    if (completed < requirements.length) {
+                        const region = companyCode.charAt(0) === '1' ? 'US/CAN/MEX' :
+                                      companyCode.charAt(0) === '2' ? 'EMEA' : 'APAC';
+                        
+                        const message = `⚠️ Cannot Mark as Completed\n\n` +
+                            `Company Code ${companyCode} (${region}) requires ALL items to be checked:\n\n` +
+                            requirements.map(req => `${currentChecklist[req.id] ? '✓' : '✗'} ${req.label}`).join('\n') +
+                            `\n\nProgress: ${completed}/${requirements.length} completed\n\n` +
+                            `Please complete the checklist before marking as Completed.`;
+                        
+                        alert(message);
+                        // Prevent form submission by returning false
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        function updateRequirementsInfo() {
+            // Optional: Show requirements info when company code changes
+            const companyCode = document.getElementById('companyCode').value;
+            if (companyCode) {
+                const requirements = getRequirementsList(companyCode);
+                // Could add visual indicator in form showing what's needed
+            }
+        }
+
+        // EX Reminder Toggle
+        function toggleEXReminder() {
+            const requestType = document.getElementById('requestType').value;
+            const reminder = document.getElementById('exReminder');
+            if (requestType === 'EX') {
+                reminder.style.display = 'block';
+            } else {
+                reminder.style.display = 'none';
+            }
+        }
+
+        // Validation Tools Modal
+        let validationResults = {
+            iban: null,
+            vat: null,
+            vendorName: ''
+        };
+
+        function incrementAbstractApiUsage() {
+            const usage = JSON.parse(localStorage.getItem('abstractApiUsage') || '{"count": 0, "month": ""}');
+            const currentMonth = new Date().toISOString().substring(0, 7);
+            
+            if (usage.month !== currentMonth) {
+                usage.count = 1;
+                usage.month = currentMonth;
+            } else {
+                usage.count++;
+            }
+            
+            localStorage.setItem('abstractApiUsage', JSON.stringify(usage));
+            return usage.count;
+        }
+
+        function incrementAbstractVatApiUsage() {
+            const usage = JSON.parse(localStorage.getItem('abstractVatApiUsage') || '{"count": 0, "month": ""}');
+            const currentMonth = new Date().toISOString().substring(0, 7);
+            
+            if (usage.month !== currentMonth) {
+                usage.count = 1;
+                usage.month = currentMonth;
+            } else {
+                usage.count++;
+            }
+            
+            localStorage.setItem('abstractVatApiUsage', JSON.stringify(usage));
+            return usage.count;
+        }
+
+        function openValidationToolsModal() {
+            // Populate AVSF dropdown
+            const select = document.getElementById('validationAVSFSelect');
+            select.innerHTML = '<option value="">-- Or enter vendor name manually below --</option>';
+            
+            avsfs.forEach((avsf, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = `${formatRequestNumber(avsf.requestNo)} - ${avsf.vendorName}`;
+                select.appendChild(option);
+            });
+
+            // Clear previous results
+            document.getElementById('ibanInputMain').value = '';
+            document.getElementById('vatInputMain').value = '';
+            document.getElementById('manualVendorName').value = '';
+            document.getElementById('ibanResultMain').innerHTML = '';
+            document.getElementById('vatResultMain').innerHTML = '';
+            document.getElementById('ibanPdfBtn').style.display = 'none';
+            document.getElementById('vatPdfBtn').style.display = 'none';
+            validationResults = { iban: null, vat: null, vendorName: '' };
+
+            // Debug: Check if API keys are loaded
+            const ibanKey = localStorage.getItem('abstractApiKey');
+            const vatKey = localStorage.getItem('abstractVatApiKey');
+            console.log('API Keys Status:', {
+                iban: ibanKey ? `Loaded (${ibanKey.substring(0, 8)}...)` : 'NOT LOADED',
+                vat: vatKey ? `Loaded (${vatKey.substring(0, 8)}...)` : 'NOT LOADED'
+            });
+
+            // Default to IBAN tab
+            switchValidationTab('iban');
+
+            document.getElementById('validationToolsModal').classList.add('active');
+        }
+
+        function switchValidationTab(tab) {
+            const ibanTab = document.getElementById('ibanTab');
+            const vatTab = document.getElementById('vatTab');
+            const ibanContent = document.getElementById('ibanTabContent');
+            const vatContent = document.getElementById('vatTabContent');
+
+            if (tab === 'iban') {
+                // Style tabs
+                ibanTab.style.background = '#3b82f6';
+                ibanTab.style.color = 'white';
+                vatTab.style.background = '#f3f4f6';
+                vatTab.style.color = '#6b7280';
+                
+                // Show/hide content
+                ibanContent.style.display = 'block';
+                vatContent.style.display = 'none';
+            } else {
+                // Style tabs
+                vatTab.style.background = '#10b981';
+                vatTab.style.color = 'white';
+                ibanTab.style.background = '#f3f4f6';
+                ibanTab.style.color = '#6b7280';
+                
+                // Show/hide content
+                ibanContent.style.display = 'none';
+                vatContent.style.display = 'block';
+            }
+        }
+
+        function updateIbanModeInfo() {
+            const mode = document.querySelector('input[name="ibanApiMode"]:checked').value;
+            const info = document.getElementById('ibanModeInfo');
+            const usage = JSON.parse(localStorage.getItem('abstractApiUsage') || '{"count": 0, "month": ""}');
+            const remaining = 100 - usage.count;
+            
+            if (mode === 'auto') {
+                info.innerHTML = '🆓 Using free unlimited API first, premium only if data is missing';
+                info.style.color = '#6b7280';
+            } else {
+                info.innerHTML = `⭐ Will use premium API directly (${remaining}/100 remaining this month)`;
+                info.style.color = '#f59e0b';
+            }
+        }
+
+        function updateVatModeInfo() {
+            const mode = document.querySelector('input[name="vatApiMode"]:checked').value;
+            const info = document.getElementById('vatModeInfo');
+            const usage = JSON.parse(localStorage.getItem('abstractVatApiUsage') || '{"count": 0, "month": ""}');
+            const remaining = 100 - usage.count;
+            
+            if (mode === 'auto') {
+                info.innerHTML = '🆓 Using free unlimited EU VIES first, premium only if data is missing';
+                info.style.color = '#6b7280';
+            } else {
+                info.innerHTML = `⭐ Will use premium API directly (${remaining}/100 remaining this month)`;
+                info.style.color = '#f59e0b';
+            }
+        }
+
+        function closeValidationToolsModal() {
+            document.getElementById('validationToolsModal').classList.remove('active');
+        }
+
+        function updateVendorNameForValidation() {
+            const select = document.getElementById('validationAVSFSelect');
+            const manualInput = document.getElementById('manualVendorName');
+            
+            if (select.value !== '') {
+                const avsf = avsfs[parseInt(select.value)];
+                manualInput.value = avsf.vendorName;
+                validationResults.vendorName = avsf.vendorName;
+            }
+        }
+
+        // IBAN Validation (Main Tool) - Multi-API Fallback
+        async function validateIBANMain() {
+            const ibanInput = document.getElementById('ibanInputMain');
+            const resultDiv = document.getElementById('ibanResultMain');
+            const pdfBtn = document.getElementById('ibanPdfBtn');
+            const iban = ibanInput.value.trim().replace(/\s/g, '');
+            
+            // Get vendor name
+            const manualName = document.getElementById('manualVendorName').value.trim();
+            validationResults.vendorName = manualName || 'Unknown Vendor';
+
+            // Check selected mode
+            const mode = document.querySelector('input[name="ibanApiMode"]:checked').value;
+            const abstractApiKey = localStorage.getItem('abstractApiKey');
+
+            if (!iban) {
+                resultDiv.innerHTML = '<div style="color: #ef4444; padding: 15px; background: #fee2e2; border-radius: 6px;">Please enter an IBAN</div>';
+                pdfBtn.style.display = 'none';
+                return;
+            }
+
+            resultDiv.innerHTML = '<div style="color: #6b7280; padding: 15px;">Validating IBAN...</div>';
+            pdfBtn.style.display = 'none';
+
+            try {
+                let bankName = '';
+                let bic = '';
+                let country = '';
+                let apiUsed = '';
+                let isValid = false;
+                
+                const countryCode = iban.substring(0, 2);
+                const checkDigits = iban.substring(2, 4);
+                const bban = iban.substring(4);
+                
+                let bankKey = '';
+                let accountNumber = '';
+                let controlKey = '';
+                
+                // Country-specific parsing
+                if (countryCode === 'FR') {
+                    bankKey = bban.substring(0, 5);
+                    const branchCode = bban.substring(5, 10);
+                    const accountNum = bban.substring(10, 21);
+                    controlKey = bban.substring(21, 23);
+                    accountNumber = branchCode + accountNum + controlKey;
+                } else if (countryCode === 'NL') {
+                    bankKey = bban.substring(0, 4);
+                    accountNumber = bban.substring(4);
+                } else if (countryCode === 'DE') {
+                    bankKey = bban.substring(0, 8);
+                    accountNumber = bban.substring(8);
+                } else if (countryCode === 'BE') {
+                    bankKey = bban.substring(0, 3);
+                    const account = bban.substring(3, 10);
+                    const check = bban.substring(10, 12);
+                    accountNumber = account;
+                    controlKey = check;
+                } else if (countryCode === 'ES' || countryCode === 'IT') {
+                    bankKey = bban.substring(0, 8);
+                    accountNumber = bban.substring(8);
+                    if (bban.length > 20) {
+                        controlKey = bban.substring(bban.length - 2);
+                    }
+                } else {
+                    bankKey = bban.substring(0, Math.min(8, Math.floor(bban.length / 2)));
+                    accountNumber = bban.substring(bankKey.length);
+                }
+
+                if (mode === 'premium' && abstractApiKey) {
+                    // Premium mode: Use AbstractAPI directly
+                    resultDiv.innerHTML = '<div style="color: #6b7280; padding: 15px;">Using premium API for best data...</div>';
+                    
+                    try {
+                        const abstractResponse = await fetch(`https://iban-validator.abstractapi.com/v1/?api_key=${abstractApiKey}&iban=${iban}`);
+                        const abstractData = await abstractResponse.json();
+                        
+                        if (abstractData && !abstractData.error && abstractData.is_valid) {
+                            isValid = true;
+                            bankName = abstractData.bank_name || '';
+                            bic = abstractData.swift_bic || '';
+                            country = countryCode;
+                            
+                            const usage = incrementAbstractApiUsage();
+                            apiUsed = `AbstractAPI Premium (${usage}/100 this month)`;
+                        } else {
+                            // If premium fails, fall back to free
+                            const response = await fetch(`https://openiban.com/validate/${iban}?getBIC=true&validateBankCode=true`);
+                            const data = await response.json();
+                            isValid = data.valid;
+                            bankName = data.bankData?.name || '';
+                            bic = data.bankData?.bic || '';
+                            country = data.bankData?.country || countryCode;
+                            apiUsed = 'openiban.com (fallback)';
+                        }
+                    } catch (error) {
+                        // If premium fails, fall back to free
+                        const response = await fetch(`https://openiban.com/validate/${iban}?getBIC=true&validateBankCode=true`);
+                        const data = await response.json();
+                        isValid = data.valid;
+                        bankName = data.bankData?.name || '';
+                        bic = data.bankData?.bic || '';
+                        country = data.bankData?.country || countryCode;
+                        apiUsed = 'openiban.com (fallback)';
+                    }
+                } else {
+                    // Auto mode: Try free first, then premium if needed
+                    const response = await fetch(`https://openiban.com/validate/${iban}?getBIC=true&validateBankCode=true`);
+                    const data = await response.json();
+                    
+                    isValid = data.valid;
+                    bankName = data.bankData?.name || '';
+                    bic = data.bankData?.bic || '';
+                    country = data.bankData?.country || countryCode;
+                    apiUsed = 'openiban.com (free)';
+
+                    // If BIC or Bank Name is missing and we have API key, try AbstractAPI
+                    const needsEnhancement = !bic || !bankName || bic === '' || bankName === '';
+                    
+                    if (needsEnhancement && abstractApiKey && abstractApiKey.length > 10) {
+                        try {
+                            resultDiv.innerHTML = '<div style="color: #6b7280; padding: 15px;">🔄 Free API incomplete, upgrading to premium...</div>';
+                            
+                            const abstractResponse = await fetch(`https://iban-validator.abstractapi.com/v1/?api_key=${abstractApiKey}&iban=${iban}`);
+                            const abstractData = await abstractResponse.json();
+                            
+                            if (abstractData && !abstractData.error) {
+                                // Use AbstractAPI data to fill gaps
+                                if (abstractData.bank_name) {
+                                    bankName = abstractData.bank_name;
+                                }
+                                if (abstractData.swift_bic) {
+                                    bic = abstractData.swift_bic;
+                                }
+                                
+                                const usage = incrementAbstractApiUsage();
+                                apiUsed = `AbstractAPI (${usage}/100 this month)`;
+                            } else {
+                                console.log('AbstractAPI returned error:', abstractData.error);
+                            }
+                        } catch (abstractError) {
+                            console.log('AbstractAPI fallback failed:', abstractError);
+                        }
+                    } else if (needsEnhancement && !abstractApiKey) {
+                        console.log('Missing data but no API key configured');
+                    }
+                }
+
+                if (!isValid) {
+                    validationResults.iban = {
+                        iban: iban,
+                        valid: false,
+                        error: 'Invalid IBAN format',
+                        timestamp: new Date().toISOString(),
+                        apiUsed: apiUsed
+                    };
+
+                    resultDiv.innerHTML = `
+                        <div style="background: #fee2e2; padding: 20px; border-radius: 6px; border-left: 4px solid #ef4444;">
+                            <div style="color: #991b1b; font-weight: 600; font-size: 16px;">
+                                ✗ Invalid IBAN
+                            </div>
+                            <div style="color: #374151; margin-top: 10px;">
+                                ${validationResults.iban.error}
+                            </div>
+                        </div>
+                    `;
+                    pdfBtn.style.display = 'block';
+                    return;
+                }
+
+                // Final fallback messages
+                if (!bankName) bankName = 'N/A - Verify manually in SAP';
+                if (!bic) bic = 'N/A - Verify manually';
+
+                validationResults.iban = {
+                    iban: iban,
+                    valid: true,
+                    countryCode: countryCode,
+                    checkDigits: checkDigits,
+                    bankKey: bankKey,
+                    accountNumber: accountNumber,
+                    controlKey: controlKey,
+                    bankName: bankName,
+                    bic: bic,
+                    country: country,
+                    timestamp: new Date().toISOString(),
+                    apiUsed: apiUsed
+                };
+
+                resultDiv.innerHTML = `
+                    <div style="background: #d1fae5; padding: 20px; border-radius: 6px; border-left: 4px solid #10b981;">
+                        <div style="color: #065f46; font-weight: 600; font-size: 16px; margin-bottom: 15px;">
+                            ✓ Valid IBAN
+                        </div>
+                        <div style="color: #374151; line-height: 1.8;">
+                            <strong>IBAN:</strong> ${iban}<br>
+                            <strong>Country Code:</strong> ${countryCode}<br>
+                            <strong>Check Digits:</strong> ${checkDigits}<br>
+                            <strong>Bank Key:</strong> ${bankKey}<br>
+                            <strong>Bank Account:</strong> ${accountNumber}<br>
+                            ${controlKey ? `<strong style="color: #dc2626;">Control Key:</strong> <span style="color: #dc2626; font-weight: 700; font-size: 16px;">${controlKey} ⚠️ REQUIRED FOR PAYMENT</span><br>` : ''}
+                            <strong>Bank Name:</strong> ${bankName}<br>
+                            <strong>BIC/SWIFT:</strong> ${bic}<br>
+                            <strong>Country:</strong> ${country}<br>
+                            <strong>Validated:</strong> ${new Date().toLocaleString()}<br>
+                            <em style="font-size: 11px; color: #6b7280;">Data from: ${apiUsed}</em>
+                        </div>
+                    </div>
+                `;
+                pdfBtn.style.display = 'block';
+
+            } catch (error) {
+                resultDiv.innerHTML = '<div style="color: #ef4444; padding: 15px; background: #fee2e2; border-radius: 6px;">Error validating IBAN. Please check the format and try again.</div>';
+                pdfBtn.style.display = 'none';
+            }
+        }
+
+        // VAT Validation (Main Tool) - Multi-API Fallback
+        async function validateVATMain() {
+            const vatInput = document.getElementById('vatInputMain');
+            const resultDiv = document.getElementById('vatResultMain');
+            const pdfBtn = document.getElementById('vatPdfBtn');
+            const vat = vatInput.value.trim().replace(/\s/g, '').toUpperCase();
+            
+            // Get vendor name
+            const manualName = document.getElementById('manualVendorName').value.trim();
+            validationResults.vendorName = manualName || 'Unknown Vendor';
+
+            if (!vat || vat.length < 3) {
+                resultDiv.innerHTML = '<div style="color: #ef4444; padding: 15px; background: #fee2e2; border-radius: 6px;">Please enter a VAT number (e.g., DE123456789)</div>';
+                pdfBtn.style.display = 'none';
+                return;
+            }
+
+            resultDiv.innerHTML = '<div style="color: #6b7280; padding: 15px;">Validating VAT number...</div>';
+            pdfBtn.style.display = 'none';
+
+            try {
+                const countryCode = vat.substring(0, 2);
+                const vatNumber = vat.substring(2);
+                
+                let companyName = '';
+                let address = '';
+                let isValid = false;
+                let apiUsed = 'EU VIES (free)';
+
+                // Step 1: Try EU VIES first (free, unlimited)
+                const apiUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://ec.europa.eu/taxation_customs/vies/rest-api/ms/${countryCode}/vat/${vatNumber}`)}`;
+                
+                try {
+                    const response = await fetch(apiUrl);
+                    const data = await response.json();
+                    
+                    if (data.isValid || data.valid) {
+                        isValid = true;
+                        companyName = data.name || data.traderName || '';
+                        address = data.address || data.traderAddress || '';
+                    }
+                } catch (viesError) {
+                    console.log('VIES API failed, trying fallback:', viesError);
+                }
+
+                // Step 2: If VIES failed or missing data, try AbstractAPI fallback
+                const abstractVatApiKey = localStorage.getItem('abstractVatApiKey');
+                if ((!isValid || !companyName) && abstractVatApiKey) {
+                    try {
+                        resultDiv.innerHTML = '<div style="color: #6b7280; padding: 15px;">Getting enhanced data from AbstractAPI...</div>';
+                        
+                        const abstractResponse = await fetch(`https://vat.abstractapi.com/v1/?api_key=${abstractVatApiKey}&vat_number=${vat}`);
+                        const abstractData = await abstractResponse.json();
+                        
+                        if (abstractData && !abstractData.error && abstractData.valid) {
+                            isValid = true;
+                            if (abstractData.company_name && !companyName) {
+                                companyName = abstractData.company_name;
+                            }
+                            if (abstractData.company_address && !address) {
+                                address = abstractData.company_address;
+                            }
+                            
+                            const usage = incrementAbstractVatApiUsage();
+                            apiUsed = `AbstractAPI (${usage}/100 this month)`;
+                        }
+                    } catch (abstractError) {
+                        console.log('AbstractAPI fallback failed:', abstractError);
+                    }
+                }
+
+                // Step 3: Process results
+                if (isValid) {
+                    // Fill in defaults if still missing
+                    if (!companyName) companyName = 'Available in VIES - Verify manually';
+                    if (!address) address = 'Available in VIES - Verify manually';
+                    
+                    validationResults.vat = {
+                        vat: vat,
+                        valid: true,
+                        countryCode: countryCode,
+                        vatNumber: vatNumber,
+                        companyName: companyName,
+                        address: address,
+                        timestamp: new Date().toISOString(),
+                        apiUsed: apiUsed
+                    };
+
+                    resultDiv.innerHTML = `
+                        <div style="background: #d1fae5; padding: 20px; border-radius: 6px; border-left: 4px solid #10b981;">
+                            <div style="color: #065f46; font-weight: 600; font-size: 16px; margin-bottom: 15px;">
+                                ✓ Valid VAT Number
+                            </div>
+                            <div style="color: #374151; line-height: 1.8;">
+                                <strong>VAT:</strong> ${vat}<br>
+                                <strong>Country:</strong> ${countryCode}<br>
+                                <strong>Number:</strong> ${vatNumber}<br>
+                                <strong>Company:</strong> ${companyName}<br>
+                                <strong>Address:</strong> ${address}<br>
+                                <strong>Validated:</strong> ${new Date().toLocaleString()}<br>
+                                <em style="font-size: 11px; color: #6b7280;">Data from: ${apiUsed}</em>
+                            </div>
+                        </div>
+                    `;
+                    pdfBtn.style.display = 'block';
+                } else {
+                    // Fallback: Basic format validation
+                    const isValidFormat = /^[A-Z]{2}[0-9A-Z]+$/.test(vat);
+                    
+                    validationResults.vat = {
+                        vat: vat,
+                        valid: isValidFormat,
+                        countryCode: countryCode,
+                        vatNumber: vatNumber,
+                        companyName: 'Verification via VIES required',
+                        address: 'N/A',
+                        formatOnly: true,
+                        timestamp: new Date().toISOString(),
+                        apiUsed: 'Format check only'
+                    };
+
+                    if (isValidFormat) {
+                        resultDiv.innerHTML = `
+                            <div style="background: #fef3c7; padding: 20px; border-radius: 6px; border-left: 4px solid #f59e0b;">
+                                <div style="color: #92400e; font-weight: 600; font-size: 16px; margin-bottom: 15px;">
+                                    ⚠ Format Valid - Manual Verification Required
+                                </div>
+                                <div style="color: #374151; line-height: 1.8;">
+                                    <strong>VAT:</strong> ${vat}<br>
+                                    <strong>Country:</strong> ${countryCode}<br>
+                                    <strong>Number:</strong> ${vatNumber}<br>
+                                    <em>Format appears valid. Please verify in VIES database for full validation.</em>
+                                </div>
+                            </div>
+                        `;
+                        pdfBtn.style.display = 'block';
+                    } else {
+                        resultDiv.innerHTML = `
+                            <div style="background: #fee2e2; padding: 20px; border-radius: 6px; border-left: 4px solid #ef4444;">
+                                <div style="color: #991b1b; font-weight: 600; font-size: 16px;">
+                                    ✗ Invalid VAT Format
+                                </div>
+                            </div>
+                        `;
+                        pdfBtn.style.display = 'none';
+                    }
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '<div style="color: #ef4444; padding: 15px; background: #fee2e2; border-radius: 6px;">Error validating VAT. Please check the format and try again.</div>';
+                pdfBtn.style.display = 'none';
+            }
+        }
+
+        // Export IBAN Validation as PDF
+        function exportIBANPDF() {
+            if (!validationResults.iban) return;
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            const vendorName = validationResults.vendorName || 'Unknown Vendor';
+            const fileName = `${vendorName} IBAN.pdf`;
+
+            // Header
+            doc.setFontSize(20);
+            doc.setFont(undefined, 'bold');
+            doc.text('IBAN Validation Report', 105, 20, { align: 'center' });
+
+            // Vendor Name
+            doc.setFontSize(14);
+            doc.text(`Vendor: ${vendorName}`, 20, 40);
+
+            // Validation Details
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'normal');
+            
+            let y = 60;
+            doc.text(`IBAN: ${validationResults.iban.iban}`, 20, y);
+            y += 10;
+            doc.text(`Status: ${validationResults.iban.valid ? 'VALID ✓' : 'INVALID ✗'}`, 20, y);
+            y += 10;
+
+            if (validationResults.iban.valid) {
+                doc.text(`Country Code: ${validationResults.iban.countryCode}`, 20, y);
+                y += 10;
+                doc.text(`Check Digits: ${validationResults.iban.checkDigits}`, 20, y);
+                y += 10;
+                doc.text(`Bank Key: ${validationResults.iban.bankKey}`, 20, y);
+                y += 10;
+                doc.text(`Bank Account: ${validationResults.iban.accountNumber}`, 20, y);
+                y += 10;
+                
+                // Highlight control key if present (critical for payment!)
+                if (validationResults.iban.controlKey) {
+                    doc.setTextColor(220, 38, 38); // Red color
+                    doc.setFont(undefined, 'bold');
+                    doc.text(`Control Key: ${validationResults.iban.controlKey} ⚠ REQUIRED FOR PAYMENT`, 20, y);
+                    doc.setTextColor(0);
+                    doc.setFont(undefined, 'normal');
+                    y += 10;
+                }
+                
+                doc.text(`Bank Name: ${validationResults.iban.bankName}`, 20, y);
+                y += 10;
+                doc.text(`BIC/SWIFT: ${validationResults.iban.bic}`, 20, y);
+                y += 10;
+                doc.text(`Country: ${validationResults.iban.country}`, 20, y);
+            } else {
+                doc.text(`Error: ${validationResults.iban.error}`, 20, y);
+            }
+            y += 20;
+
+            // Footer
+            doc.setFontSize(10);
+            doc.setTextColor(100);
+            doc.text(`Validated: ${new Date(validationResults.iban.timestamp).toLocaleString()}`, 20, y);
+            y += 10;
+            if (validationResults.iban.apiUsed) {
+                doc.text(`Data source: ${validationResults.iban.apiUsed}`, 20, y);
+                y += 7;
+            }
+            doc.text(`Generated by: AVSF Dashboard`, 20, y);
+
+            // Save
+            doc.save(fileName);
+        }
+
+        // Export VAT Validation as PDF
+        function exportVATPDF() {
+            if (!validationResults.vat) return;
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Use validated company name from API, not manual vendor name
+            const vendorName = validationResults.vat.companyName || validationResults.vendorName || 'Unknown Vendor';
+            const fileName = `${vendorName} VAT.pdf`;
+
+            // Header
+            doc.setFontSize(20);
+            doc.setFont(undefined, 'bold');
+            doc.text('VAT Validation Report', 105, 20, { align: 'center' });
+
+            // Vendor Name (from validated result)
+            doc.setFontSize(14);
+            doc.text(`Vendor: ${vendorName}`, 20, 40);
+
+            // Validation Details
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'normal');
+            
+            let y = 60;
+            doc.text(`VAT Number: ${validationResults.vat.vat}`, 20, y);
+            y += 10;
+            doc.text(`Status: ${validationResults.vat.valid ? (validationResults.vat.formatOnly ? 'FORMAT VALID ⚠' : 'VALID ✓') : 'INVALID ✗'}`, 20, y);
+            y += 10;
+            doc.text(`Country Code: ${validationResults.vat.countryCode}`, 20, y);
+            y += 10;
+            doc.text(`VAT Number: ${validationResults.vat.vatNumber}`, 20, y);
+            y += 10;
+
+            if (validationResults.vat.companyName) {
+                doc.text(`Company Name: ${validationResults.vat.companyName}`, 20, y);
+                y += 10;
+            }
+            
+            if (validationResults.vat.address && validationResults.vat.address !== 'N/A') {
+                // Handle multi-line addresses
+                const addressLines = doc.splitTextToSize(`Address: ${validationResults.vat.address}`, 170);
+                addressLines.forEach(line => {
+                    doc.text(line, 20, y);
+                    y += 7;
+                });
+                y += 3;
+            }
+
+            if (validationResults.vat.formatOnly) {
+                y += 5;
+                doc.setTextColor(200, 100, 0);
+                doc.text('Note: Format validated only. Please verify in VIES for full validation.', 20, y);
+                doc.setTextColor(0);
+            }
+
+            y += 20;
+
+            // Footer
+            doc.setFontSize(10);
+            doc.setTextColor(100);
+            doc.text(`Validated: ${new Date(validationResults.vat.timestamp).toLocaleString()}`, 20, y);
+            y += 10;
+            if (validationResults.vat.apiUsed) {
+                doc.text(`Data source: ${validationResults.vat.apiUsed}`, 20, y);
+                y += 7;
+            }
+            doc.text(`Generated by: AVSF Dashboard`, 20, y);
+
+            // Save
+            doc.save(fileName);
+        }
+
+        // Refresh all
+        function refresh() {
+            updateMetrics();
+            renderTable();
+            updateCharts();
+        }
+
+        // Initialize API keys (localStorage only — not shared data)
+        if (!localStorage.getItem('abstractApiKey')) {
+            localStorage.setItem('abstractApiKey', '6f13148743ea489dba73b64a31a897c4');
+        }
+        if (!localStorage.getItem('abstractVatApiKey')) {
+            localStorage.setItem('abstractVatApiKey', '30a14ad525bd4a3caebbbdd7efd407e7');
+        }
+
+        // Start real-time Firebase sync
+        initializeRealtimeSync();
+    </script>
+</body>
+</html>
