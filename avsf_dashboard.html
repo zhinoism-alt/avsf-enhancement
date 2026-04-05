@@ -704,7 +704,7 @@
                         </div>
                         <div style="display:flex;gap:6px;margin-left:auto;">
                             <button class="btn btn-success" onclick="exportAllData()" title="Export all data as JSON">📤 Export JSON</button>
-                            <button class="btn btn-secondary" onclick="importDataFile()" title="Import SAP CSV report">📥 Import CSV</button>
+                            <button class="btn btn-secondary" onclick="importDataFile()" title="Import SAP Excel (.xlsx) or CSV report">📥 Import SAP File</button>
                             <button class="btn btn-secondary" onclick="exportData()" title="Export current view as CSV">📊 Export CSV</button>
                         </div>
                     </div>
@@ -2077,6 +2077,7 @@ Select a request from the left to preview the email...
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script>
         // Firebase config
         const firebaseConfig = {
@@ -3634,111 +3635,234 @@ ${f.from}`;
             return { headers, rows };
         }
 
+        // ── SAP Excel / CSV Row Mapper ──────────────────────────────────────
+        function sapDateToISO(val) {
+            if (!val) return '';
+            // SheetJS returns JS Date objects when cellDates:true
+            if (val instanceof Date) {
+                if (isNaN(val.getTime())) return '';
+                return val.toISOString().split('T')[0];
+            }
+            const s = String(val).trim();
+            // Already ISO or YYYY-MM-DD
+            if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.substring(0, 10);
+            // Excel serial number fallback (SheetJS without cellDates)
+            if (/^\d{5}$/.test(s)) {
+                const d = new Date(Math.round((parseInt(s) - 25569) * 86400 * 1000));
+                return d.toISOString().split('T')[0];
+            }
+            return s;
+        }
+
+        function mapSAPStatus(raw) {
+            const s = String(raw || '').toUpperCase().trim();
+            if (s === 'COMPLETED')  return 'COMPLETED';
+            if (s === 'REJECTED')   return 'REJECTED';
+            if (s === 'CANCELLED')  return 'REJECTED';
+            if (s === 'IDOC ERROR' || s === 'IDOC_ERROR') return 'IDOC_ERROR';
+            if (s === 'PENDING_BUYER' || s.includes('PEND')) return 'PENDING_BUYER';
+            // APPR_AWAIT, SAVED, or anything else = PROCESSING
+            return 'PROCESSING';
+        }
+
         function mapSAPRow(row) {
-            // Try multiple SAP column name variants (case-insensitive)
-            const keys = Object.fromEntries(Object.entries(row).map(([k,v]) => [k.toLowerCase().trim(), v]));
-            function get(...names) {
+            // Build case-insensitive lookup — handles both SAP Excel exact headers
+            // and generic CSV column names
+            const keys = {};
+            Object.entries(row).forEach(([k, v]) => { keys[k.toLowerCase().trim()] = v; });
+
+            function getStr(...names) {
                 for (const n of names) {
                     const v = keys[n.toLowerCase()];
-                    if (v !== undefined && v !== '') return v;
+                    if (v !== undefined && v !== null && String(v).trim() !== '') return String(v).trim();
                 }
                 return '';
             }
+            function getDate(...names) {
+                for (const n of names) {
+                    const v = keys[n.toLowerCase()];
+                    if (v !== undefined && v !== null) {
+                        const d = sapDateToISO(v);
+                        if (d) return d;
+                    }
+                }
+                return '';
+            }
+
+            // ── Exact SAP Vendor Request Report columns ──────────────────────
+            // (from Vendor Request No. / Request Type / Account Group / etc.)
+            const rawReqNo  = getStr('vendor request no.', 'vendor request no',
+                                     'request no','request number','request','ticket','req','#');
+            // Strip leading zeros (0000167016 → 167016)
+            const requestNo = rawReqNo.replace(/^0+/, '') || rawReqNo;
+
+            const rawVendNo = getStr('vendor number','vendor no','vendor #','account','lifnr');
+            // Keep vendor number as-is (SAP format with leading zeros)
+
+            const rawStatus = getStr('request status','status','state');
+            const status    = mapSAPStatus(rawStatus);
+
+            // Multiple Company Code note
+            const multiCC   = getStr('multiple company code');
+            const sbg       = getStr('sbg');
+            const compName  = getStr('company name');
+            let notes = '';
+            if (multiCC) notes += 'Multiple CC: ' + multiCC;
+            if (sbg)      notes += (notes ? ' | ' : '') + 'SBG: ' + sbg;
+
             return {
-                requestNo:      get('request no','request number','request','ticket','ticket no','ticket number','req','req no','#','request#','req#','number','no'),
-                vendorName:     get('vendor name','name','name 1','name1','vendor','supplier name','supplier','kreditoren name'),
-                vendorNumber:   get('vendor number','vendor no','vendor #','vendor#','account','kred.-nr.','kreditor','vendor account','supplier number','account no','lifnr'),
-                companyCode:    get('company code','cocode','co. code','co.code','cc','bukrs','company'),
-                country:        get('country','country key','land1','vendor country','land','country code'),
-                status:         get('status','request status','state','bearbeitungsstatus'),
-                entryDate:      get('entry date','date received','date','created on','creation date','request date','received date','erstellungsdatum','created','eingangsdatum'),
-                completionDate: get('completion date','completed date','completed on','finish date','fertigstellungsdatum'),
-                requestorName:  get('requestor','requestor name','requested by','requester','requester name','anforderer'),
-                approverName:   get('approver','approver name','approved by','genehmigt von'),
-                notes:          get('notes','comments','comment','description','remarks','notizen','bemerkung'),
+                requestNo,
+                requestType:    getStr('request type','type'),
+                accountGroup:   getStr('account group','acctgrp','acc group'),
+                vendorNumber:   rawVendNo,
+                vendorName:     getStr('vendor name','name','name 1','name1','supplier name','supplier','kreditoren name'),
+                companyCode:    getStr('company code','cocode','co. code','co.code','cc','bukrs'),
+                country:        getStr('country','country key','land1','land'),
+                status,
+                entryDate:      getDate('requested date','entry date','date received','created on','creation date','request date','erstellungsdatum'),
+                completionDate: getDate('completion date','completed date','last approved date','fertigstellungsdatum'),
+                requestorName:  getStr('requestor name','requestor','requested by','requester'),
+                approverName:   getStr('current approver name','approver name','approver','approved by'),
+                paymentTerms:   getStr('payment terms','zahlungsbedingungen'),
+                notes,
             };
+        }
+
+        // ── Shared import logic (used by both CSV and XLSX paths) ────────
+        async function processImportedRows(rawRows, fileType) {
+            const mapped = rawRows.map(mapSAPRow).filter(r => r.requestNo || r.vendorName);
+            if (!mapped.length) {
+                const sample = Object.keys(rawRows[0] || {}).slice(0, 6).join(', ');
+                alert('❌ Could not map ' + fileType + ' columns to AVSF fields.\n\n' +
+                      'Detected headers:\n' + sample + '\n\n' +
+                      'Expected SAP columns like:\n' +
+                      'Vendor Request No. | Vendor Name | Company Code | Country | Request Status | Requested Date');
+                return;
+            }
+
+            // Finalize records
+            let autoGenCount = 0;
+            mapped.forEach((r, i) => {
+                if (!r.requestNo) {
+                    r.requestNo = fileType + '-' + Date.now() + '-' + i;
+                    autoGenCount++;
+                }
+                // Status should already be normalized by mapSAPRow, but double-check
+                if (!['PROCESSING','COMPLETED','REJECTED','PENDING_BUYER','IDOC_ERROR'].includes(r.status)) {
+                    r.status = 'PROCESSING';
+                }
+            });
+
+            // Build preview summary
+            const statusBreakdown = {};
+            mapped.forEach(r => { statusBreakdown[r.status] = (statusBreakdown[r.status] || 0) + 1; });
+            const breakdown = Object.entries(statusBreakdown)
+                .map(([s, n]) => `  • ${s}: ${n}`).join('\n');
+
+            const proceed = window.confirm(
+                `📊 ${fileType} Import Preview\n\n` +
+                `Records found: ${mapped.length}\n` +
+                (autoGenCount ? `Auto-generated IDs: ${autoGenCount}\n` : '') +
+                `\nStatus breakdown:\n${breakdown}\n\n` +
+                `Import ${mapped.length} records into AVSF Dashboard?\n` +
+                `(Existing records will be updated, new ones will be created)`
+            );
+            if (!proceed) return;
+
+            let newCount = 0, updatedCount = 0, skippedCount = 0;
+            for (const record of mapped) {
+                try {
+                    const docRef = db.collection('avsfs').doc(record.requestNo);
+                    const docSnap = await docRef.get();
+                    if (!docSnap.exists) {
+                        record.requirements = {};
+                        record.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+                        await docRef.set(record);
+                        newCount++;
+                    } else {
+                        const existing = docSnap.data();
+                        // Preserve existing requirements and completed-by info
+                        record.requirements  = existing.requirements  || {};
+                        if (!record.completedBy && existing.completedBy) record.completedBy = existing.completedBy;
+                        await docRef.set(record, { merge: true });
+                        updatedCount++;
+                    }
+                } catch (err) {
+                    console.error('Import error for', record.requestNo, err);
+                    skippedCount++;
+                }
+            }
+            alert('✅ ' + fileType + ' Import Complete!\n\n' +
+                  newCount + ' new records added\n' +
+                  updatedCount + ' existing records updated\n' +
+                  (skippedCount ? '\n⚠️ ' + skippedCount + ' records skipped (see console for details)' : ''));
         }
 
         function importDataFile() {
             const input = document.createElement('input');
             input.type = 'file';
-            input.accept = '.csv,.CSV,.txt';
+            input.accept = '.xlsx,.xls,.csv,.CSV,.txt';
 
-            input.onchange = e => {
+            input.onchange = async e => {
                 const file = e.target.files[0];
                 if (!file) return;
-                const reader = new FileReader();
-                reader.onload = async event => {
-                    try {
-                        const { headers, rows } = parseCSVText(event.target.result);
-                        if (!rows.length) {
-                            alert('❌ No data rows found in CSV. Make sure the file has a header row and data rows.');
-                            return;
-                        }
 
-                        // Map rows
-                        const mapped = rows.map(mapSAPRow).filter(r => r.requestNo || r.vendorName);
-                        if (!mapped.length) {
-                            const detected = headers.slice(0,8).join(', ');
-                            alert('❌ Could not map CSV columns to AVSF fields.\n\nDetected headers:\n' + detected + '\n\nExpected columns like: Request No, Vendor Name, Company Code, Country, Status, Entry Date');
-                            return;
-                        }
+                const ext = file.name.split('.').pop().toLowerCase();
+                const isExcel = ext === 'xlsx' || ext === 'xls';
 
-                        // Validate — rows without requestNo get one generated
-                        let autoGenCount = 0;
-                        mapped.forEach((r, i) => {
-                            if (!r.requestNo) {
-                                r.requestNo = 'CSV-' + Date.now() + '-' + i;
-                                autoGenCount++;
-                            }
-                            // Normalize status
-                            const s = (r.status || '').toUpperCase();
-                            if (!['PROCESSING','COMPLETED','REJECTED','PENDING_BUYER','IDOC_ERROR'].includes(s)) {
-                                r.status = s.includes('COMP') ? 'COMPLETED' : s.includes('REJ') ? 'REJECTED' : s.includes('PEND') ? 'PENDING_BUYER' : 'PROCESSING';
-                            }
-                        });
-
-                        const detectedCols = headers.filter(h => {
-                            const lo = h.toLowerCase();
-                            return ['vendor','name','company','code','country','status','date','request','number'].some(k => lo.includes(k));
-                        }).slice(0, 6).join(', ');
-
-                        const confirm = window.confirm(
-                            `📊 CSV Preview\n\n` +
-                            `Records found: ${mapped.length}\n` +
-                            (autoGenCount ? `Auto-generated IDs: ${autoGenCount}\n` : '') +
-                            `Detected columns: ${detectedCols || headers.slice(0,5).join(', ')}\n\n` +
-                            `Import ${mapped.length} records into AVSF Dashboard?`
-                        );
-                        if (!confirm) return;
-
-                        let newCount = 0, updatedCount = 0, skippedCount = 0;
-                        for (const record of mapped) {
-                            try {
-                                const docRef = db.collection('avsfs').doc(record.requestNo);
-                                const docSnap = await docRef.get();
-                                if (!docSnap.exists) {
-                                    record.requirements = {};
-                                    record.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-                                    await docRef.set(record);
-                                    newCount++;
-                                } else {
-                                    const existing = docSnap.data();
-                                    record.requirements = existing.requirements || {};
-                                    await docRef.set(record, { merge: true });
-                                    updatedCount++;
-                                }
-                            } catch (err) { skippedCount++; }
-                        }
-                        alert('✅ CSV Import Complete!\n\n' +
-                              newCount + ' new records added\n' +
-                              updatedCount + ' existing records updated\n' +
-                              (skippedCount ? skippedCount + ' skipped (errors)' : ''));
-                    } catch (error) {
-                        alert('❌ Error reading CSV: ' + error.message);
+                if (isExcel) {
+                    // ── XLSX / XLS via SheetJS ──────────────────────────────
+                    if (typeof XLSX === 'undefined') {
+                        alert('❌ Excel library (SheetJS) not loaded. Please check your internet connection and try again.');
+                        return;
                     }
-                };
-                reader.readAsText(file, 'UTF-8');
+                    const reader = new FileReader();
+                    reader.onload = async event => {
+                        try {
+                            const data = new Uint8Array(event.target.result);
+                            const workbook = XLSX.read(data, {
+                                type: 'array',
+                                cellDates: true,      // parse dates as JS Date objects
+                                cellNF: false,
+                                cellText: false
+                            });
+
+                            // Use first sheet
+                            const sheetName = workbook.SheetNames[0];
+                            const sheet = workbook.Sheets[sheetName];
+                            const rows = XLSX.utils.sheet_to_json(sheet, {
+                                defval: '',           // empty cells = ''
+                                raw: false            // formatted strings for non-dates
+                            });
+
+                            if (!rows.length) {
+                                alert('❌ No data found in Excel file.\nSheet used: ' + sheetName);
+                                return;
+                            }
+                            await processImportedRows(rows, 'Excel');
+                        } catch (err) {
+                            alert('❌ Error reading Excel file:\n' + err.message);
+                        }
+                    };
+                    reader.readAsArrayBuffer(file);
+
+                } else {
+                    // ── CSV / TXT ───────────────────────────────────────────
+                    const reader = new FileReader();
+                    reader.onload = async event => {
+                        try {
+                            const { rows } = parseCSVText(event.target.result);
+                            if (!rows.length) {
+                                alert('❌ No data rows found in CSV.\nMake sure the file has a header row and data rows.');
+                                return;
+                            }
+                            await processImportedRows(rows, 'CSV');
+                        } catch (err) {
+                            alert('❌ Error reading CSV:\n' + err.message);
+                        }
+                    };
+                    reader.readAsText(file, 'UTF-8');
+                }
             };
             input.click();
         }
