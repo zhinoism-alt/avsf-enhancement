@@ -3270,6 +3270,7 @@ ${f.from}`;
                 if (!_firstSnapshotDone) {
                     _firstSnapshotDone = true;
                     setTimeout(runCompletedMigration, 1800);
+                    setTimeout(runApproverMigration, 2500);
                 }
             }, (error) => {
                 console.error('Firebase error:', error);
@@ -3310,6 +3311,59 @@ ${f.from}`;
 
             localStorage.setItem(FLAG, '1');
             console.log(`[AutoFix] Done — ${toFix.length} records updated silently.`);
+        }
+
+        // ── Silent one-time migration: fix completedBy from approverName ──────
+        async function runApproverMigration() {
+            const FLAG = 'avsfMigV3_approver';
+            if (localStorage.getItem(FLAG)) return;
+
+            const TEAM_MAP = {
+                'ROSANA MUNOZ':  'Rosana Munoz',
+                'BRANDON RAMOS': 'Brandon Ramos',
+                'YANNICK ROJAS': 'Yannick Rojas'
+            };
+
+            const toFix = [];
+            avsfs.forEach(a => {
+                const ap = String(a.approverName || '').toUpperCase().trim();
+                const isOurTeam = Object.keys(TEAM_MAP).includes(ap);
+                const isVMTeam  = ap === 'VM TEAM' || ap.includes('VM TEAM');
+
+                if (a.status === 'COMPLETED' && isOurTeam) {
+                    const correct = TEAM_MAP[ap];
+                    if ((a.completedBy || '').trim() !== correct) {
+                        toFix.push({ id: a.requestNo, completedBy: correct });
+                    }
+                } else if (a.status === 'COMPLETED' && isVMTeam) {
+                    // VM TEAM as final approver = still PROCESSING (we haven't processed yet)
+                    toFix.push({ id: a.requestNo, status: 'PROCESSING', completedBy: '' });
+                } else if (a.status === 'COMPLETED' && ap && !isOurTeam && !isVMTeam) {
+                    // Another team's approver — hasn't reached us yet = ON_HOLD
+                    toFix.push({ id: a.requestNo, status: 'ON_HOLD', completedBy: '' });
+                }
+            });
+
+            if (!toFix.length) {
+                localStorage.setItem(FLAG, '1');
+                return;
+            }
+
+            console.log(`[ApproverFix] Fixing ${toFix.length} records...`);
+            const CHUNK = 400;
+            for (let i = 0; i < toFix.length; i += CHUNK) {
+                const batch = db.batch();
+                toFix.slice(i, i + CHUNK).forEach(fix => {
+                    const update = {};
+                    if ('completedBy' in fix) update.completedBy = fix.completedBy;
+                    if ('status'      in fix) update.status      = fix.status;
+                    batch.update(db.collection('avsfs').doc(fix.id), update);
+                });
+                await batch.commit();
+            }
+
+            localStorage.setItem(FLAG, '1');
+            console.log(`[ApproverFix] Done — ${toFix.length} records fixed.`);
         }
 
         // Update metrics
