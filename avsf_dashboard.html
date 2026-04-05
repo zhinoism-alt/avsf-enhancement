@@ -7,39 +7,68 @@
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* Professional Color Palette */
+            /* Brand */
             --primary: #0f766e;
             --primary-light: #14b8a6;
             --primary-dark: #0d5e56;
+            --primary-50: #f0fdfa;
+            --primary-100: #ccfbf1;
             --secondary: #f59e0b;
-            
-            /* Neutrals */
-            --bg-main: #fafaf9;
+
+            /* Neutrals – warm gray */
+            --bg-main: #f8f7f6;
             --bg-card: #ffffff;
-            --bg-hover: #f5f5f4;
-            --border: #e7e5e4;
-            
+            --bg-hover: #f4f3f1;
+            --bg-secondary: #f1f0ee;
+            --border: #e4e2df;
+            --border-light: #eeece9;
+
             /* Text */
-            --text-primary: #1c1917;
-            --text-secondary: #57534e;
-            --text-tertiary: #78716c;
-            
-            /* Status */
-            --success: #10b981;
-            --warning: #f59e0b;
-            --error: #ef4444;
-            --info: #3b82f6;
-            
-            /* Shadows */
-            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+            --text-primary: #18171a;
+            --text-secondary: #524f4a;
+            --text-tertiary: #7a7570;
+            --text-muted: #a09b96;
+
+            /* Status semantic */
+            --success: #059669;
+            --success-bg: #d1fae5;
+            --success-fg: #065f46;
+            --warning: #d97706;
+            --warning-bg: #fef3c7;
+            --warning-fg: #78350f;
+            --error: #dc2626;
+            --error-bg: #fee2e2;
+            --error-fg: #7f1d1d;
+            --info: #2563eb;
+            --info-bg: #dbeafe;
+            --info-fg: #1e3a8a;
+
+            /* Elevation */
+            --shadow-xs: 0 1px 2px rgb(0 0 0 / .04);
+            --shadow-sm: 0 1px 3px rgb(0 0 0 / .07), 0 1px 2px rgb(0 0 0 / .05);
+            --shadow-md: 0 4px 8px -1px rgb(0 0 0 / .09), 0 2px 4px -1px rgb(0 0 0 / .06);
+            --shadow-lg: 0 12px 24px -4px rgb(0 0 0 / .1), 0 4px 8px -2px rgb(0 0 0 / .07);
+            --shadow-xl: 0 20px 40px -6px rgb(0 0 0 / .12), 0 8px 16px -4px rgb(0 0 0 / .08);
+
+            /* Radius */
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 14px;
+            --radius-xl: 18px;
+            --radius-full: 9999px;
+
+            /* Transitions */
+            --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+            --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+            --duration-fast: 120ms;
+            --duration-base: 200ms;
+            --duration-slow: 300ms;
         }
 
         /* User Themes */
-        body[data-user="Brandon"] { --primary:#0f766e; --primary-light:#14b8a6; --primary-dark:#0d5e56; }
-        body[data-user="Yannick"] { --primary:#1d4ed8; --primary-light:#3b82f6; --primary-dark:#1e3a8a; }
-        body[data-user="Rosana"]  { --primary:#be185d; --primary-light:#ec4899; --primary-dark:#9d174d; }
+        body[data-user="Brandon"] { --primary:#0f766e; --primary-light:#14b8a6; --primary-dark:#0d5e56; --user-color:#0f766e; }
+        body[data-user="Yannick"] { --primary:#1d4ed8; --primary-light:#3b82f6; --primary-dark:#1e3a8a; --user-color:#1d4ed8; }
+        body[data-user="Rosana"]  { --primary:#be185d; --primary-light:#ec4899; --primary-dark:#9d174d; --user-color:#be185d; }
 
         * {
             margin: 0;
@@ -53,19 +82,20 @@
             color: var(--text-primary);
             line-height: 1.6;
             min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1440px;
             margin: 0 auto;
             padding: 0;
         }
 
-        /* Header with Gradient */
+        /* Header */
         header {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            background: linear-gradient(140deg, var(--primary-dark) 0%, var(--primary) 50%, var(--primary-light) 100%);
             color: white;
-            padding: 2rem 2rem 3rem;
+            padding: 1.5rem 2rem 2.75rem;
             box-shadow: var(--shadow-lg);
             position: relative;
             overflow: hidden;
@@ -75,37 +105,94 @@
         header::before {
             content: '';
             position: absolute;
-            top: 0;
-            right: 0;
-            width: 500px;
-            height: 500px;
-            background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+            top: -60px; right: -80px;
+            width: 420px; height: 420px;
+            background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 65%);
             border-radius: 50%;
-            transform: translate(30%, -30%);
+            pointer-events: none;
+        }
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: -30px; left: 40%;
+            width: 280px; height: 280px;
+            background: radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 65%);
+            border-radius: 50%;
+            pointer-events: none;
         }
 
-        header h1 {
-            font-size: 2rem;
+        .header-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header-brand h1 {
+            font-size: 1.625rem;
             font-weight: 700;
-            margin-bottom: 0.5rem;
-            letter-spacing: -0.02em;
-            position: relative;
-            z-index: 1;
+            margin-bottom: 0.2rem;
+            letter-spacing: -0.025em;
             color: white;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
-        header .subtitle {
-            font-size: 1rem;
-            opacity: 0.95;
+        .header-brand .subtitle {
+            font-size: 0.8125rem;
+            opacity: 0.8;
             font-weight: 400;
+            color: white;
+            max-width: 480px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        #syncStatus {
+            font-size: 0.75rem;
+            opacity: 0.9;
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: var(--radius-full);
+            padding: 4px 10px;
+            white-space: nowrap;
+        }
+
+        .btn-admin {
+            padding: 4px 12px;
+            border-radius: var(--radius-full);
+            border: 1px solid rgba(255,255,255,0.35);
+            background: rgba(255,255,255,0.14);
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background var(--duration-base) var(--ease-in-out);
+            font-family: 'DM Sans', sans-serif;
+        }
+        .btn-admin:hover { background: rgba(255,255,255,0.24); }
+
+        .header-bottom {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 1rem;
             position: relative;
             z-index: 1;
-            color: white;
         }
 
         /* Content Area */
         .content-wrapper {
-            max-width: 1400px;
+            max-width: 1440px;
             margin: -2rem auto 2rem;
             padding: 0 2rem;
             position: relative;
@@ -115,33 +202,45 @@
         /* Metrics Grid */
         .metrics-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
+            grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+            gap: 0.875rem;
+            margin-bottom: 1.5rem;
         }
 
         .metric-card {
             background: var(--bg-card);
-            border-radius: 12px;
-            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            padding: 1.25rem 1.25rem 1.125rem;
             box-shadow: var(--shadow-sm);
-            border: 1px solid rgba(0,0,0,0.05);
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid var(--border-light);
+            border-left: 3px solid var(--border);
+            transition: box-shadow var(--duration-base) var(--ease-out),
+                        transform var(--duration-base) var(--ease-out),
+                        border-color var(--duration-base) var(--ease-out);
             cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, transparent 60%, rgba(0,0,0,.015));
+            pointer-events: none;
         }
 
         .metric-card:hover {
             box-shadow: var(--shadow-md);
             transform: translateY(-2px);
-            border-color: var(--primary-light);
         }
 
         .metric-label {
-            font-size: 0.75rem;
+            font-size: 0.6875rem;
             font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--text-tertiary);
+            letter-spacing: 0.07em;
+            color: var(--text-muted);
             margin-bottom: 0.5rem;
         }
 
@@ -150,67 +249,78 @@
             font-weight: 700;
             color: var(--text-primary);
             line-height: 1;
+            letter-spacing: -0.03em;
         }
 
-        .metric-card.completed .metric-value { color: var(--success); }
-        .metric-card.rejected .metric-value { color: var(--error); }
-        .metric-card.pending .metric-value { color: var(--warning); }
+        .metric-card.completed  { border-left-color: var(--success); }
+        .metric-card.rejected   { border-left-color: var(--error); }
+        .metric-card.pending    { border-left-color: var(--warning); }
+        .metric-card.processing { border-left-color: var(--info); }
+        .metric-card.idoc-error { border-left-color: #be185d; }
+
+        .metric-card.completed  .metric-value { color: var(--success); }
+        .metric-card.rejected   .metric-value { color: var(--error); }
+        .metric-card.pending    .metric-value { color: var(--warning); }
         .metric-card.processing .metric-value { color: var(--info); }
         .metric-card.idoc-error .metric-value { color: #be185d; }
+
+        .metric-card:hover.completed  { background: #f0fdf8; }
+        .metric-card:hover.rejected   { background: #fff5f5; }
+        .metric-card:hover.pending    { background: #fffbeb; }
+        .metric-card:hover.processing { background: #eff6ff; }
+        .metric-card:hover.idoc-error { background: #fdf2f8; }
 
         /* Main Content Grid */
         .main-content {
             display: grid;
-            grid-template-columns: 1fr 240px;
-            gap: 1.25rem;
+            grid-template-columns: 1fr 260px;
+            gap: 1.125rem;
             margin-bottom: 2rem;
         }
 
-        @media (max-width: 1024px) {
-            .main-content {
-                grid-template-columns: 1fr;
-            }
-            .content-wrapper {
-                padding: 0 1rem;
-            }
+        @media (max-width: 1100px) {
+            .main-content { grid-template-columns: 1fr; }
+            .content-wrapper { padding: 0 1rem; }
         }
 
         /* Data Section */
         .data-section {
             background: var(--bg-card);
-            border-radius: 12px;
+            border-radius: var(--radius-lg);
             box-shadow: var(--shadow-sm);
-            border: 1px solid rgba(0,0,0,0.05);
+            border: 1px solid var(--border-light);
             overflow: hidden;
         }
 
         .section-header {
-            padding: 1.5rem;
+            padding: 1.125rem 1.375rem;
             border-bottom: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            background: var(--bg-card);
         }
 
         .section-title {
-            font-size: 1.125rem;
+            font-size: 1rem;
             font-weight: 700;
             color: var(--text-primary);
+            letter-spacing: -0.01em;
         }
 
         /* Controls */
         .controls {
             background: var(--bg-card);
-            border-radius: 12px;
-            padding: 1.25rem;
+            border-radius: var(--radius-lg);
+            padding: 1rem 1.125rem;
             box-shadow: var(--shadow-sm);
-            border: 1px solid rgba(0,0,0,0.05);
-            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-light);
+            margin-bottom: 1.125rem;
         }
 
         .filter-group {
             display: flex;
-            gap: 0.75rem;
+            gap: 0.5rem;
             flex-wrap: wrap;
             align-items: center;
         }
@@ -218,66 +328,70 @@
         /* Buttons */
         .btn {
             font-family: 'DM Sans', sans-serif;
-            font-size: 0.875rem;
+            font-size: 0.8125rem;
             font-weight: 600;
-            padding: 0.625rem 1.25rem;
+            padding: 0.5rem 1rem;
             border: none;
-            border-radius: 8px;
+            border-radius: var(--radius-md);
             cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: background var(--duration-base) var(--ease-out),
+                        box-shadow var(--duration-base) var(--ease-out),
+                        transform var(--duration-fast) var(--ease-out),
+                        border-color var(--duration-base) var(--ease-out);
             display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.375rem;
             white-space: nowrap;
+            letter-spacing: -0.005em;
         }
+
+        .btn:active { transform: scale(0.97); }
 
         .btn-primary {
             background: var(--primary);
             color: white;
-            box-shadow: var(--shadow-sm);
+            box-shadow: 0 1px 2px rgb(0 0 0 / .1), inset 0 1px 0 rgba(255,255,255,.1);
         }
-
         .btn-primary:hover {
             background: var(--primary-dark);
-            transform: translateY(-1px);
             box-shadow: var(--shadow-md);
+            transform: translateY(-1px);
         }
 
         .btn-secondary {
-            background: var(--bg-hover);
-            color: var(--text-primary);
+            background: var(--bg-card);
+            color: var(--text-secondary);
             border: 1px solid var(--border);
+            box-shadow: var(--shadow-xs);
         }
-
         .btn-secondary:hover {
-            background: white;
-            border-color: var(--primary);
+            background: var(--bg-hover);
+            border-color: var(--primary-light);
             color: var(--primary);
         }
 
         .btn-success {
             background: var(--success);
             color: white;
-            box-shadow: var(--shadow-sm);
+            box-shadow: 0 1px 2px rgb(0 0 0 / .1);
         }
-
         .btn-success:hover {
-            background: #059669;
-            transform: translateY(-1px);
+            background: #047857;
             box-shadow: var(--shadow-md);
+            transform: translateY(-1px);
         }
 
         .btn-icon {
-            background: var(--bg-hover);
+            background: var(--bg-card);
             color: var(--text-secondary);
             border: 1px solid var(--border);
-            padding: 0.5rem;
-            border-radius: 6px;
+            padding: 0.4rem 0.5rem;
+            border-radius: var(--radius-sm);
             cursor: pointer;
-            transition: all 0.2s;
-            font-size: 1.125rem;
+            transition: all var(--duration-base) var(--ease-out);
+            font-size: 1rem;
+            box-shadow: var(--shadow-xs);
         }
-
         .btn-icon:hover {
             background: var(--primary);
             color: white;
@@ -286,112 +400,128 @@
 
         /* Form Elements */
         .search-box, .filter-select, .form-input, .form-select {
-            padding: 0.75rem;
-            border: 2px solid var(--border);
-            border-radius: 8px;
+            padding: 0.5rem 0.75rem;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-md);
             font-family: 'DM Sans', sans-serif;
-            font-size: 0.875rem;
-            transition: all 0.2s;
-            background: white;
+            font-size: 0.8125rem;
+            transition: border-color var(--duration-base), box-shadow var(--duration-base);
+            background: var(--bg-card);
+            color: var(--text-primary);
         }
 
         .search-box {
             width: 200px;
-            min-width: 150px;
+            min-width: 140px;
             flex: 1;
         }
 
         .search-box:focus, .filter-select:focus, .form-input:focus, .form-select:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.1);
+            box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
         }
 
         /* Table Styles */
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.875rem;
+            font-size: 0.8125rem;
             min-width: 1050px;
         }
         td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
-        td:nth-child(2) { max-width: 180px; } /* Vendor name can wrap */
+        td:nth-child(2) { max-width: 180px; }
 
         thead {
-            background: var(--bg-hover);
+            background: var(--bg-secondary);
             position: sticky;
             top: 0;
             z-index: 10;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            box-shadow: 0 1px 0 var(--border);
         }
-        thead th {
-            background: var(--bg-hover);
-        }
+        thead th { background: var(--bg-secondary); }
 
         th {
-            padding: 1rem;
+            padding: 0.625rem 0.875rem;
             text-align: left;
             font-weight: 600;
-            color: var(--text-secondary);
-            font-size: 0.75rem;
+            color: var(--text-tertiary);
+            font-size: 0.6875rem;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
-            border-bottom: 2px solid var(--border);
+            letter-spacing: 0.07em;
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
         }
 
         td {
-            padding: 1rem;
-            border-bottom: 1px solid rgba(0,0,0,0.05);
+            padding: 0.6875rem 0.875rem;
+            border-bottom: 1px solid var(--border-light);
             color: var(--text-primary);
+            font-size: 0.8125rem;
         }
 
-        tbody tr {
-            transition: background 0.15s;
-        }
+        tbody tr { transition: background var(--duration-fast); }
+        tbody tr:hover { background: #fafaf8; }
+        tbody tr:last-child td { border-bottom: none; }
 
-        tbody tr:hover {
-            background: var(--bg-hover);
-        }
-
-        /* Status Badges */
+        /* Status Badges — dot + label */
         .status-badge {
             display: inline-flex;
             align-items: center;
-            gap: 0.375rem;
-            padding: 0.25rem 0.75rem;
-            border-radius: 6px;
-            font-size: 0.75rem;
+            gap: 5px;
+            padding: 3px 9px 3px 7px;
+            border-radius: var(--radius-full);
+            font-size: 0.6875rem;
             font-weight: 600;
+            letter-spacing: 0.01em;
+            white-space: nowrap;
+        }
+        .status-badge::before {
+            content: '';
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            flex-shrink: 0;
         }
 
-        .status-completed { background: #d1fae5; color: #065f46; }
-        .status-rejected { background: #fee2e2; color: #991b1b; }
-        .status-pending { background: #fef3c7; color: #92400e; }
-        .status-processing { background: #dbeafe; color: #1e40af; }
-        .status-idoc-error { background: #fecaca; color: #7f1d1d; }
-        .status-buyer-response { background: #e0e7ff; color: #3730a3; }
-        .status-on-hold { background: #fed7aa; color: #7c2d12; }
-        .status-cancelled { background: #e5e7eb; color: #374151; }
+        .status-completed      { background: #d1fae5; color: #065f46; }
+        .status-completed::before   { background: #10b981; }
+        .status-rejected       { background: #fee2e2; color: #991b1b; }
+        .status-rejected::before    { background: #ef4444; }
+        .status-pending        { background: #fef3c7; color: #78350f; }
+        .status-pending::before     { background: #f59e0b; }
+        .status-processing     { background: #dbeafe; color: #1e3a8a; }
+        .status-processing::before  { background: #3b82f6; }
+        .status-idoc-error     { background: #fce7f3; color: #831843; }
+        .status-idoc-error::before  { background: #ec4899; }
+        .status-buyer-response { background: #ede9fe; color: #4c1d95; }
+        .status-buyer-response::before { background: #8b5cf6; }
+        .status-on-hold        { background: #ffedd5; color: #7c2d12; }
+        .status-on-hold::before     { background: #f97316; }
+        .status-cancelled      { background: #f3f4f6; color: #374151; }
+        .status-cancelled::before   { background: #9ca3af; }
 
         .sidebar {
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 1rem;
         }
 
         .chart-card {
             background: var(--bg-card);
-            padding: 1.25rem;
-            border-radius: 12px;
+            padding: 1.125rem 1.25rem;
+            border-radius: var(--radius-lg);
             box-shadow: var(--shadow-sm);
-            border: 1px solid rgba(0,0,0,0.05);
+            border: 1px solid var(--border-light);
         }
 
         .chart-title {
-            font-size: 1rem;
+            font-size: 0.875rem;
             font-weight: 700;
             color: var(--text-primary);
-            margin-bottom: 1rem;
+            margin-bottom: 0.875rem;
+            letter-spacing: -0.01em;
         }
 
         .chart-container {
@@ -399,9 +529,7 @@
             position: relative;
         }
 
-        canvas {
-            max-width: 100%;
-        }
+        canvas { max-width: 100%; }
 
         /* Modal */
         .modal {
@@ -411,8 +539,9 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.55);
-            backdrop-filter: blur(3px);
+            background: rgba(15, 10, 5, 0.45);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
             z-index: 1000;
             align-items: flex-start;
             justify-content: center;
@@ -432,15 +561,16 @@
 
         .modal-content {
             background: var(--bg-card);
-            border-radius: 14px;
+            border-radius: var(--radius-xl);
             width: 100%;
-            max-width: 780px;
-            box-shadow: var(--shadow-lg), 0 0 0 1px rgba(0,0,0,.06);
-            animation: slideUp 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            max-width: 800px;
+            box-shadow: var(--shadow-xl), 0 0 0 1px rgba(0,0,0,.06);
+            animation: slideUp 0.22s var(--ease-out);
             display: flex;
             flex-direction: column;
             margin: auto;
         }
+
         .modal-body {
             overflow-y: auto;
             max-height: calc(100vh - 180px);
@@ -448,18 +578,12 @@
         }
 
         @keyframes slideUp {
-            from { 
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to { 
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(16px) scale(0.99); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
         }
 
         .modal-header {
-            padding: 1rem 1.5rem;
+            padding: 1rem 1.375rem;
             border-bottom: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
@@ -468,189 +592,205 @@
         }
 
         .modal-title {
-            font-size: 1.15rem;
+            font-size: 1.0625rem;
             font-weight: 700;
             color: var(--text-primary);
+            letter-spacing: -0.015em;
         }
 
-        .modal-body {
-            padding: 2rem;
-        }
+        .modal-body { padding: 1.375rem 1.5rem; }
 
         .close-btn {
             background: none;
             border: none;
-            font-size: 1.5rem;
+            font-size: 1.25rem;
             color: var(--text-tertiary);
             cursor: pointer;
             width: 32px;
             height: 32px;
-            border-radius: 6px;
+            border-radius: var(--radius-sm);
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.2s;
+            transition: background var(--duration-base), color var(--duration-base);
+            line-height: 1;
         }
+        .close-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
 
-        .close-btn:hover {
-            background: var(--bg-hover);
-            color: var(--text-primary);
-        }
-
-        .form-group {
-            margin-bottom: 0.75rem;
-        }
+        .form-group { margin-bottom: 0.75rem; }
 
         .form-label {
             display: block;
             margin-bottom: 4px;
-            font-size: 11px;
+            font-size: 0.6875rem;
             font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: .3px;
-            color: var(--text-primary);
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
         }
 
         .form-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 1rem;
+            gap: 0.875rem;
         }
 
         .empty-state {
             text-align: center;
-            padding: 60px 20px;
-            color: #6b7280;
+            padding: 56px 20px;
+            color: var(--text-muted);
         }
+        .empty-state svg { margin: 0 auto 14px; display: block; opacity: 0.35; }
+        .empty-state h3  { font-size: 1rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px; }
+        .empty-state p   { font-size: 0.8125rem; }
 
-        .empty-state-icon {
-            font-size: 48px;
-            margin-bottom: 15px;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 8px;
-        }
+        .action-buttons { display: flex; gap: 6px; }
 
         @media (max-width: 768px) {
-            .metrics-grid {
-                grid-template-columns: 1fr 1fr;
-            }
-
-            .form-row {
-                grid-template-columns: 1fr;
-            }
+            .metrics-grid { grid-template-columns: 1fr 1fr; }
+            .form-row { grid-template-columns: 1fr; }
         }
 
+        /* Tab Navigation */
         .dash-tabs {
             display: flex;
-            gap: 4px;
-            margin-bottom: 1.5rem;
-            border-bottom: 2px solid var(--border);
+            gap: 2px;
+            margin-bottom: 1.25rem;
+            border-bottom: 1.5px solid var(--border);
             padding-bottom: 0;
+            overflow-x: auto;
+            scrollbar-width: none;
         }
+        .dash-tabs::-webkit-scrollbar { display: none; }
+
         .dash-tab-btn {
-            padding: 10px 20px;
+            padding: 8px 16px;
             border: none;
-            border-radius: 8px 8px 0 0;
+            border-radius: var(--radius-sm) var(--radius-sm) 0 0;
             font-family: 'DM Sans', sans-serif;
-            font-size: 0.875rem;
+            font-size: 0.8125rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.15s;
-            background: var(--bg-hover);
-            color: var(--text-secondary);
+            transition: color var(--duration-base), background var(--duration-base), border-color var(--duration-fast);
+            background: transparent;
+            color: var(--text-tertiary);
             border-bottom: 2px solid transparent;
-            margin-bottom: -2px;
+            margin-bottom: -1.5px;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .dash-tab-btn:hover:not(.active) {
+            color: var(--text-secondary);
+            background: var(--bg-hover);
         }
         .dash-tab-btn.active {
-            background: var(--bg-card);
             color: var(--primary);
-            border-color: var(--primary);
+            border-bottom-color: var(--primary);
+            background: var(--primary-50);
         }
+
         .dash-tab-content { display: none; }
         .dash-tab-content.active { display: block; }
 
-        /* Cleaner action buttons */
+        /* Row action buttons */
         .action-btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 30px;
-            height: 30px;
+            width: 28px;
+            height: 28px;
             border: 1px solid var(--border);
-            border-radius: 6px;
+            border-radius: var(--radius-sm);
             background: var(--bg-card);
             cursor: pointer;
-            font-size: 14px;
-            transition: all 0.15s;
+            font-size: 13px;
+            transition: background var(--duration-fast), border-color var(--duration-fast), color var(--duration-fast);
             text-decoration: none;
+            color: var(--text-secondary);
         }
-        .action-btn:hover { background: var(--primary); border-color: var(--primary); }
-        .action-btn.danger:hover { background: var(--error); border-color: var(--error); }
+        .action-btn:hover        { background: var(--primary); border-color: var(--primary); color: white; }
+        .action-btn.danger:hover { background: var(--error);   border-color: var(--error);   color: white; }
 
-        /* Audit log table */
+        /* Audit badges */
         .audit-badge {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
             padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 11px;
+            border-radius: var(--radius-full);
+            font-size: 0.6875rem;
             font-weight: 600;
         }
-        .audit-added { background: #d1fae5; color: #065f46; }
-        .audit-edited { background: #dbeafe; color: #1e40af; }
+        .audit-added   { background: #d1fae5; color: #065f46; }
+        .audit-edited  { background: #dbeafe; color: #1e40af; }
         .audit-deleted { background: #fee2e2; color: #991b1b; }
 
         /* Resource Cards (Tab 5) */
-        .res-card { background:white; border-radius:8px; border-left:4px solid #3b82f6; padding:12px 14px; box-shadow:0 1px 3px rgba(0,0,0,.06); display:flex; flex-direction:column; gap:5px; }
-        .res-title { font-size:13px; font-weight:700; color:var(--text-primary); }
-        .res-desc  { font-size:12px; color:var(--text-secondary); line-height:1.5; }
-        .res-link  { font-size:11px; color:var(--primary); text-decoration:none; font-weight:600; word-break:break-all; }
-        .res-link:hover { text-decoration:underline; }
-        .res-tags  { display:flex; gap:4px; flex-wrap:wrap; margin-top:2px; }
-        .res-tag   { padding:1px 7px; border-radius:4px; font-size:10px; font-weight:700; text-transform:uppercase; }
-        .res-tag-vat  { background:#dbeafe; color:#1e40af; }
-        .res-tag-iban { background:#d1fae5; color:#065f46; }
-        .res-tag-reg  { background:#f3f4f6; color:#374151; }
+        .res-card  { background: var(--bg-card); border-radius: var(--radius-md); border-left: 3px solid #3b82f6; padding: 12px 14px; box-shadow: var(--shadow-xs); display: flex; flex-direction: column; gap: 5px; border: 1px solid var(--border-light); border-left: 3px solid #3b82f6; }
+        .res-title { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+        .res-desc  { font-size: 12px; color: var(--text-secondary); line-height: 1.55; }
+        .res-link  { font-size: 11px; color: var(--primary); text-decoration: none; font-weight: 600; word-break: break-all; }
+        .res-link:hover { text-decoration: underline; }
+        .res-tags  { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 2px; }
+        .res-tag   { padding: 1px 7px; border-radius: var(--radius-full); font-size: 10px; font-weight: 700; text-transform: uppercase; }
+        .res-tag-vat  { background: #dbeafe; color: #1e40af; }
+        .res-tag-iban { background: #d1fae5; color: #065f46; }
+        .res-tag-reg  { background: #f3f4f6; color: #374151; }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
         </style>
 </head>
 <body>
     <header>
-        <h1>📋 AVSF Dashboard</h1>
-        <p class="subtitle">Automated Vendor Setup Forms - Track, validate, and manage SAP vendor master data requests</p>
-        <div style="display:flex;align-items:center;gap:12px;margin-top:0.5rem;">
-            <div id="syncStatus" style="font-size:0.8rem;opacity:0.9;">🔄 Connecting to Firebase...</div>
-            <button onclick="openAdminPanel()" style="padding:2px 10px;border-radius:12px;border:1px solid rgba(255,255,255,0.4);background:rgba(255,255,255,0.12);color:white;font-size:11px;cursor:pointer;font-weight:600;">⚙️ Admin</button>
-        </div>
-        <div style="margin-top:0.75rem;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            <!-- User pill -->
-            <div id="userPill" style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:20px;padding:4px 12px 4px 6px;cursor:pointer;" onclick="document.getElementById('userDropdown').classList.toggle('open')">
-                <span id="userAvatar" style="width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,0.3);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:white;flex-shrink:0;">B</span>
-                <span id="userLabel" style="font-size:13px;font-weight:600;color:white;">Brandon Ramos</span>
-                <span style="font-size:10px;color:rgba(255,255,255,0.7);">▾</span>
+        <div class="header-top">
+            <div class="header-brand">
+                <h1>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="m9 12 2 2 4-4"/></svg>
+                    AVSF Dashboard
+                </h1>
+                <p class="subtitle">Automated Vendor Setup Forms — SAP vendor master data tracking</p>
             </div>
-            <!-- Hidden native select (synced by JS) -->
+            <div class="header-actions">
+                <div id="syncStatus">&#x25CF; Connecting...</div>
+                <button class="btn-admin" onclick="openAdminPanel()">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline;vertical-align:middle;margin-right:3px;"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>Admin
+                </button>
+            </div>
+        </div>
+        <div class="header-bottom">
+            <!-- User pill -->
+            <div id="userPill" style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.28);border-radius:var(--radius-full);padding:4px 12px 4px 5px;cursor:pointer;" onclick="document.getElementById('userDropdown').classList.toggle('open')">
+                <span id="userAvatar" style="width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.28);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:white;flex-shrink:0;">B</span>
+                <span id="userLabel" style="font-size:12px;font-weight:600;color:white;">Brandon Ramos</span>
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="rgba(255,255,255,0.65)"><path d="M1 3l4 4 4-4"/></svg>
+            </div>
+            <!-- Hidden native select -->
             <select id="currentUser" onchange="saveCurrentUser()" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0;">
                 <option value="Brandon">Brandon Ramos</option>
                 <option value="Yannick">Yannick Rojas</option>
                 <option value="Rosana">Rosana Munoz</option>
             </select>
             <!-- Custom dropdown -->
-            <div id="userDropdown" style="display:none;position:absolute;margin-top:4px;background:white;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,0.2);z-index:999;min-width:170px;overflow:hidden;border:1px solid #e5e7eb;">
-                <div onclick="setUser('Brandon','B','Brandon Ramos')" style="padding:10px 14px;cursor:pointer;font-size:13px;font-weight:600;color:#111827;display:flex;align-items:center;gap:8px;border-bottom:1px solid #f3f4f6;" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background=''">
-                    <span style="width:24px;height:24px;border-radius:50%;background:#0f766e;color:white;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;">B</span> Brandon Ramos
+            <div id="userDropdown" style="display:none;position:absolute;margin-top:4px;background:white;border-radius:var(--radius-lg);box-shadow:var(--shadow-xl);z-index:999;min-width:175px;overflow:hidden;border:1px solid var(--border);">
+                <div onclick="setUser('Brandon','B','Brandon Ramos')" style="padding:9px 13px;cursor:pointer;font-size:13px;font-weight:600;color:#111827;display:flex;align-items:center;gap:9px;border-bottom:1px solid #f3f4f6;" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background=''">
+                    <span style="width:24px;height:24px;border-radius:50%;background:#0f766e;color:white;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;">B</span>Brandon Ramos
                 </div>
-                <div onclick="setUser('Yannick','Y','Yannick Rojas')" style="padding:10px 14px;cursor:pointer;font-size:13px;font-weight:600;color:#111827;display:flex;align-items:center;gap:8px;border-bottom:1px solid #f3f4f6;" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background=''">
-                    <span style="width:24px;height:24px;border-radius:50%;background:#0f766e;color:white;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;">Y</span> Yannick Rojas
+                <div onclick="setUser('Yannick','Y','Yannick Rojas')" style="padding:9px 13px;cursor:pointer;font-size:13px;font-weight:600;color:#111827;display:flex;align-items:center;gap:9px;border-bottom:1px solid #f3f4f6;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background=''">
+                    <span style="width:24px;height:24px;border-radius:50%;background:#1d4ed8;color:white;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;">Y</span>Yannick Rojas
                 </div>
-                <div onclick="setUser('Rosana','R','Rosana Munoz')" style="padding:10px 14px;cursor:pointer;font-size:13px;font-weight:600;color:#111827;display:flex;align-items:center;gap:8px;" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background=''">
-                    <span style="width:24px;height:24px;border-radius:50%;background:#0f766e;color:white;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;">R</span> Rosana Munoz
+                <div onclick="setUser('Rosana','R','Rosana Munoz')" style="padding:9px 13px;cursor:pointer;font-size:13px;font-weight:600;color:#111827;display:flex;align-items:center;gap:9px;" onmouseover="this.style.background='#fdf2f8'" onmouseout="this.style.background=''">
+                    <span style="width:24px;height:24px;border-radius:50%;background:#be185d;color:white;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;">R</span>Rosana Munoz
                 </div>
             </div>
             <a href="https://resideoinc-my.sharepoint.com/:x:/g/personal/reyna_valenzuela_resideo_com/Eem_eSQFE_9Mu7owN9Qbd2MB3-iyWlCJWdzM4PUOZtNnXw?e=8766Kv" target="_blank"
-               style="font-size:13px;background:rgba(255,255,255,0.15);color:white;text-decoration:none;padding:5px 14px;border-radius:20px;font-weight:600;border:1px solid rgba(255,255,255,0.3);">
-                🏦 Bank Validation Sheet
+               style="font-size:12px;background:rgba(255,255,255,0.14);color:white;text-decoration:none;padding:4px 13px;border-radius:var(--radius-full);font-weight:600;border:1px solid rgba(255,255,255,0.28);display:inline-flex;align-items:center;gap:5px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+                Bank Validation
             </a>
         </div>
     </header>
@@ -659,12 +799,30 @@
         <div class="content-wrapper">
             <!-- Dashboard Tab Navigation -->
             <div class="dash-tabs">
-                <button class="dash-tab-btn active" id="dashTab1Btn" onclick="switchDashTab(1)">📋 AVSF Tracker</button>
-                <button class="dash-tab-btn" id="dashTab2Btn" onclick="switchDashTab(2)">🏭 Plant / CC Reference</button>
-                <button class="dash-tab-btn" id="dashTab3Btn" onclick="switchDashTab(3)">📜 Audit Log</button>
-                <button class="dash-tab-btn" id="dashTab4Btn" onclick="switchDashTab(4)">💳 Payment Method</button>
-                <button class="dash-tab-btn" id="dashTab5Btn" onclick="switchDashTab(5)">🌐 Resources</button>
-                <button class="dash-tab-btn" id="dashTab6Btn" onclick="switchDashTab(6)">✉️ Email Templates</button>
+                <button class="dash-tab-btn active" id="dashTab1Btn" onclick="switchDashTab(1)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="m9 12 2 2 4-4"/></svg>
+                    AVSF Tracker
+                </button>
+                <button class="dash-tab-btn" id="dashTab2Btn" onclick="switchDashTab(2)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    Plant / CC Ref
+                </button>
+                <button class="dash-tab-btn" id="dashTab3Btn" onclick="switchDashTab(3)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    Audit Log
+                </button>
+                <button class="dash-tab-btn" id="dashTab4Btn" onclick="switchDashTab(4)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                    Payment Method
+                </button>
+                <button class="dash-tab-btn" id="dashTab5Btn" onclick="switchDashTab(5)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    Resources
+                </button>
+                <button class="dash-tab-btn" id="dashTab6Btn" onclick="switchDashTab(6)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                    Email Templates
+                </button>
             </div>
 
             <div class="dash-tab-content active" id="dashTab1Content">
@@ -699,39 +857,58 @@
             <div class="data-section">
                 <div class="controls">
                     <div class="filter-group">
-                        <input type="text" class="search-box" id="searchBox" placeholder="Search vendor name, number...">
+                        <input type="text" class="search-box" id="searchBox" placeholder="Search vendor, request #...">
                         <select class="filter-select" id="statusFilter">
                             <option value="">All Statuses</option>
                             <option value="COMPLETED">Completed</option>
                             <option value="REJECTED">Rejected</option>
                             <option value="PROCESSING">Processing</option>
-                            <option value="PENDING_BUYER">Pending Buyer Response</option>
+                            <option value="PENDING_BUYER">Pending Buyer</option>
                             <option value="IDOC_ERROR">IDOC Error</option>
                             <option value="ON_HOLD">On Hold</option>
                             <option value="CANCELLED">Cancelled</option>
                         </select>
-                        <button class="btn btn-primary" onclick="openAddModal()">+ Add AVSF</button>
-                        <button class="btn btn-primary" onclick="openImportModal()">📧 Import from Email</button>
-                        <button class="btn btn-primary" onclick="openValidationToolsModal()">🔧 Validation Tools</button>
+                        <button class="btn btn-primary" onclick="openAddModal()">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            Add AVSF
+                        </button>
+                        <button class="btn btn-secondary" onclick="openImportModal()">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                            Import Email
+                        </button>
+                        <button class="btn btn-secondary" onclick="openValidationToolsModal()">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                            Validation Tools
+                        </button>
                     </div>
-                    <div class="filter-group" style="margin-top:0.5rem;flex-wrap:wrap;gap:6px;">
+                    <div class="filter-group" style="margin-top:0.625rem;flex-wrap:wrap;gap:5px;align-items:center;">
                         <!-- Region quick-filters -->
-                        <div style="display:flex;gap:4px;align-items:center;">
-                            <span style="font-size:11px;color:var(--text-tertiary);font-weight:600;">Region:</span>
-                            <button id="rfAll"  onclick="setRegionFilter('')"   style="padding:3px 10px;border-radius:20px;border:1px solid var(--primary);background:var(--primary);color:white;font-size:11px;cursor:pointer;font-weight:600;">All</button>
-                            <button id="rfAm"   onclick="setRegionFilter('1')"  style="padding:3px 10px;border-radius:20px;border:1px solid #d1d5db;background:white;color:#374151;font-size:11px;cursor:pointer;">🌎 Americas</button>
-                            <button id="rfEMEA" onclick="setRegionFilter('2')"  style="padding:3px 10px;border-radius:20px;border:1px solid #d1d5db;background:white;color:#374151;font-size:11px;cursor:pointer;">🇪🇺 EMEA</button>
-                            <button id="rfAPAC" onclick="setRegionFilter('3')"  style="padding:3px 10px;border-radius:20px;border:1px solid #d1d5db;background:white;color:#374151;font-size:11px;cursor:pointer;">🌏 APAC</button>
+                        <div style="display:flex;gap:3px;align-items:center;">
+                            <span style="font-size:10.5px;color:var(--text-muted);font-weight:700;letter-spacing:0.05em;text-transform:uppercase;margin-right:2px;">Region</span>
+                            <button id="rfAll"  onclick="setRegionFilter('')"   style="padding:3px 10px;border-radius:var(--radius-full);border:1px solid var(--primary);background:var(--primary);color:white;font-size:11px;cursor:pointer;font-weight:600;transition:all .15s;">All</button>
+                            <button id="rfAm"   onclick="setRegionFilter('1')"  style="padding:3px 10px;border-radius:var(--radius-full);border:1px solid var(--border);background:var(--bg-card);color:var(--text-secondary);font-size:11px;cursor:pointer;font-weight:500;transition:all .15s;">Americas</button>
+                            <button id="rfEMEA" onclick="setRegionFilter('2')"  style="padding:3px 10px;border-radius:var(--radius-full);border:1px solid var(--border);background:var(--bg-card);color:var(--text-secondary);font-size:11px;cursor:pointer;font-weight:500;transition:all .15s;">EMEA</button>
+                            <button id="rfAPAC" onclick="setRegionFilter('3')"  style="padding:3px 10px;border-radius:var(--radius-full);border:1px solid var(--border);background:var(--bg-card);color:var(--text-secondary);font-size:11px;cursor:pointer;font-weight:500;transition:all .15s;">APAC</button>
                         </div>
-                        <div style="display:flex;gap:6px;margin-left:auto;">
-                            <button class="btn btn-success" onclick="exportAllData()" title="Export all data as JSON">📤 Export JSON</button>
-                            <button class="btn btn-secondary" onclick="importDataFile()" title="Import SAP Excel (.xlsx) or CSV report">📥 Import SAP File</button>
-                            <button class="btn btn-secondary" onclick="exportData()" title="Export current view as CSV">📊 Export CSV</button>
+                        <div style="display:flex;gap:5px;margin-left:auto;">
+                            <button class="btn btn-secondary" onclick="exportAllData()" title="Export all data as JSON">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                Export JSON
+                            </button>
+                            <button class="btn btn-secondary" onclick="importDataFile()" title="Import SAP Excel (.xlsx) or CSV report">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                Import SAP
+                            </button>
+                            <button class="btn btn-secondary" onclick="exportData()" title="Export current view as CSV">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                                Export CSV
+                            </button>
                         </div>
                     </div>
                     <!-- Advanced filters row -->
-                    <div class="filter-group" style="margin-top:0.4rem;flex-wrap:wrap;gap:8px;align-items:center;padding:6px 10px;background:var(--bg-secondary);border-radius:8px;border:1px solid var(--border);">
-                        <span style="font-size:11px;color:var(--text-tertiary);font-weight:600;white-space:nowrap;">&#9656; Filters:</span>
+                    <div class="filter-group" style="margin-top:0.5rem;flex-wrap:wrap;gap:6px;align-items:center;padding:7px 10px;background:var(--bg-secondary);border-radius:var(--radius-md);border:1px solid var(--border-light);">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                        <span style="font-size:10.5px;color:var(--text-muted);font-weight:700;letter-spacing:0.05em;text-transform:uppercase;white-space:nowrap;">Filters</span>
                         <select id="completedByFilter" class="filter-select" style="font-size:12px;padding:4px 8px;min-width:150px;" onchange="applyFilters()">
                             <option value="">All Completed By</option>
                             <option value="Rosana Munoz">Rosana Munoz</option>
@@ -789,7 +966,7 @@
                 </div>
 
                 <div id="emptyState" class="empty-state" style="display: none;">
-                    <div class="empty-state-icon">📋</div>
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
                     <h3>No AVSFs Yet</h3>
                     <p>Click "Add AVSF" to start tracking your vendor setup forms</p>
                 </div>
@@ -813,8 +990,14 @@
             <div class="dash-tab-content" id="dashTab2Content">
                 <!-- Sub-tabs -->
                 <div style="display:flex;gap:4px;margin-bottom:1rem;">
-                    <button id="refTab1Btn" onclick="switchRefTab(1)" style="padding:8px 18px;border:none;border-radius:6px;font-weight:600;font-size:13px;cursor:pointer;background:var(--primary);color:white;">&#127981; Plants (OX18)</button>
-                    <button id="refTab2Btn" onclick="switchRefTab(2)" style="padding:8px 18px;border:none;border-radius:6px;font-weight:600;font-size:13px;cursor:pointer;background:var(--bg-hover);color:var(--text-secondary);">&#127970; Company Codes</button>
+                    <button id="refTab1Btn" onclick="switchRefTab(1)" style="padding:7px 16px;border:none;border-radius:var(--radius-md);font-weight:600;font-size:12.5px;cursor:pointer;background:var(--primary);color:white;display:inline-flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif;">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="17"/><line x1="9" y1="14.5" x2="15" y2="14.5"/></svg>
+                        Plants (OX18)
+                    </button>
+                    <button id="refTab2Btn" onclick="switchRefTab(2)" style="padding:7px 16px;border:none;border-radius:var(--radius-md);font-weight:600;font-size:12.5px;cursor:pointer;background:var(--bg-hover);color:var(--text-secondary);display:inline-flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif;border:1px solid var(--border);">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                        Company Codes
+                    </button>
                 </div>
 
                 <!-- Plants sub-tab -->
@@ -3594,14 +3777,14 @@ AMERBankingValidation@resideo.com`;
 
             function connect() {
                 if (_unsub) { try { _unsub(); } catch(e) {} }
-                statusEl.innerHTML = '🔄 Connecting to Firebase...';
+                statusEl.innerHTML = '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.5);margin-right:5px;vertical-align:middle;"></span>Connecting...';
 
                 _unsub = db.collection('avsfs').onSnapshot((snapshot) => {
                     _retryCount = 0;
                     if (_retryTimer) { clearTimeout(_retryTimer); _retryTimer = null; }
                     avsfs = snapshot.docs.map(doc => ({ ...doc.data(), _id: doc.id }));
                     refresh();
-                    statusEl.textContent = '🟢 Live · synced ' + new Date().toLocaleTimeString();
+                    statusEl.innerHTML = '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#6ee7b7;margin-right:5px;vertical-align:middle;box-shadow:0 0 0 2px rgba(110,231,183,.35);"></span>Live · ' + new Date().toLocaleTimeString();
                     if (!_firstSnapshotDone) {
                         _firstSnapshotDone = true;
                         setTimeout(runCompletedMigration, 1800);
@@ -3612,10 +3795,11 @@ AMERBankingValidation@resideo.com`;
                     _retryCount++;
                     const wait = Math.min(_retryCount * 8, 60);
                     statusEl.innerHTML =
-                        '🔴 Connection lost &nbsp;<button onclick="window._fbReconnect()" ' +
-                        'style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.5);' +
-                        'color:white;padding:2px 10px;border-radius:12px;cursor:pointer;font-size:11px;">🔄 Reconnect</button>' +
-                        ` &nbsp;<span style="font-size:10px;opacity:.7;">retry in ${wait}s</span>`;
+                        '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#fca5a5;margin-right:5px;vertical-align:middle;"></span>' +
+                        'Disconnected &nbsp;<button onclick="window._fbReconnect()" ' +
+                        'style="background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.4);' +
+                        'color:white;padding:2px 9px;border-radius:9999px;cursor:pointer;font-size:11px;font-weight:600;">Reconnect</button>' +
+                        ` <span style="font-size:10px;opacity:.6;">retry in ${wait}s</span>`;
                     _retryTimer = setTimeout(connect, wait * 1000);
                 });
             }
