@@ -619,7 +619,10 @@
     <header>
         <h1>📋 AVSF Dashboard</h1>
         <p class="subtitle">Automated Vendor Setup Forms - Track, validate, and manage SAP vendor master data requests</p>
-        <div id="syncStatus" style="margin-top:0.5rem;font-size:0.8rem;opacity:0.9;">🔄 Connecting to Firebase...</div>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:0.5rem;">
+            <div id="syncStatus" style="font-size:0.8rem;opacity:0.9;">🔄 Connecting to Firebase...</div>
+            <button onclick="openAdminPanel()" style="padding:2px 10px;border-radius:12px;border:1px solid rgba(255,255,255,0.4);background:rgba(255,255,255,0.12);color:white;font-size:11px;cursor:pointer;font-weight:600;">⚙️ Admin</button>
+        </div>
         <div style="margin-top:0.75rem;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
             <!-- User pill -->
             <div id="userPill" style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:20px;padding:4px 12px 4px 6px;cursor:pointer;" onclick="document.getElementById('userDropdown').classList.toggle('open')">
@@ -1806,7 +1809,17 @@ Example formats accepted:
                             <div style="flex:1;">
                                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
                                     <label style="font-size:12px;font-weight:600;color:var(--text-secondary);">📝 Email Preview</label>
-                                    <span id="tab6SubjectBadge" style="font-size:11px;color:var(--text-tertiary);font-family:monospace;"></span>
+                                    <div style="display:flex;gap:6px;align-items:center;">
+                                        <span id="tab6SubjectBadge" style="font-size:11px;color:var(--text-tertiary);font-family:monospace;"></span>
+                                        <button id="tab6EditToggle" onclick="tab6ToggleEdit()"
+                                            style="padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:white;color:var(--text-secondary);font-size:11px;cursor:pointer;">
+                                            ✏️ Edit
+                                        </button>
+                                    </div>
+                                </div>
+                                <!-- FROM mailbox reminder — updates per template -->
+                                <div id="tab6FromReminder" style="display:none;margin-bottom:8px;padding:7px 10px;background:#fef3c7;border:1px solid #f59e0b;border-radius:6px;font-size:12px;color:#92400e;">
+                                    📬 <strong>In Outlook, set FROM to:</strong> <span id="tab6FromReminderAddr" style="font-family:monospace;font-weight:700;"></span>
                                 </div>
                                 <div id="tab6PreviewBox"
                                      style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:16px;font-size:12.5px;font-family:'DM Sans',sans-serif;white-space:pre-wrap;color:#111827;min-height:280px;max-height:380px;overflow-y:auto;line-height:1.75;box-shadow:inset 0 1px 3px rgba(0,0,0,.04);">
@@ -1853,6 +1866,61 @@ Select a request from the left to preview the email...
                     </div>
                 </div>
             </div>
+
+    <!-- Admin Panel Modal -->
+    <div class="modal" id="adminModal">
+        <div class="modal-content" style="max-width:520px;">
+            <div class="modal-header">
+                <h2 class="modal-title">⚙️ Admin Panel</h2>
+                <button class="close-btn" onclick="document.getElementById('adminModal').classList.remove('active')">&times;</button>
+            </div>
+            <div class="modal-body" style="display:flex;flex-direction:column;gap:16px;">
+                <div style="padding:10px 14px;background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;font-size:12.5px;color:#92400e;">
+                    ⚠️ <strong>Admin actions are permanent and affect all users.</strong> Use with caution.
+                </div>
+
+                <!-- Firebase status -->
+                <div style="background:var(--bg-secondary);border-radius:8px;padding:14px;">
+                    <div style="font-weight:700;font-size:13px;margin-bottom:10px;">🔗 Firebase Connection</div>
+                    <div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">Total records loaded: <strong id="adminRecordCount">—</strong></div>
+                    <button onclick="window._fbReconnect && window._fbReconnect()" class="btn btn-secondary" style="font-size:12px;padding:6px 14px;">🔄 Force Reconnect</button>
+                </div>
+
+                <!-- Migrations -->
+                <div style="background:var(--bg-secondary);border-radius:8px;padding:14px;">
+                    <div style="font-weight:700;font-size:13px;margin-bottom:10px;">🔧 Re-run Migrations</div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                        <button onclick="adminRerunMigrations()" class="btn btn-secondary" style="font-size:12px;padding:6px 14px;">♻️ Re-run All Migrations</button>
+                    </div>
+                </div>
+
+                <!-- Bulk delete by status -->
+                <div style="background:var(--bg-secondary);border-radius:8px;padding:14px;">
+                    <div style="font-weight:700;font-size:13px;margin-bottom:10px;">🗑️ Bulk Delete by Status</div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+                        <select id="adminDeleteStatus" class="filter-select" style="font-size:12px;padding:5px 10px;">
+                            <option value="">— Select status —</option>
+                            <option value="COMPLETED">Completed</option>
+                            <option value="REJECTED">Rejected</option>
+                            <option value="CANCELLED">Cancelled</option>
+                            <option value="PROCESSING">Processing</option>
+                            <option value="ON_HOLD">On Hold</option>
+                        </select>
+                        <button onclick="adminDeleteByStatus()" class="btn" style="background:#dc2626;color:white;font-size:12px;padding:6px 14px;border:none;border-radius:6px;cursor:pointer;">🗑️ Delete Selected</button>
+                    </div>
+                </div>
+
+                <!-- Delete all -->
+                <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:14px;">
+                    <div style="font-weight:700;font-size:13px;color:#dc2626;margin-bottom:6px;">☢️ Delete ALL Records</div>
+                    <div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;">Permanently deletes every AVSF record from Firestore. Cannot be undone.</div>
+                    <button onclick="adminDeleteAll()" style="background:#dc2626;color:white;font-size:12px;padding:7px 18px;border:none;border-radius:6px;cursor:pointer;font-weight:700;">🗑️ DELETE ALL — I understand this is permanent</button>
+                </div>
+
+                <div id="adminLog" style="font-size:12px;color:var(--text-secondary);min-height:20px;font-family:monospace;"></div>
+            </div>
+        </div>
+    </div>
 
     <!-- Validation Tools Modal -->
     <div class="modal" id="validationToolsModal">
@@ -3093,6 +3161,7 @@ ${from}`;
                 btn.style.fontWeight = active ? '600' : '500';
             });
             tab6BuildPreview();
+            tab6UpdateFromReminder();
         }
 
         function tab6GetFields() {
@@ -3305,6 +3374,52 @@ AMERBankingValidation@resideo.com`;
             return '';
         }
 
+        // ── Preview edit toggle ───────────────────────────────────────────────
+        let _tab6EditMode = false;
+        function tab6ToggleEdit() {
+            _tab6EditMode = !_tab6EditMode;
+            const box = document.getElementById('tab6PreviewBox');
+            const btn = document.getElementById('tab6EditToggle');
+            if (_tab6EditMode) {
+                box.contentEditable = 'true';
+                box.style.border = '2px solid var(--primary)';
+                box.style.outline = 'none';
+                btn.textContent = '🔒 Lock';
+                btn.style.background = 'var(--primary)';
+                btn.style.color = 'white';
+                btn.style.borderColor = 'var(--primary)';
+            } else {
+                box.contentEditable = 'false';
+                box.style.border = '1px solid var(--border)';
+                btn.textContent = '✏️ Edit';
+                btn.style.background = 'white';
+                btn.style.color = 'var(--text-secondary)';
+                btn.style.borderColor = 'var(--border)';
+            }
+        }
+
+        // ── FROM mailbox reminder ─────────────────────────────────────────────
+        function tab6UpdateFromReminder() {
+            const meta = TAB6_TEMPLATE_META[_tab6Template] || {};
+            const fromAddr = meta.from || null; // only set for non-default mailboxes
+            const reminder = document.getElementById('tab6FromReminder');
+            const addr     = document.getElementById('tab6FromReminderAddr');
+            if (!reminder) return;
+            if (fromAddr) {
+                reminder.style.display = 'block';
+                addr.textContent = fromAddr;
+            } else {
+                const sel = document.getElementById('tab6FromSelect');
+                const chosen = sel ? sel.value : '';
+                if (chosen && chosen !== 'USMXVendorMaintenance@resideo.com') {
+                    reminder.style.display = 'block';
+                    addr.textContent = chosen;
+                } else {
+                    reminder.style.display = 'none';
+                }
+            }
+        }
+
         // ── Preview rendering helpers ─────────────────────────────────────────
         // Body text can contain [BOLD]...[/BOLD] and [YELLOW]...[/YELLOW] markers.
         // stripBodyMarkers → plain text for mailto / clipboard
@@ -3352,23 +3467,36 @@ AMERBankingValidation@resideo.com`;
                              '─'.repeat(52) + '\n';
 
             if (hasMarkers(body)) {
-                // Render with bold / yellow highlight using innerHTML
                 const escapedHeader = header.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
                 previewEl.innerHTML = escapedHeader + renderBodyHTML(body);
             } else {
                 previewEl.textContent = header + body;
             }
+            // Reset edit mode on new preview
+            if (_tab6EditMode) tab6ToggleEdit();
+            tab6UpdateFromReminder();
         }
 
         function tab6OpenOutlook() {
             const f = tab6GetFields();
-            if (!f.vendName) { alert('Please select an AVSF request first.'); return; }
+            const previewEl = document.getElementById('tab6PreviewBox');
             const avsf_part = f.reqNo ? `AVSF ${f.reqNo} ` : '';
-            const subject  = `${f.initials} - ${avsf_part}Vendor ${f.vendNum} ${f.vendName} CC ${f.cc}`;
-            const body     = stripBodyMarkers(tab6BuildBody(f)).replace(/\n/g, '\r\n');
-            const toAddr   = tab6GetTO(f);
-            const fromAddr = tab6GetFROM(f);
-            const mailto   = 'mailto:' + encodeURIComponent(toAddr) +
+            const subject   = `${f.initials} - ${avsf_part}Vendor ${f.vendNum} ${f.vendName} CC ${f.cc}`;
+            const toAddr    = tab6GetTO(f);
+            const fromAddr  = tab6GetFROM(f);
+
+            // If in edit mode, use whatever the user typed in the preview box
+            let body;
+            if (_tab6EditMode && previewEl) {
+                // Strip the header lines (first 5 lines) to get just the body
+                const lines = (previewEl.innerText || previewEl.textContent).split('\n');
+                body = lines.slice(5).join('\n').replace(/\n/g, '\r\n');
+            } else {
+                if (!f.vendName) { alert('Please select an AVSF request first.'); return; }
+                body = stripBodyMarkers(tab6BuildBody(f)).replace(/\n/g, '\r\n');
+            }
+
+            const mailto = 'mailto:' + encodeURIComponent(toAddr) +
                 '?cc=' + encodeURIComponent(fromAddr) +
                 '&subject=' + encodeURIComponent(subject) +
                 '&body=' + encodeURIComponent(body);
@@ -3400,25 +3528,100 @@ AMERBankingValidation@resideo.com`;
             });
         }
 
+        // ── Admin Panel ───────────────────────────────────────────────────────
+        function openAdminPanel() {
+            document.getElementById('adminRecordCount').textContent = avsfs.length;
+            document.getElementById('adminLog').textContent = '';
+            document.getElementById('adminModal').classList.add('active');
+        }
+
+        function adminLog(msg) {
+            const el = document.getElementById('adminLog');
+            if (el) el.textContent = msg;
+        }
+
+        function adminRerunMigrations() {
+            localStorage.removeItem('avsfMigV2_checklist');
+            localStorage.removeItem('avsfMigV3_approver');
+            adminLog('Migrations reset. They will re-run on next page load.');
+        }
+
+        async function adminDeleteByStatus() {
+            const status = document.getElementById('adminDeleteStatus').value;
+            if (!status) { adminLog('Please select a status first.'); return; }
+            const targets = avsfs.filter(a => a.status === status);
+            if (!targets.length) { adminLog(`No records with status ${status}.`); return; }
+            if (!confirm(`Delete ${targets.length} records with status "${status}"? This cannot be undone.`)) return;
+            adminLog(`Deleting ${targets.length} records...`);
+            try {
+                const CHUNK = 400;
+                for (let i = 0; i < targets.length; i += CHUNK) {
+                    const batch = db.batch();
+                    targets.slice(i, i + CHUNK).forEach(a => {
+                        batch.delete(db.collection('avsfs').doc(a.requestNo));
+                    });
+                    await batch.commit();
+                }
+                adminLog(`Done. Deleted ${targets.length} ${status} records.`);
+            } catch(e) { adminLog('Error: ' + e.message); }
+        }
+
+        async function adminDeleteAll() {
+            if (!confirm(`DELETE ALL ${avsfs.length} records? This is PERMANENT and cannot be undone.`)) return;
+            if (!confirm('Are you absolutely sure? All data will be lost.')) return;
+            adminLog(`Deleting all ${avsfs.length} records...`);
+            try {
+                const CHUNK = 400;
+                for (let i = 0; i < avsfs.length; i += CHUNK) {
+                    const batch = db.batch();
+                    avsfs.slice(i, i + CHUNK).forEach(a => {
+                        batch.delete(db.collection('avsfs').doc(a.requestNo));
+                    });
+                    await batch.commit();
+                }
+                adminLog('All records deleted.');
+            } catch(e) { adminLog('Error: ' + e.message); }
+        }
+
         // Real-time sync from Firestore
         let _firstSnapshotDone = false;
 
         function initializeRealtimeSync() {
             const statusEl = document.getElementById('syncStatus');
-            db.collection('avsfs').orderBy('entryDate', 'desc').onSnapshot((snapshot) => {
-                avsfs = snapshot.docs.map(doc => ({ ...doc.data(), _id: doc.id }));
-                refresh();
-                statusEl.textContent = '🟢 Live · synced ' + new Date().toLocaleTimeString();
-                // Run silent migration once after first load
-                if (!_firstSnapshotDone) {
-                    _firstSnapshotDone = true;
-                    setTimeout(runCompletedMigration, 1800);
-                    setTimeout(runApproverMigration, 2500);
-                }
-            }, (error) => {
-                console.error('Firebase error:', error);
-                statusEl.textContent = '🔴 Offline — check connection';
-            });
+            let _unsub = null;
+            let _retryTimer = null;
+            let _retryCount = 0;
+
+            function connect() {
+                if (_unsub) { try { _unsub(); } catch(e) {} }
+                statusEl.innerHTML = '🔄 Connecting to Firebase...';
+
+                _unsub = db.collection('avsfs').onSnapshot((snapshot) => {
+                    _retryCount = 0;
+                    if (_retryTimer) { clearTimeout(_retryTimer); _retryTimer = null; }
+                    avsfs = snapshot.docs.map(doc => ({ ...doc.data(), _id: doc.id }));
+                    refresh();
+                    statusEl.textContent = '🟢 Live · synced ' + new Date().toLocaleTimeString();
+                    if (!_firstSnapshotDone) {
+                        _firstSnapshotDone = true;
+                        setTimeout(runCompletedMigration, 1800);
+                        setTimeout(runApproverMigration, 2500);
+                    }
+                }, (error) => {
+                    console.error('Firebase error:', error);
+                    _retryCount++;
+                    const wait = Math.min(_retryCount * 8, 60);
+                    statusEl.innerHTML =
+                        '🔴 Connection lost &nbsp;<button onclick="window._fbReconnect()" ' +
+                        'style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.5);' +
+                        'color:white;padding:2px 10px;border-radius:12px;cursor:pointer;font-size:11px;">🔄 Reconnect</button>' +
+                        ` &nbsp;<span style="font-size:10px;opacity:.7;">retry in ${wait}s</span>`;
+                    _retryTimer = setTimeout(connect, wait * 1000);
+                });
+            }
+
+            window._fbReconnect = () => { _retryCount = 0; connect(); };
+            connect();
         }
 
         // ── Silent one-time migration: auto-check all COMPLETED records ──────
@@ -4048,32 +4251,49 @@ AMERBankingValidation@resideo.com`;
         // ── SAP Excel / CSV Row Mapper ──────────────────────────────────────
         function sapDateToISO(val) {
             if (!val) return '';
-            // JS Date object (SheetJS cellDates:true + raw:true)
+            // JS Date object — use LOCAL date parts (not toISOString which shifts to UTC)
             if (val instanceof Date) {
                 if (isNaN(val.getTime())) return '';
-                return val.toISOString().split('T')[0];
+                return val.getFullYear() + '-' +
+                       String(val.getMonth() + 1).padStart(2, '0') + '-' +
+                       String(val.getDate()).padStart(2, '0');
             }
             const s = String(val).trim();
             if (!s || s === 'Invalid Date') return '';
             // Already ISO YYYY-MM-DD
             if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.substring(0, 10);
-            // Excel serial number (numeric string, 5 digits = year 1900–2173)
+            // Excel serial number (5 digits) — UTC to stay day-accurate
             if (/^\d{5}$/.test(s)) {
                 const d = new Date(Math.round((parseInt(s) - 25569) * 86400 * 1000));
-                return d.toISOString().split('T')[0];
+                return d.getUTCFullYear() + '-' +
+                       String(d.getUTCMonth() + 1).padStart(2, '0') + '-' +
+                       String(d.getUTCDate()).padStart(2, '0');
             }
-            // MM/DD/YYYY  (US SAP export format)
+            // Slash-separated: smart MM/DD vs DD/MM detection
             const m1 = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-            if (m1) return `${m1[3]}-${m1[1].padStart(2,'0')}-${m1[2].padStart(2,'0')}`;
-            // DD.MM.YYYY  (European SAP export format)
+            if (m1) {
+                const p1 = parseInt(m1[1], 10), p2 = parseInt(m1[2], 10);
+                if (p1 > 12) return `${m1[3]}-${m1[2].padStart(2,'0')}-${m1[1].padStart(2,'0')}`; // DD/MM
+                if (p2 > 12) return `${m1[3]}-${m1[1].padStart(2,'0')}-${m1[2].padStart(2,'0')}`; // MM/DD
+                return `${m1[3]}-${m1[1].padStart(2,'0')}-${m1[2].padStart(2,'0')}`; // ambiguous → MM/DD
+            }
+            // DD.MM.YYYY (European SAP)
             const m2 = s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})/);
             if (m2) return `${m2[3]}-${m2[2].padStart(2,'0')}-${m2[1].padStart(2,'0')}`;
-            // DD-MM-YYYY
+            // Dash-separated with smart detection
             const m3 = s.match(/^(\d{1,2})-(\d{1,2})-(\d{4})/);
-            if (m3) return `${m3[3]}-${m3[2].padStart(2,'0')}-${m3[1].padStart(2,'0')}`;
-            // Last resort — native Date parse
+            if (m3) {
+                const p1 = parseInt(m3[1], 10);
+                if (p1 > 12) return `${m3[3]}-${m3[2].padStart(2,'0')}-${m3[1].padStart(2,'0')}`;
+                return `${m3[3]}-${m3[1].padStart(2,'0')}-${m3[2].padStart(2,'0')}`;
+            }
+            // Last resort — local date components
             const d = new Date(s);
-            if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
+            if (!isNaN(d.getTime())) {
+                return d.getFullYear() + '-' +
+                       String(d.getMonth() + 1).padStart(2, '0') + '-' +
+                       String(d.getDate()).padStart(2, '0');
+            }
             return '';
         }
 
@@ -4336,10 +4556,10 @@ AMERBankingValidation@resideo.com`;
             input.click();
         }
 
-        // Refresh all
+        // Refresh all — re-apply active filters so Firebase updates don't reset the view
         function refresh() {
             updateMetrics();
-            renderTable();
+            applyFilters();
             updateCharts();
         }
 
@@ -5513,10 +5733,10 @@ AMERBankingValidation@resideo.com`;
             doc.save(fileName);
         }
 
-        // Refresh all
+        // Refresh all — re-apply active filters so Firebase updates don't reset the view
         function refresh() {
             updateMetrics();
-            renderTable();
+            applyFilters();
             updateCharts();
         }
 
