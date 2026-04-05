@@ -36,6 +36,11 @@
             --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
         }
 
+        /* User Themes */
+        body[data-user="Brandon"] { --primary:#0f766e; --primary-light:#14b8a6; --primary-dark:#0d5e56; }
+        body[data-user="Yannick"] { --primary:#1d4ed8; --primary-light:#3b82f6; --primary-dark:#1e3a8a; }
+        body[data-user="Rosana"]  { --primary:#be185d; --primary-light:#ec4899; --primary-dark:#9d174d; }
+
         * {
             margin: 0;
             padding: 0;
@@ -720,10 +725,9 @@
                                 <th>Country</th>
                                 <th>Status</th>
                                 <th>Checklist</th>
-                                <th>Payment</th>
-                                <th>IBAN / Bank</th>
-                                <th>Entry</th>
+                                <th>Date Received</th>
                                 <th>Completed</th>
+                                <th>Completed By</th>
                                 <th>Requestor</th>
                                 <th>Actions</th>
                             </tr>
@@ -890,6 +894,9 @@
                     <div class="section-header" style="flex-wrap:wrap;gap:8px;">
                         <span class="section-title">💳 Payment Method Advisor</span>
                         <span style="font-size:12px;color:var(--text-tertiary);">Select a Company Code to see applicable payment methods, then enter vendor details for a precise recommendation.</span>
+                        <div style="width:100%;margin-top:6px;padding:6px 12px;background:#eff6ff;border:1px solid #93c5fd;border-radius:6px;font-size:12px;color:#1e40af;">
+                            📌 <strong>Note:</strong> For <strong>HK/CN vendors</strong> — always check if an <strong>intermediary bank</strong> is required. For <strong>APAC CCs (3xxx)</strong> — confirm intermediary bank details before bank setup. For <strong>Mexico</strong> (HSBC 021) — enter <strong>account number</strong> in SAP bank field; put CLABE in Reference Details.
+                        </div>
                     </div>
 
                     <!-- STEP 1: CC Selection bar -->
@@ -1209,6 +1216,13 @@
                             <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#1e40af;margin-bottom:10px;">🇪🇺 EU-Wide Tools</div>
                             <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;">
 
+                                <div class="res-card" style="border-left-color:#10b981;">
+                                    <div class="res-title">✅ VAT Checker — IBAN.com</div>
+                                    <div class="res-desc">Free VAT number validation tool covering EU + many non-EU countries. Returns company name and registration details. Also validates format. Good complement to VIES.</div>
+                                    <a href="https://www.iban.com/vat-checker" target="_blank" class="res-link">iban.com/vat-checker ↗</a>
+                                    <div class="res-tags"><span class="res-tag res-tag-vat">VAT Check</span><span class="res-tag res-tag-reg">Multi-country</span></div>
+                                </div>
+
                                 <div class="res-card" style="border-left-color:#3b82f6;">
                                     <div class="res-title">🔎 VIES — EU VAT Validation</div>
                                     <div class="res-desc">Verify VAT numbers for all EU member states. Note: Germany returns valid/invalid only (no company name shown — privacy law). Does <strong>not</strong> cover GB (post-Brexit).</div>
@@ -1454,7 +1468,7 @@
                         </div>
                         <div class="form-group">
                             <label class="form-label">Request Type</label>
-                            <select class="form-select" id="requestType" onchange="toggleEXReminder()">
+                            <select class="form-select" id="requestType" onchange="toggleEXReminder();toggleMOReminder()">
                                 <option value="CR">CR - Creation</option>
                                 <option value="EX">EX - Extend</option>
                                 <option value="MO">MO - Modify</option>
@@ -1463,6 +1477,9 @@
                         </div>
                     </div>
 
+                    <div id="moPurchaseBlockReminder" style="display:none;margin-top:6px;padding:8px 12px;background:#fef3c7;border:1px solid #fbbf24;border-radius:8px;font-size:12px;color:#92400e;">
+                        ⚠️ <strong>MO Request:</strong> Remember to check for <strong>old purchase blocks</strong> on this vendor before proceeding. Review block indicators in SAP before completing the AVSF.
+                    </div>
                     <div id="exReminder" style="display:none;background:#fef3c7;border-left:4px solid #f59e0b;padding:12px 15px;margin-bottom:15px;border-radius:4px;">
                         <div style="display:flex;align-items:start;gap:10px;">
                             <span style="font-size:18px;">⚠️</span>
@@ -1484,7 +1501,10 @@
                         </div>
                         <div class="form-group">
                             <label class="form-label">Country</label>
-                            <input type="text" class="form-input" id="country" placeholder="e.g., US, MX, DE">
+                            <input type="text" class="form-input" id="country" placeholder="e.g., US, MX, DE" onchange="showIbanHint()">
+                            <div id="ibanCountryHint" style="display:none;margin-top:5px;padding:6px 10px;background:#eff6ff;border:1px solid #93c5fd;border-radius:6px;font-size:11px;color:#1e40af;">
+                                🌐 <strong>IBAN may be available online</strong> — check the official registry (<span id="ibanHintLink"></span>) and send to <strong>VendorMaintenanceAudit@resideo.com</strong> to unblock if needed.
+                            </div>
                         </div>
                     </div>
 
@@ -1495,7 +1515,7 @@
                         </div>
                         <div class="form-group">
                             <label class="form-label">Status *</label>
-                            <select class="form-select" id="status" required onchange="checkCompletionRequirements()">
+                            <select class="form-select" id="status" required onchange="checkCompletionRequirements();autoSetCompletedBy()">
                                 <option value="PROCESSING">Processing</option>
                                 <option value="COMPLETED">Completed</option>
                                 <option value="REJECTED">Rejected</option>
@@ -1503,6 +1523,11 @@
                                 <option value="IDOC_ERROR">IDOC Error</option>
                             </select>
                         </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Completed By <span style="font-size:10px;font-weight:400;color:var(--text-tertiary);">auto-set on completion</span></label>
+                        <input type="text" class="form-input" id="completedBy" placeholder="VM Team" readonly style="background:var(--bg-hover);color:var(--text-secondary);cursor:default;">
                     </div>
 
                     <div class="form-row">
@@ -1518,7 +1543,7 @@
 
                     <div class="form-row">
                         <div class="form-group">
-                            <label class="form-label">Entry Date</label>
+                            <label class="form-label">Date Received <span style="font-size:10px;font-weight:400;color:var(--text-tertiary);">(SAP workflow date)</span></label>
                             <input type="date" class="form-input" id="entryDate">
                         </div>
                         <div class="form-group">
@@ -1848,6 +1873,7 @@ Example formats accepted:
             document.getElementById('currentUser').value = saved;
             if (document.getElementById('userAvatar')) document.getElementById('userAvatar').textContent = info[0];
             if (document.getElementById('userLabel')) document.getElementById('userLabel').textContent = info[1];
+            document.body.setAttribute('data-user', saved);
         }
         // ── User Dropdown ─────────────────────────────────────────────
         function setUser(val, initial, label) {
@@ -1856,6 +1882,7 @@ Example formats accepted:
             document.getElementById('userLabel').textContent = label;
             document.getElementById('userDropdown').classList.remove('open');
             document.getElementById('userDropdown').style.display = 'none';
+            document.body.setAttribute('data-user', val);
             saveCurrentUser();
         }
         document.addEventListener('click', function(e) {
@@ -2429,6 +2456,16 @@ Example formats accepted:
                 res.innerHTML = cards; return;
             }
 
+            // ── APAC / HK / CN Intermediary warning ──────────────────────
+            // Show intermediary check note if CC starts with 3 OR vendor country is HK/CN
+            const needsIntermediary = (cc && cc.charAt(0)==='3') || ['HK','CN','TW','SG','MY','ID','TH','PH','VN','KR','JP','IN','AU','NZ'].includes(vc);
+            const isHKCN = ['HK','CN'].includes(vc);
+            if (cfg.type === 'EMEA' || cfg.type === 'EMEA_CH' || cfg.type === 'EMEA_CH_MULTI' ||
+                cfg.type === 'EMEA_DK' || cfg.type === 'EMEA_PL' || cfg.type === 'EMEA_SE' ||
+                cfg.type === 'EMEA_TR' || cfg.type === 'EMEA_ZA') {
+                // already handled above
+            }
+
             // ── Standard EMEA (PM 5 / 6 / 7 / 8) ──────────────────────
             if (cfg.type === 'EMEA') {
                 if (!vc || !cur || hasIban === null) {
@@ -2479,10 +2516,57 @@ Example formats accepted:
                 } else {
                     cards = pmCard('7','#f59e0b','Foreign — PM 7','Foreign payment');
                 }
-                res.innerHTML = ctxBar + cards; return;
+                // Add APAC/HK/CN intermediary warning if applicable
+                const isVcHKCN = ['HK','CN'].includes(vc);
+                const apacWarn = (isVcHKCN || (cc && cc.charAt(0)==='3'))
+                    ? `<div style="margin-top:8px;padding:8px 12px;background:#fef3c7;border:1px solid #fbbf24;border-radius:8px;font-size:12px;color:#92400e;">⚠️ <strong>APAC/HK/CN Vendor:</strong> ${isVcHKCN ? 'HK/CN vendors typically require an <strong>intermediary bank</strong>. Confirm intermediary details with the vendor before completing the bank setup.' : 'APAC vendor (CC 3xxx) — verify if intermediary bank is required.'}</div>` : '';
+                res.innerHTML = ctxBar + cards + apacWarn; return;
             }
 
             res.innerHTML = pmPlaceholder('Unable to determine — please contact your supervisor.');
+        }
+
+
+        // ── Auto Completed By ─────────────────────────────────────────────
+        function autoSetCompletedBy() {
+            const statusEl = document.getElementById('status');
+            const cbEl = document.getElementById('completedBy');
+            if (!statusEl || !cbEl) return;
+            if (statusEl.value === 'COMPLETED') {
+                if (!cbEl.value) cbEl.value = getCurrentUser() === 'Brandon' ? 'Brandon Ramos'
+                    : getCurrentUser() === 'Yannick' ? 'Yannick Rojas' : 'Rosana Munoz';
+            } else {
+                cbEl.value = '';
+            }
+        }
+
+        // ── IBAN Country Hint ──────────────────────────────────────────────
+        const IBAN_HINT_MAP = {
+            PL: { text: 'Biała Lista', url: 'https://www.podatki.gov.pl/wykaz-podatnikow-vat-wyszukiwarka', label: 'Poland' },
+            CZ: { text: 'ARES', url: 'https://ares.gov.cz/', label: 'Czech Republic' },
+            HU: { text: 'e-Cégjegyzék', url: 'https://www.e-cegjegyzek.hu/?cegkereses', label: 'Hungary' },
+            DK: { text: 'datacvr.virk.dk', url: 'https://datacvr.virk.dk/', label: 'Denmark' },
+            BE: { text: 'BCE/KBO', url: 'https://kbopub.economie.fgov.be/kbopub/zoeknamepage.action', label: 'Belgium' },
+        };
+        function showIbanHint() {
+            const country = (document.getElementById('country')?.value || '').toUpperCase().trim();
+            const hint = IBAN_HINT_MAP[country];
+            const hintDiv = document.getElementById('ibanCountryHint');
+            const linkSpan = document.getElementById('ibanHintLink');
+            if (!hintDiv || !linkSpan) return;
+            if (hint) {
+                linkSpan.innerHTML = `<a href="${hint.url}" target="_blank" style="color:#1d4ed8;font-weight:700;">${hint.text} ↗</a>`;
+                hintDiv.style.display = 'block';
+            } else {
+                hintDiv.style.display = 'none';
+            }
+        }
+
+        // ── MO Purchase Block Reminder ─────────────────────────────────────
+        function toggleMOReminder() {
+            const rt = document.getElementById('requestType')?.value || '';
+            const el = document.getElementById('moPurchaseBlockReminder');
+            if (el) el.style.display = (rt === 'MO') ? 'block' : 'none';
         }
 
         // Real-time sync from Firestore
@@ -2547,11 +2631,9 @@ Example formats accepted:
                             ${reqStatus.icon} ${reqStatus.text}
                         </span>
                     </td>
-                    <td title="${avsf.paymentMethod || ''}">${avsf.paymentMethod || '-'}</td>
-                    <td title="${avsf.ibanNumber || avsf.bankName || ''}" style="font-family:monospace;font-size:11px;">${avsf.ibanNumber ? avsf.ibanNumber.substring(0,12)+'...' : (avsf.bankName || '-')}</td>
                     <td>${formatDate(avsf.entryDate)}</td>
                     <td>${formatDate(avsf.completionDate)}</td>
-                    <td>${avsf.requestorName || '-'}</td>
+                    <td style="font-size:12px;color:var(--text-secondary);">${avsf.completedBy || (avsf.status==='COMPLETED' ? '—' : '<span style=\'color:#9ca3af;font-size:11px;\'>VM Team</span>')}</td>
                     <td>
                         <div class="action-buttons" style="display:flex;gap:6px;justify-content:center;">
                             <button class="action-btn" onclick="editAvsf('${avsf.requestNo}')" title="Edit">✏️</button>
@@ -2646,7 +2728,32 @@ Example formats accepted:
                             position: 'bottom',
                             labels: {
                                 boxWidth: 12,
-                                font: { size: 11 }
+                                font: { size: 11 },
+                                generateLabels: function(chart) {
+                                    const data = chart.data;
+                                    const total = data.datasets[0].data.reduce((a,b)=>a+b,0);
+                                    return data.labels.map((label, i) => {
+                                        const val = data.datasets[0].data[i];
+                                        const pct = total > 0 ? Math.round(val/total*100) : 0;
+                                        return {
+                                            text: val > 0 ? `${label}: ${val} (${pct}%)` : label,
+                                            fillStyle: data.datasets[0].backgroundColor[i],
+                                            strokeStyle: '#fff',
+                                            lineWidth: 1,
+                                            hidden: val === 0,
+                                            index: i
+                                        };
+                                    });
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) {
+                                    const total = ctx.dataset.data.reduce((a,b)=>a+b,0);
+                                    const pct = total > 0 ? Math.round(ctx.parsed/total*100) : 0;
+                                    return ` ${ctx.label}: ${ctx.parsed} (${pct}%)`;
+                                }
                             }
                         }
                     }
@@ -2746,28 +2853,9 @@ Example formats accepted:
             document.getElementById('entryDate').value = avsf.entryDate || '';
             document.getElementById('completionDate').value = avsf.completionDate || '';
             document.getElementById('notes').value = avsf.notes || '';
-            // Tab 2
-            document.getElementById('accountGroup').value = avsf.accountGroup || '';
-            document.getElementById('plantCode').value = avsf.plantCode || '';
-            document.getElementById('taxNumber').value = avsf.taxNumber || '';
-            document.getElementById('taxNumber2').value = avsf.taxNumber2 || '';
-            document.getElementById('reconAccount').value = avsf.reconAccount || '';
-            document.getElementById('sortKey').value = avsf.sortKey || '';
-            document.getElementById('withholdingTax').value = avsf.withholdingTax || 'No';
-            document.getElementById('paymentTerms').value = avsf.paymentTerms || '';
-            document.getElementById('plantNotes').value = avsf.plantNotes || '';
-            // Tab 3
-            document.getElementById('paymentMethod').value = avsf.paymentMethod || '';
-            document.getElementById('currency').value = avsf.currency || '';
-            document.getElementById('bankName').value = avsf.bankName || '';
-            document.getElementById('bankKey').value = avsf.bankKey || '';
-            document.getElementById('bankAccount').value = avsf.bankAccount || '';
-            document.getElementById('bicSwift').value = avsf.bicSwift || '';
-            document.getElementById('ibanNumber').value = avsf.ibanNumber || '';
-            document.getElementById('vatNumber').value = avsf.vatNumber || '';
-            document.getElementById('taxNumber5').value = avsf.taxNumber5 || '';
-            document.getElementById('paymentNotes').value = avsf.paymentNotes || '';
-            switchFormTab(1);
+            // Completed By
+            const cbEl = document.getElementById('completedBy');
+            if (cbEl) cbEl.value = avsf.completedBy || (avsf.status === 'COMPLETED' ? getCurrentUser() : '');
 
             // Show EX reminder if request type is EX
             toggleEXReminder();
@@ -2802,34 +2890,24 @@ Example formats accepted:
                 entryDate: document.getElementById('entryDate').value,
                 completionDate: document.getElementById('completionDate').value,
                 notes: document.getElementById('notes').value,
-                // Tab 2 - CC/Plant
-                accountGroup: document.getElementById('accountGroup').value,
-                plantCode: document.getElementById('plantCode').value,
-                taxNumber: document.getElementById('taxNumber').value,
-                taxNumber2: document.getElementById('taxNumber2').value,
-                reconAccount: document.getElementById('reconAccount').value,
-                sortKey: document.getElementById('sortKey').value,
-                withholdingTax: document.getElementById('withholdingTax').value,
-                paymentTerms: document.getElementById('paymentTerms').value,
-                plantNotes: document.getElementById('plantNotes').value,
-                // Tab 3 - Payment
-                paymentMethod: document.getElementById('paymentMethod').value,
-                currency: document.getElementById('currency').value,
-                bankName: document.getElementById('bankName').value,
-                bankKey: document.getElementById('bankKey').value,
-                bankAccount: document.getElementById('bankAccount').value,
-                bicSwift: document.getElementById('bicSwift').value,
-                ibanNumber: document.getElementById('ibanNumber').value,
-                vatNumber: document.getElementById('vatNumber').value,
-                taxNumber5: document.getElementById('taxNumber5').value,
-                paymentNotes: document.getElementById('paymentNotes').value,
+                completedBy: document.getElementById('status').value === 'COMPLETED'
+                    ? (document.getElementById('completedBy').value || getCurrentUser())
+                    : '',
                 requirements: {}
             };
 
             const editRequestNo = document.getElementById('editIndex').value;
             if (editRequestNo !== '') {
                 const existing = avsfs.find(a => a.requestNo === editRequestNo);
-                avsf.requirements = existing ? (existing.requirements || {}) : {};
+                if (existing) {
+                    avsf.requirements = existing.requirements || {};
+                    // Preserve removed-tab fields so they aren't lost
+                    const preserve = ['accountGroup','plantCode','taxNumber','taxNumber2',
+                        'reconAccount','sortKey','withholdingTax','paymentTerms','plantNotes',
+                        'paymentMethod','currency','bankName','bankKey','bankAccount',
+                        'bicSwift','ibanNumber','vatNumber','taxNumber5','paymentNotes'];
+                    preserve.forEach(k => { if (existing[k] !== undefined) avsf[k] = existing[k]; });
+                }
             }
 
             await db.collection('avsfs').doc(avsf.requestNo).set(avsf);
@@ -3264,43 +3342,57 @@ Example formats accepted:
         // Requirements Management
         let currentRequirementsIndex = null;
 
-        function getRequirementsList(companyCode, country = '') {
+        function getRequirementsList(companyCode, country = '', requestType = '') {
             if (!companyCode) return [];
-            
             const prefix = companyCode.charAt(0);
-            const europeanCountries = ['SE', 'DE', 'NL', 'FR', 'IT', 'ES', 'BE', 'AT', 'PT', 'IE', 'FI', 'DK', 'PL', 'CZ', 'RO', 'HU', 'GR', 'SK', 'BG', 'HR', 'SI', 'LT', 'LV', 'EE', 'CY', 'LU', 'MT'];
+            const europeanCountries = ['SE','DE','NL','FR','IT','ES','BE','AT','PT','IE','FI','DK','PL','CZ','RO','HU','GR','SK','BG','HR','SI','LT','LV','EE','CY','LU','MT','GB','CH','NO','IS'];
+            const ibanOnWebCountries = ['PL','CZ','HU','DK','BE'];
             const isEuropean = europeanCountries.includes(country.toUpperCase());
-            
+            const hasIbanOnWeb = ibanOnWebCountries.includes(country.toUpperCase());
+            const needsDupCheck = ['MO','CR','EX'].includes((requestType||'').toUpperCase());
+            let reqs = [];
+
             switch(prefix) {
                 case '1': // US, CAN, MEX
-                    return [
-                        { id: 'dps', label: 'DPS Attached' },
-                        { id: 'taxNum2', label: 'Tax Number 2 Entered' },
-                        { id: 'wht', label: 'Withholding Tax Setup' }
+                    reqs = [
+                        { id: 'dps', label: '🔒 DPS Attached' },
+                        { id: 'taxNum2', label: '🔢 Tax Number 2 Entered' },
+                        { id: 'wht', label: '💰 Withholding Tax Setup' }
                     ];
+                    break;
                 case '2': // EMEA
-                    const emeaReqs = [
-                        { id: 'dps', label: 'DPS Attached' },
-                        { id: 'vat', label: 'VAT Attached' },
-                        { id: 'vatReg', label: 'VAT Reg No Filled Out' }
+                    reqs = [
+                        { id: 'dps', label: '🔒 DPS Attached' },
+                        { id: 'vat', label: '📄 VAT Document Attached' },
+                        { id: 'vatReg', label: '🔢 VAT Reg No Filled Out in SAP' }
                     ];
-                    // Add IBAN check for European countries
                     if (isEuropean) {
-                        emeaReqs.push({ id: 'iban', label: 'IBAN Check' });
+                        const ibanLabel = hasIbanOnWeb
+                            ? '🌐 IBAN Check — <em>may appear on official registry (see Resources tab)</em>'
+                            : '🏦 IBAN Verified';
+                        reqs.push({ id: 'iban', label: ibanLabel });
                     }
-                    return emeaReqs;
+                    break;
                 case '3': // APAC
-                    return [
-                        { id: 'dps', label: 'DPS Attached' },
-                        { id: 'taxNum5', label: 'Tax Number 5 Filled Out' }
+                    reqs = [
+                        { id: 'dps', label: '🔒 DPS Attached' },
+                        { id: 'taxNum5', label: '🔢 Tax Number 5 Filled Out' },
+                        { id: 'intermediary', label: '🏦 Intermediary Bank Checked (required for HK/CN vendors)' }
                     ];
+                    break;
                 default:
-                    return [];
+                    reqs = [];
             }
+
+            // Add duplicate check for MO / CR / EX
+            if (needsDupCheck) {
+                reqs.push({ id: 'dupCheck', label: `🔍 Duplicate Check: Verify no duplicate account, Tax ID, or vendor name for ${requestType} request` });
+            }
+            return reqs;
         }
 
         function getRequirementsStatus(avsf) {
-            const requirements = getRequirementsList(avsf.companyCode, avsf.country);
+            const requirements = getRequirementsList(avsf.companyCode, avsf.country, avsf.requestType || '');
             if (requirements.length === 0) {
                 return { icon: '○', text: 'N/A', color: '#9ca3af' };
             }
@@ -3322,7 +3414,7 @@ Example formats accepted:
             const avsf = avsfs.find(a => a.requestNo === requestNo);
             if (!avsf) return;
             currentRequirementsIndex = avsfs.indexOf(avsf);
-            const requirements = getRequirementsList(avsf.companyCode, avsf.country);
+            const requirements = getRequirementsList(avsf.companyCode, avsf.country, avsf.requestType || '');
 
             document.getElementById('requirementsModalTitle').textContent = 
                 `Requirements for ${formatRequestNumber(avsf.requestNo)} - ${avsf.vendorName}`;
