@@ -766,6 +766,33 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+        /* ── KPI Cards ───────────────────────────────────────────── */
+        .kpi-card { background:var(--bg-card); border-radius:var(--radius-lg); padding:1.125rem 1.25rem; border:1px solid var(--border-light); border-left:3px solid var(--primary); box-shadow:var(--shadow-sm); }
+        .kpi-card-label { font-size:.6875rem; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--text-muted); margin-bottom:6px; }
+        .kpi-card-value { font-size:1.875rem; font-weight:700; color:var(--text-primary); letter-spacing:-.03em; line-height:1; }
+        .kpi-card-sub   { font-size:.75rem; color:var(--text-tertiary); margin-top:4px; }
+        .kpi-card.on-time  { border-left-color:var(--success); }
+        .kpi-card.on-time .kpi-card-value  { color:var(--success); }
+        .kpi-card.warn { border-left-color:var(--warning); }
+        .kpi-card.warn .kpi-card-value { color:var(--warning); }
+        .kpi-card.danger { border-left-color:var(--error); }
+        .kpi-card.danger .kpi-card-value { color:var(--error); }
+
+        /* ── Calendar ────────────────────────────────────────────── */
+        .cal-day { min-height:86px; border-right:1px solid var(--border-light); border-bottom:1px solid var(--border-light); padding:5px 6px; cursor:pointer; transition:background var(--duration-fast); position:relative; }
+        .cal-day:hover { background:var(--bg-hover); }
+        .cal-day.cal-today { background:var(--primary-50); }
+        .cal-day.cal-other { opacity:.45; pointer-events:none; }
+        .cal-day.cal-weekend { background:#fafaf9; }
+        .cal-day-num { font-size:11.5px; font-weight:700; color:var(--text-tertiary); margin-bottom:3px; display:inline-block; }
+        .cal-day.cal-today .cal-day-num { width:20px; height:20px; border-radius:50%; background:var(--primary); color:white; font-size:10.5px; display:inline-flex; align-items:center; justify-content:center; }
+        .cal-chip { display:flex; align-items:center; gap:3px; font-size:9.5px; font-weight:600; padding:2px 5px; border-radius:3px; margin-bottom:2px; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+        .cal-chip.vacation { background:#ede9fe; color:#6d28d9; }
+        .cal-chip.meeting  { background:#dbeafe; color:#1e40af; }
+        .cal-chip.activity { background:#d1fae5; color:#065f46; }
+        .cal-chip.holiday  { background:#fef3c7; color:#78350f; }
+        .cal-upcoming-row { display:flex; align-items:center; gap:10px; padding:8px 12px; border-radius:var(--radius-md); background:var(--bg-card); border:1px solid var(--border-light); font-size:12px; }
+        .cal-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
         </style>
 </head>
 <body>
@@ -2622,7 +2649,7 @@ Select a request from the left to preview the email...
 
         // ── Dashboard Tab Switching ───────────────────────────────
         function switchDashTab(tab) {
-            [1,2,3,4,5,6].forEach(t => {
+            [1,2,3,4,5,6,7,8].forEach(t => {
                 const c = document.getElementById(`dashTab${t}Content`);
                 const b = document.getElementById(`dashTab${t}Btn`);
                 if (c) { c.classList.toggle('active', t === tab); c.style.display = t === tab ? 'block' : 'none'; }
@@ -2632,6 +2659,8 @@ Select a request from the left to preview the email...
             if (tab === 3) renderAuditTable();
             if (tab === 4) pmPopulateCountries();
             if (tab === 6) tab6PopulateSelect();
+            if (tab === 7) renderKPI();
+            if (tab === 8) { calInit(); calRender(); calRenderUpcoming(); }
         }
 
         // ── Audit Log ─────────────────────────────────────────────
@@ -3966,77 +3995,99 @@ AMERBankingValidation@resideo.com`;
         let _firstSnapshotDone = false;
 
         function initializeRealtimeSync() {
+            const DOT = (color, glow) =>
+                `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${color};margin-right:5px;vertical-align:middle;${glow?'box-shadow:0 0 0 2px '+glow+';':''}"></span>`;
             const statusEl = document.getElementById('syncStatus');
-            let _unsub = null;
-            let _retryTimer = null;
-            let _retryCount = 0;
+            const setStatus = html => { if (statusEl) statusEl.innerHTML = html; };
+
+            let _unsub = null, _retryTimer = null, _retryCount = 0, _lastSnap = 0, _kaTimer = null;
 
             function connect() {
-                if (_unsub) { try { _unsub(); } catch(e) {} }
-                statusEl.innerHTML = '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.5);margin-right:5px;vertical-align:middle;"></span>Connecting...';
+                if (_unsub)      { try { _unsub(); }       catch(e){} _unsub = null; }
+                if (_retryTimer) { clearTimeout(_retryTimer); _retryTimer = null; }
+                if (_kaTimer)    { clearInterval(_kaTimer);  _kaTimer = null; }
 
-                _unsub = db.collection('avsfs').onSnapshot((snapshot) => {
-                    _retryCount = 0;
-                    if (_retryTimer) { clearTimeout(_retryTimer); _retryTimer = null; }
-                    avsfs = snapshot.docs.map(doc => ({ ...doc.data(), _id: doc.id }));
-                    refresh();
-                    statusEl.innerHTML = '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#6ee7b7;margin-right:5px;vertical-align:middle;box-shadow:0 0 0 2px rgba(110,231,183,.35);"></span>Live · ' + new Date().toLocaleTimeString();
-                    if (!_firstSnapshotDone) {
-                        _firstSnapshotDone = true;
-                        setTimeout(runCompletedMigration, 1800);
-                        setTimeout(runApproverMigration, 2500);
+                setStatus(DOT('rgba(255,255,255,0.5)') + 'Connecting…');
+
+                try {
+                    _unsub = db.collection('avsfs').onSnapshot((snapshot) => {
+                        _retryCount = 0; _lastSnap = Date.now();
+                        if (_retryTimer) { clearTimeout(_retryTimer); _retryTimer = null; }
+                        avsfs = snapshot.docs.map(d => ({ ...d.data(), _id: d.id }));
+                        refresh();
+                        setStatus(DOT('#6ee7b7','rgba(110,231,183,.3)') + 'Live · ' + new Date().toLocaleTimeString());
+                        if (!_firstSnapshotDone) {
+                            _firstSnapshotDone = true;
+                            setTimeout(runCompletedMigration, 1500);
+                            setTimeout(runApproverMigration, 2500);
+                        }
+                    }, (error) => {
+                        console.error('[Firebase]', error.code, error.message);
+                        _retryCount++;
+                        const wait = Math.min(5 + (_retryCount - 1) * 5, 60);
+                        setStatus(DOT('#fca5a5') +
+                            'Disconnected &nbsp;<button onclick="window._fbReconnect()" ' +
+                            'style="background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.4);' +
+                            'color:white;padding:2px 9px;border-radius:9999px;cursor:pointer;font-size:11px;font-weight:600;">Reconnect</button>' +
+                            ` <span style="font-size:10px;opacity:.6;">retry in ${wait}s</span>`);
+                        _retryTimer = setTimeout(connect, wait * 1000);
+                    });
+                } catch(e) {
+                    console.error('[Firebase] init error', e);
+                    _retryTimer = setTimeout(connect, 10000);
+                }
+
+                // Keepalive: if no snapshot in 3 min, reconnect proactively
+                _kaTimer = setInterval(() => {
+                    if (_lastSnap && Date.now() - _lastSnap > 180000) {
+                        console.warn('[Firebase] No update in 3 min — reconnecting');
+                        _retryCount = 0;
+                        connect();
                     }
-                }, (error) => {
-                    console.error('Firebase error:', error);
-                    _retryCount++;
-                    const wait = Math.min(_retryCount * 8, 60);
-                    statusEl.innerHTML =
-                        '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#fca5a5;margin-right:5px;vertical-align:middle;"></span>' +
-                        'Disconnected &nbsp;<button onclick="window._fbReconnect()" ' +
-                        'style="background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.4);' +
-                        'color:white;padding:2px 9px;border-radius:9999px;cursor:pointer;font-size:11px;font-weight:600;">Reconnect</button>' +
-                        ` <span style="font-size:10px;opacity:.6;">retry in ${wait}s</span>`;
-                    _retryTimer = setTimeout(connect, wait * 1000);
-                });
+                }, 60000);
             }
 
             window._fbReconnect = () => { _retryCount = 0; connect(); };
             connect();
         }
 
-        // ── Silent one-time migration: auto-check all COMPLETED + REJECTED records ──
+        // ── Auto-fix: ensure all COMPLETED/REJECTED records have full checklists ──
+        // Runs on every snapshot (no flag). Only writes records that need fixing.
+        // Updates in-memory immediately so display shows green without waiting for Firestore.
         async function runCompletedMigration() {
-            const FLAG = 'avsfMigV2b_checklist'; // bumped to re-run for REJECTED records
-            if (localStorage.getItem(FLAG)) return;
-
             const toFix = avsfs.filter(a => {
                 if (a.status !== 'COMPLETED' && a.status !== 'REJECTED') return false;
-                const reqs = getRequirementsList(a.companyCode || '', a.country || '', a.requestType || '');
+                const reqs = getRequirementsList(String(a.companyCode || ''), a.country || '', a.requestType || '');
                 if (!reqs.length) return false;
                 const done = a.requirements || {};
-                return !reqs.every(r => done[r.id]); // not all checked
+                return !reqs.every(r => done[r.id]); // has unchecked items
             });
+            if (!toFix.length) return; // nothing to do — fast path
 
-            if (!toFix.length) {
-                localStorage.setItem(FLAG, '1');
-                return;
-            }
+            console.log(`[AutoFix] ${toFix.length} COMPLETED/REJECTED records need checklist fill`);
 
-            console.log(`[AutoFix] Checking ${toFix.length} COMPLETED/REJECTED records...`);
+            // 1. Update in-memory immediately → display turns green right away
+            toFix.forEach(avsf => {
+                const reqs = getRequirementsList(String(avsf.companyCode || ''), avsf.country || '', avsf.requestType || '');
+                const filled = {};
+                reqs.forEach(r => { filled[r.id] = true; });
+                avsf.requirements = filled;
+            });
+            refresh(); // re-render with filled checklists
+
+            // 2. Persist to Firestore in the background
             const CHUNK = 400;
             for (let i = 0; i < toFix.length; i += CHUNK) {
                 const batch = db.batch();
                 toFix.slice(i, i + CHUNK).forEach(avsf => {
-                    const reqs = getRequirementsList(avsf.companyCode || '', avsf.country || '', avsf.requestType || '');
-                    const newReqs = {};
-                    reqs.forEach(r => { newReqs[r.id] = true; });
-                    batch.update(db.collection('avsfs').doc(avsf.requestNo), { requirements: newReqs });
+                    const reqs = getRequirementsList(String(avsf.companyCode || ''), avsf.country || '', avsf.requestType || '');
+                    const filled = {};
+                    reqs.forEach(r => { filled[r.id] = true; });
+                    batch.update(db.collection('avsfs').doc(avsf.requestNo), { requirements: filled });
                 });
                 await batch.commit();
             }
-
-            localStorage.setItem(FLAG, '1');
-            console.log(`[AutoFix] Done — ${toFix.length} records updated silently.`);
+            console.log(`[AutoFix] Done — ${toFix.length} records persisted.`);
         }
 
         // ── Silent one-time migration: fix completedBy from approverName ──────
@@ -5249,7 +5300,7 @@ AMERBankingValidation@resideo.com`;
 
         function getRequirementsList(companyCode, country = '', requestType = '') {
             if (!companyCode) return [];
-            const prefix = companyCode.charAt(0);
+            const prefix = String(companyCode).charAt(0); // always string-safe
             const europeanCountries = ['SE','DE','NL','FR','IT','ES','BE','AT','PT','IE','FI','DK','PL','CZ','RO','HU','GR','SK','BG','HR','SI','LT','LV','EE','CY','LU','MT','GB','CH','NO','IS'];
             const ibanOnWebCountries = ['PL','CZ','HU','DK','BE'];
             const isEuropean = europeanCountries.includes(country.toUpperCase());
@@ -6140,6 +6191,327 @@ AMERBankingValidation@resideo.com`;
         if (!localStorage.getItem('abstractVatApiKey')) {
             localStorage.setItem('abstractVatApiKey', '30a14ad525bd4a3caebbbdd7efd407e7');
         }
+
+        // ══════════════════════════════════════════════════════════════════
+        // filterByStatus — metric card click → filters table
+        // ══════════════════════════════════════════════════════════════════
+        function filterByStatus(status) {
+            const sel = document.getElementById('statusFilter');
+            if (sel) { sel.value = status; }
+            applyFilters();
+            switchDashTab(1);
+        }
+
+        // ══════════════════════════════════════════════════════════════════
+        // Mexican Public Holidays (Mon-Fri work calendar)
+        // ══════════════════════════════════════════════════════════════════
+        function getMexicanHolidays(year) {
+            const pad = n => String(n).padStart(2, '0');
+            const iso = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+            const nthMon = (y, m, n) => {
+                const d = new Date(y, m, 1); let c = 0;
+                while (true) { if (d.getDay() === 1 && ++c === n) return iso(d); d.setDate(d.getDate()+1); }
+            };
+            return [
+                `${year}-01-01`,          // New Year
+                nthMon(year, 1, 1),       // Constitution Day (1st Mon Feb)
+                nthMon(year, 2, 3),       // Benito Juárez (3rd Mon Mar)
+                `${year}-05-01`,          // Labor Day
+                `${year}-09-16`,          // Independence Day
+                nthMon(year, 10, 3),      // Revolution Day (3rd Mon Nov)
+                `${year}-12-25`,          // Christmas
+            ];
+        }
+
+        function businessDaysBetween(startISO, endISO) {
+            if (!startISO || !endISO) return null;
+            const s = new Date(startISO + 'T00:00:00');
+            const e = new Date(endISO   + 'T00:00:00');
+            if (isNaN(s) || isNaN(e) || e <= s) return 0;
+            const pad = n => String(n).padStart(2,'0');
+            const years = new Set();
+            for (let y = s.getFullYear(); y <= e.getFullYear(); y++) years.add(y);
+            const holidays = new Set();
+            years.forEach(y => getMexicanHolidays(y).forEach(h => holidays.add(h)));
+            let count = 0;
+            const cur = new Date(s);
+            while (cur < e) {
+                const dow = cur.getDay();
+                const key = `${cur.getFullYear()}-${pad(cur.getMonth()+1)}-${pad(cur.getDate())}`;
+                if (dow !== 0 && dow !== 6 && !holidays.has(key)) count++;
+                cur.setDate(cur.getDate() + 1);
+            }
+            return count;
+        }
+
+        // ══════════════════════════════════════════════════════════════════
+        // KPI Dashboard
+        // ══════════════════════════════════════════════════════════════════
+        let _kpiDist = null, _kpiTrend = null;
+
+        function renderKPI() {
+            const personF = (document.getElementById('kpiPersonFilter')||{}).value || '';
+            const periodF = parseInt((document.getElementById('kpiPeriodFilter')||{}).value || '0');
+            const TARGET  = 2;
+            const cutoff  = periodF ? new Date(Date.now() - periodF * 86400000) : null;
+
+            const completed = avsfs.filter(a =>
+                a.status === 'COMPLETED' && a.entryDate && a.completionDate &&
+                (!personF || (a.completedBy||'') === personF) &&
+                (!cutoff  || new Date(a.completionDate) >= cutoff)
+            );
+            const rows = completed.map(a => ({ ...a, bd: businessDaysBetween(a.entryDate, a.completionDate) }))
+                                  .filter(a => a.bd !== null);
+
+            const n     = rows.length;
+            const onT   = rows.filter(r => r.bd <= TARGET).length;
+            const avg   = n ? +(rows.reduce((s,r) => s+r.bd, 0)/n).toFixed(1) : 0;
+            const pct   = n ? Math.round(onT/n*100) : 0;
+            const minD  = n ? Math.min(...rows.map(r=>r.bd)) : '—';
+            const maxD  = n ? Math.max(...rows.map(r=>r.bd)) : '—';
+
+            const cls = v => v <= TARGET ? 'on-time' : v <= 4 ? 'warn' : 'danger';
+
+            const cardsEl = document.getElementById('kpiCards');
+            if (cardsEl) cardsEl.innerHTML = [
+                { lbl:'Requests Analyzed', val:n,       sub:'completed with date data', c:'' },
+                { lbl:'Avg Business Days',  val:avg+'d', sub:'target: ≤ 2 business days', c:cls(avg) },
+                { lbl:'On-Time Rate',       val:pct+'%', sub:`${onT}/${n} within 2 days`, c:pct>=80?'on-time':pct>=60?'warn':'danger' },
+                { lbl:'Fastest',            val:minD+(n?'d':''), sub:'business days', c:'on-time' },
+                { lbl:'Slowest',            val:maxD+(n?'d':''), sub:'business days', c:n&&maxD>TARGET?'danger':'' },
+            ].map(({lbl,val,sub,c}) => `
+                <div class="kpi-card ${c}">
+                    <div class="kpi-card-label">${lbl}</div>
+                    <div class="kpi-card-value">${val}</div>
+                    <div class="kpi-card-sub">${sub}</div>
+                </div>`).join('');
+
+            // Distribution chart (buckets: 0,1,2,3,4,5+)
+            const labels = ['0d','1d','2d','3d','4d','5d+'];
+            const counts = [0,1,2,3,4].map(b => rows.filter(r=>r.bd===b).length);
+            counts.push(rows.filter(r=>r.bd>=5).length);
+            const bgClr  = ['#6ee7b7','#34d399','#10b981','#f59e0b','#f97316','#ef4444'];
+            const distCtx = document.getElementById('kpiDistChart');
+            if (distCtx) {
+                if (_kpiDist) { _kpiDist.destroy(); _kpiDist = null; }
+                _kpiDist = new Chart(distCtx, {
+                    type:'bar',
+                    data:{ labels, datasets:[{ data:counts, backgroundColor:bgClr, borderRadius:6, borderSkipped:false }] },
+                    options:{ responsive:true, maintainAspectRatio:false,
+                        plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>`${c.raw} requests`}} },
+                        scales:{ x:{grid:{display:false}}, y:{beginAtZero:true,grid:{color:'rgba(0,0,0,.05)'},ticks:{stepSize:1}} }
+                    }
+                });
+            }
+
+            // Monthly trend
+            const byM = {};
+            rows.forEach(r => { const m = r.completionDate.slice(0,7); (byM[m]||(byM[m]=[])).push(r.bd); });
+            const months = Object.keys(byM).sort().slice(-12);
+            const mLabels = months.map(m => new Date(m+'-02').toLocaleDateString('en-US',{month:'short',year:'2-digit'}));
+            const mAvgs   = months.map(m => +(byM[m].reduce((s,v)=>s+v,0)/byM[m].length).toFixed(2));
+            const trendCtx = document.getElementById('kpiTrendChart');
+            if (trendCtx) {
+                if (_kpiTrend) { _kpiTrend.destroy(); _kpiTrend = null; }
+                _kpiTrend = new Chart(trendCtx, {
+                    type:'line',
+                    data:{ labels:mLabels, datasets:[
+                        { label:'Avg Days', data:mAvgs, borderColor:'rgb(15,118,110)', backgroundColor:'rgba(15,118,110,.08)',
+                          tension:.35, fill:true, pointBackgroundColor:'rgb(15,118,110)', pointRadius:4 },
+                        { label:'2-Day Target', data:months.map(()=>2), borderColor:'rgba(239,68,68,.55)',
+                          borderDash:[5,4], borderWidth:1.5, pointRadius:0, fill:false }
+                    ]},
+                    options:{ responsive:true, maintainAspectRatio:false,
+                        plugins:{ legend:{labels:{font:{size:11}}} },
+                        scales:{ x:{grid:{display:false},ticks:{font:{size:10}}}, y:{beginAtZero:true,grid:{color:'rgba(0,0,0,.05)'}} }
+                    }
+                });
+            }
+
+            // Per-person table
+            const people = ['Brandon Ramos','Rosana Munoz','Yannick Rojas'];
+            const pRows = people.map(name => {
+                const rs = rows.filter(r => (r.completedBy||'') === name);
+                if (!rs.length) return null;
+                const a = rs.reduce((s,r)=>s+r.bd,0)/rs.length;
+                const o = rs.filter(r=>r.bd<=TARGET).length;
+                const p = Math.round(o/rs.length*100);
+                return { name, n:rs.length, avg:a, onT:o, pct:p, min:Math.min(...rs.map(r=>r.bd)), max:Math.max(...rs.map(r=>r.bd)) };
+            }).filter(Boolean);
+
+            const tbody = document.getElementById('kpiPersonBody');
+            if (tbody) tbody.innerHTML = pRows.length ? pRows.map(r => `
+                <tr>
+                    <td style="font-weight:600;">${r.name}</td>
+                    <td style="text-align:right;">${r.n}</td>
+                    <td style="text-align:right;font-weight:700;color:${r.avg<=TARGET?'var(--success)':r.avg<=4?'var(--warning)':'var(--error)'};">${r.avg.toFixed(1)}d</td>
+                    <td style="text-align:right;">${r.onT}</td>
+                    <td style="text-align:right;">
+                        <span style="display:inline-flex;align-items:center;gap:5px;">
+                            <span style="width:48px;height:5px;border-radius:3px;background:var(--border);display:inline-block;overflow:hidden;">
+                                <span style="display:block;height:100%;width:${r.pct}%;background:${r.pct>=80?'var(--success)':r.pct>=60?'var(--warning)':'var(--error)'};border-radius:3px;"></span>
+                            </span>
+                            <strong>${r.pct}%</strong>
+                        </span>
+                    </td>
+                    <td style="text-align:right;color:var(--success);">${r.min}d</td>
+                    <td style="text-align:right;color:${r.max>TARGET?'var(--error)':'var(--text-primary)'};">${r.max}d</td>
+                </tr>`).join('')
+            : '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:24px;">No completed requests with date data yet</td></tr>';
+        }
+
+        // ══════════════════════════════════════════════════════════════════
+        // Team Calendar
+        // ══════════════════════════════════════════════════════════════════
+        let _calY = new Date().getFullYear(), _calM = new Date().getMonth();
+        let _calEvents = [], _calUnsub = null, _calInited = false;
+
+        const CAL_COLORS = { vacation:'#8b5cf6', meeting:'#3b82f6', activity:'#10b981', holiday:'#f59e0b' };
+        const PAD2 = n => String(n).padStart(2,'0');
+        const calISO = (y,m,d) => `${y}-${PAD2(m+1)}-${PAD2(d)}`;
+        const todayISO = () => { const t=new Date(); return calISO(t.getFullYear(),t.getMonth(),t.getDate()); };
+
+        function calInit() {
+            if (_calInited) return;
+            _calInited = true;
+            _calUnsub = db.collection('calendarEvents').onSnapshot(snap => {
+                _calEvents = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+                const t8 = document.getElementById('dashTab8Content');
+                if (t8 && t8.style.display !== 'none') { calRender(); calRenderUpcoming(); }
+            }, e => console.warn('[Calendar]', e));
+        }
+
+        function calHolidays(y, m) {
+            const names = { '01-01':'New Year\'s Day','05-01':'Labor Day','09-16':'Independence Day','12-25':'Christmas' };
+            const prefix = `${y}-${PAD2(m+1)}`;
+            return getMexicanHolidays(y).filter(h => h.startsWith(prefix)).map(h => ({
+                id:'__h__'+h, date:h, type:'holiday', user:'all',
+                title: names[h.slice(5)] || (() => {
+                    const d=new Date(h+'T12:00:00'), mo=d.getMonth(), dow=d.getDay();
+                    if(dow===1){ if(mo===1)return'Constitution Day'; if(mo===2)return'Benito Juárez Day'; if(mo===10)return'Revolution Day'; }
+                    return 'Mexican Holiday';
+                })()
+            }));
+        }
+
+        function calRender() {
+            const lbl = document.getElementById('calMonthLabel');
+            if (lbl) lbl.textContent = new Date(_calY,_calM,1).toLocaleDateString('en-US',{month:'long',year:'numeric'});
+            const grid = document.getElementById('calGrid');
+            if (!grid) return;
+
+            const first  = new Date(_calY,_calM,1).getDay();   // 0=Sun
+            const days   = new Date(_calY,_calM+1,0).getDate();
+            const prevD  = new Date(_calY,_calM,0).getDate();
+            const offset = (first+6)%7; // convert to Mon-start
+            const today  = todayISO();
+            const allEvt = [..._calEvents, ...calHolidays(_calY,_calM)];
+            const cells  = Math.ceil((offset+days)/7)*7;
+            let html = '';
+
+            for (let i=0; i<cells; i++) {
+                let d, iso, cls='cal-day';
+                if (i < offset) {
+                    d = prevD-offset+i+1;
+                    const pm=_calM===0?11:_calM-1, py=_calM===0?_calY-1:_calY;
+                    iso=calISO(py,pm,d); cls+=' cal-other';
+                } else if (i >= offset+days) {
+                    d = i-offset-days+1;
+                    const nm=_calM===11?0:_calM+1, ny=_calM===11?_calY+1:_calY;
+                    iso=calISO(ny,nm,d); cls+=' cal-other';
+                } else {
+                    d=i-offset+1; iso=calISO(_calY,_calM,d);
+                    if(i%7>=5) cls+=' cal-weekend';
+                    if(iso===today) cls+=' cal-today';
+                }
+                const evts = allEvt.filter(e=>e.date===iso);
+                html += `<div class="${cls}" onclick="calOpenAdd('${iso}')">`;
+                html += `<span class="cal-day-num">${d}</span>`;
+                evts.slice(0,3).forEach(ev => {
+                    html += `<div class="cal-chip ${ev.type}" onclick="event.stopPropagation();calOpenEdit('${ev.id}')" title="${ev.title}">${ev.title.length>20?ev.title.slice(0,18)+'…':ev.title}</div>`;
+                });
+                if(evts.length>3) html += `<div style="font-size:9px;color:var(--text-muted);">+${evts.length-3} more</div>`;
+                html += '</div>';
+            }
+            grid.innerHTML = html;
+        }
+
+        function calRenderUpcoming() {
+            const el = document.getElementById('calUpcoming');
+            if (!el) return;
+            const t = todayISO();
+            const up = _calEvents.filter(e=>e.date>=t).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,8);
+            if (!up.length) { el.innerHTML='<p style="font-size:12px;color:var(--text-muted);">No upcoming events</p>'; return; }
+            el.innerHTML = up.map(e => {
+                const dateStr = new Date(e.date+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+                const who = e.user==='all'?'All Team':e.user;
+                return `<div class="cal-upcoming-row">
+                    <span class="cal-dot" style="background:${CAL_COLORS[e.type]||'#9ca3af'};"></span>
+                    <span style="font-weight:700;min-width:95px;font-size:11.5px;">${dateStr}</span>
+                    <span style="flex:1;color:var(--text-secondary);">${e.title}</span>
+                    <span style="font-size:11px;color:var(--text-muted);">${who}</span>
+                    <button onclick="calOpenEdit('${e.id}')" style="border:none;background:none;cursor:pointer;color:var(--text-muted);font-size:13px;padding:0 4px;">✎</button>
+                </div>`;
+            }).join('');
+        }
+
+        function calPrevMonth(){ if(_calM===0){_calM=11;_calY--;}else _calM--; calRender(); }
+        function calNextMonth(){ if(_calM===11){_calM=0;_calY++;}else _calM++; calRender(); }
+        function calGoToday()  { _calY=new Date().getFullYear(); _calM=new Date().getMonth(); calRender(); }
+
+        function calOpenAdd(dateISO) {
+            document.getElementById('calEventId').value='';
+            document.getElementById('calEventDate').value=dateISO||'';
+            document.getElementById('calEventTitle').value='';
+            document.getElementById('calEventType').value='meeting';
+            const u=getCurrentUser();
+            document.getElementById('calEventUser').value=u==='Brandon'?'Brandon':u==='Yannick'?'Yannick':'Rosana';
+            document.getElementById('calEventDesc').value='';
+            document.getElementById('calDeleteBtn').style.display='none';
+            document.getElementById('calEventModalTitle').textContent='Add Event';
+            document.getElementById('calEventModal').classList.add('active');
+        }
+        function calOpenEdit(id) {
+            if(id.startsWith('__h__')) return; // holidays are read-only
+            const ev=_calEvents.find(e=>e.id===id);
+            if(!ev) return;
+            document.getElementById('calEventId').value=ev.id;
+            document.getElementById('calEventDate').value=ev.date;
+            document.getElementById('calEventTitle').value=ev.title;
+            document.getElementById('calEventType').value=ev.type;
+            document.getElementById('calEventUser').value=ev.user||'all';
+            document.getElementById('calEventDesc').value=ev.description||'';
+            document.getElementById('calDeleteBtn').style.display='';
+            document.getElementById('calEventModalTitle').textContent='Edit Event';
+            document.getElementById('calEventModal').classList.add('active');
+        }
+        async function calSaveEvent() {
+            const id    = document.getElementById('calEventId').value;
+            const date  = document.getElementById('calEventDate').value;
+            const title = document.getElementById('calEventTitle').value.trim();
+            if (!date||!title) { alert('Please enter date and title.'); return; }
+            const data = {
+                date, title,
+                type: document.getElementById('calEventType').value,
+                user: document.getElementById('calEventUser').value,
+                description: document.getElementById('calEventDesc').value.trim(),
+                updatedAt: new Date().toISOString()
+            };
+            if (id) {
+                await db.collection('calendarEvents').doc(id).set(data);
+            } else {
+                data.createdBy=getCurrentUser(); data.createdAt=new Date().toISOString();
+                await db.collection('calendarEvents').add(data);
+            }
+            calCloseModal();
+        }
+        async function calDeleteEvent() {
+            const id = document.getElementById('calEventId').value;
+            if (!id||!confirm('Delete this event?')) return;
+            await db.collection('calendarEvents').doc(id).delete();
+            calCloseModal();
+        }
+        function calCloseModal() { document.getElementById('calEventModal').classList.remove('active'); }
 
         // Start real-time Firebase sync
         initializeRealtimeSync();
