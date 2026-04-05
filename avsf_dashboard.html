@@ -1787,6 +1787,7 @@ Example formats accepted:
                                         <option value="USMXVendorMaintenance@resideo.com">🌎 USMXVendorMaintenance@resideo.com</option>
                                         <option value="VendorMaintenance_EMEA@resideo.com">🇪🇺 VendorMaintenance_EMEA@resideo.com</option>
                                         <option value="ApacVendorMaintenance@resideo.com">🌏 ApacVendorMaintenance@resideo.com</option>
+                                        <option value="AMERBankingValidation@resideo.com">🔒 AMERBankingValidation@resideo.com</option>
                                     </select>
                                 </div>
                                 <div>
@@ -3233,21 +3234,18 @@ Thank you for taking the time to speak with me earlier and for confirming your e
 
 We have been informed that your company is utilizing the bank information provided in the attached document for electronic payments. To ensure the accuracy of these details and facilitate the processing of pending invoices, we kindly request that you confirm whether the attached bank details are correct for ${f.vendName || '[Company name]'}. This will help us avoid potential payment processing issues.
 
-Bank Name: [Suppliers Bank]
+[BOLD]Bank Name:
 Account number: ***** XXXX
+Account holder:
+Bank Number (Routing #):
+Country: ${f.country || ''}
+Currency: [/BOLD]
 
-Account holder: [Name of account holder]
-Bank Number (Routing #): XXXXXXXX
-
-Country: ${f.country || '[Supplier\'s country]'}
-
-Currency: [Supplier\'s currency]
-
-Please note that the attached file is encrypted to protect the integrity of your company\'s information. The password to access the file will be sent to you in a separate email with the same subject line.
+Please note that the attached file is encrypted to protect the integrity of your company's information. The password to access the file will be sent to you in a separate email with the same subject line.
 
 For our records, please reply to this email with your confirmation and include any attachments you received. This will help us accurately reference the information provided.
 
-Please be aware that no payments will be processed until we receive your confirmation.
+[YELLOW]Please be aware that no payments will be processed until we receive your confirmation.[/YELLOW]
 
 Thank you for your prompt attention to this matter.
 
@@ -3262,21 +3260,18 @@ Gracias por tomarse el tiempo de hablar conmigo anteriormente y por confirmar su
 
 Se nos ha informado que su empresa utiliza la información bancaria proporcionada en el documento adjunto para pagos electrónicos. Para garantizar la exactitud de estos datos y facilitar el procesamiento de las facturas pendientes, le solicitamos amablemente que confirme si los datos bancarios adjuntos son correctos para ${f.vendName || '[Nombre de la empresa]'}. Esto nos ayudará a evitar posibles problemas en el procesamiento de pagos.
 
-Nombre del banco: [Banco del proveedor]
+[BOLD]Nombre del banco:
 Número de cuenta: ***** XXXX
-
-Titular de la cuenta: [Nombre del titular de la cuenta]
-Número de banco (Routing #): XXXXXXXX
-
-País: ${f.country || '[País del proveedor]'}
-
-Moneda: [Moneda del proveedor]
+Titular de la cuenta:
+Número de banco (Routing #):
+País: ${f.country || ''}
+Moneda: [/BOLD]
 
 Tenga en cuenta que el archivo adjunto está cifrado para proteger la integridad de la información de su empresa. La contraseña para acceder al archivo se enviará en un correo electrónico separado con el mismo asunto.
 
 Para nuestros registros, por favor responda a este correo con su confirmación e incluya los archivos adjuntos que recibió. Esto nos ayudará a referenciar con precisión la información proporcionada.
 
-Tenga en cuenta que no se procesará ningún pago hasta que recibamos su confirmación.
+[YELLOW]Tenga en cuenta que no se procesará ningún pago hasta que recibamos su confirmación.[/YELLOW]
 
 Gracias por su pronta atención a este asunto.
 
@@ -3286,6 +3281,26 @@ AMERBankingValidation@resideo.com`;
             }
             return '';
         }
+
+        // ── Preview rendering helpers ─────────────────────────────────────────
+        // Body text can contain [BOLD]...[/BOLD] and [YELLOW]...[/YELLOW] markers.
+        // stripBodyMarkers → plain text for mailto / clipboard
+        // renderBodyHTML   → styled HTML for the preview box
+        function stripBodyMarkers(text) {
+            return text.replace(/\[BOLD\]/g,'').replace(/\[\/BOLD\]/g,'')
+                       .replace(/\[YELLOW\]/g,'').replace(/\[\/YELLOW\]/g,'');
+        }
+        function renderBodyHTML(text) {
+            // 1. Escape HTML special chars
+            const esc = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            // 2. Convert markers to HTML (newlines inside BOLD stay as \n — white-space:pre-wrap handles them)
+            return esc
+                .replace(/\[BOLD\]/g, '<strong>')
+                .replace(/\[\/BOLD\]/g, '</strong>')
+                .replace(/\[YELLOW\]/g, '<span style="background:#fef08a;padding:1px 3px;border-radius:2px;">')
+                .replace(/\[\/YELLOW\]/g, '</span>');
+        }
+        function hasMarkers(text) { return /\[BOLD\]|\[YELLOW\]/.test(text); }
 
         function tab6BuildPreview() {
             const previewEl = document.getElementById('tab6PreviewBox');
@@ -3305,15 +3320,21 @@ AMERBankingValidation@resideo.com`;
 
             if (badgeEl) badgeEl.textContent = 'Subject: ' + subject;
 
-            const toAddr  = tab6GetTO(f);
+            const toAddr   = tab6GetTO(f);
             const fromAddr = tab6GetFROM(f);
-            previewEl.textContent =
-                'From:    ' + fromAddr + '\n' +
-                'To:      ' + toAddr + '\n' +
-                'CC:      ' + fromAddr + '\n' +
-                'Subject: ' + subject + '\n' +
-                '─'.repeat(52) + '\n' +
-                body;
+            const header   = 'From:    ' + fromAddr + '\n' +
+                             'To:      ' + toAddr   + '\n' +
+                             'CC:      ' + fromAddr + '\n' +
+                             'Subject: ' + subject  + '\n' +
+                             '─'.repeat(52) + '\n';
+
+            if (hasMarkers(body)) {
+                // Render with bold / yellow highlight using innerHTML
+                const escapedHeader = header.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+                previewEl.innerHTML = escapedHeader + renderBodyHTML(body);
+            } else {
+                previewEl.textContent = header + body;
+            }
         }
 
         function tab6OpenOutlook() {
@@ -3321,7 +3342,7 @@ AMERBankingValidation@resideo.com`;
             if (!f.vendName) { alert('Please select an AVSF request first.'); return; }
             const avsf_part = f.reqNo ? `AVSF ${f.reqNo} ` : '';
             const subject  = `${f.initials} - ${avsf_part}Vendor ${f.vendNum} ${f.vendName} CC ${f.cc}`;
-            const body     = tab6BuildBody(f).replace(/\n/g, '\r\n');
+            const body     = stripBodyMarkers(tab6BuildBody(f)).replace(/\n/g, '\r\n');
             const toAddr   = tab6GetTO(f);
             const fromAddr = tab6GetFROM(f);
             const mailto   = 'mailto:' + encodeURIComponent(toAddr) +
@@ -3333,8 +3354,9 @@ AMERBankingValidation@resideo.com`;
 
         function tab6CopyClipboard() {
             const previewEl = document.getElementById('tab6PreviewBox');
-            if (!previewEl || previewEl.textContent.startsWith('Select')) { alert('Select a request first.'); return; }
-            navigator.clipboard.writeText(previewEl.textContent).then(() => {
+            const previewText = previewEl ? (previewEl.innerText || previewEl.textContent) : '';
+            if (!previewEl || previewText.startsWith('Select')) { alert('Select a request first.'); return; }
+            navigator.clipboard.writeText(previewText).then(() => {
                 const btn = event.target; const orig = btn.textContent;
                 btn.textContent = '✅ Copied!'; setTimeout(() => btn.textContent = orig, 2000);
             }).catch(() => {
