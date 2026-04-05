@@ -847,33 +847,41 @@
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                         Email Templates
                     </button>
+                    <button class="dash-tab-btn" id="dashTab7Btn" onclick="switchDashTab(7)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                        KPI
+                    </button>
+                    <button class="dash-tab-btn" id="dashTab8Btn" onclick="switchDashTab(8)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        Team Calendar
+                    </button>
                 </div>
             </div>
             <div class="dash-tab-content-area">
 
             <div class="dash-tab-content active" id="dashTab1Content">
             <div class="metrics-grid">
-                <div class="metric-card">
+                <div class="metric-card" onclick="filterByStatus('')" title="Show all">
                     <div class="metric-label">Total AVSFs</div>
                     <div class="metric-value" id="totalCount">0</div>
                 </div>
-                <div class="metric-card completed">
+                <div class="metric-card completed" onclick="filterByStatus('COMPLETED')" title="Filter: Completed" style="cursor:pointer;">
                     <div class="metric-label">Completed</div>
                     <div class="metric-value" id="completedCount">0</div>
                 </div>
-                <div class="metric-card rejected">
+                <div class="metric-card rejected" onclick="filterByStatus('REJECTED')" title="Filter: Rejected" style="cursor:pointer;">
                     <div class="metric-label">Rejected</div>
                     <div class="metric-value" id="rejectedCount">0</div>
                 </div>
-                <div class="metric-card processing">
+                <div class="metric-card processing" onclick="filterByStatus('PROCESSING')" title="Filter: Processing" style="cursor:pointer;">
                     <div class="metric-label">Processing</div>
                     <div class="metric-value" id="processingCount">0</div>
                 </div>
-                <div class="metric-card pending">
+                <div class="metric-card pending" onclick="filterByStatus('PENDING_BUYER')" title="Filter: Pending Buyer" style="cursor:pointer;">
                     <div class="metric-label">Pending Buyer</div>
                     <div class="metric-value" id="pendingBuyerCount">0</div>
                 </div>
-                <div class="metric-card idoc-error">
+                <div class="metric-card idoc-error" onclick="filterByStatus('IDOC_ERROR')" title="Filter: IDOC Errors" style="cursor:pointer;">
                     <div class="metric-label">IDOC Errors</div>
                     <div class="metric-value" id="idocErrorCount">0</div>
                 </div>
@@ -2076,7 +2084,167 @@ Select a request from the left to preview the email...
                 </div>
             </div>
 
+            <!-- ═══════════════════ TAB 7 — KPI Dashboard ═══════════════════ -->
+            <div class="dash-tab-content" id="dashTab7Content" style="display:none;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:8px;">
+                    <div>
+                        <h2 style="font-size:1rem;font-weight:700;color:var(--text-primary);letter-spacing:-0.01em;">Processing Time KPI</h2>
+                        <p style="font-size:12px;color:var(--text-tertiary);margin-top:2px;">Business days from Date Received → Completion · Mon–Fri, excluding Mexican public holidays · Target: ≤2 days</p>
+                    </div>
+                    <div style="display:flex;gap:6px;align-items:center;">
+                        <select id="kpiPersonFilter" class="filter-select" style="font-size:12px;" onchange="renderKPI()">
+                            <option value="">All Team Members</option>
+                            <option value="Brandon Ramos">Brandon Ramos</option>
+                            <option value="Rosana Munoz">Rosana Munoz</option>
+                            <option value="Yannick Rojas">Yannick Rojas</option>
+                        </select>
+                        <select id="kpiPeriodFilter" class="filter-select" style="font-size:12px;" onchange="renderKPI()">
+                            <option value="">All Time</option>
+                            <option value="30">Last 30 days</option>
+                            <option value="90">Last 90 days</option>
+                            <option value="180">Last 180 days</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- KPI Summary Cards -->
+                <div id="kpiCards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:0.875rem;margin-bottom:1.5rem;"></div>
+
+                <!-- Charts row -->
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;">
+                    <div class="chart-card">
+                        <div class="chart-title">Processing Time Distribution</div>
+                        <p style="font-size:11px;color:var(--text-muted);margin-top:-8px;margin-bottom:10px;">Number of completed requests by business days taken</p>
+                        <div style="position:relative;height:220px;">
+                            <canvas id="kpiDistChart"></canvas>
+                            <div id="kpiDistEmpty" style="display:none;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:13px;">No completed data</div>
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-title">Monthly Avg Processing Days</div>
+                        <p style="font-size:11px;color:var(--text-muted);margin-top:-8px;margin-bottom:10px;">Average business days per month · Red line = 2-day target</p>
+                        <div style="position:relative;height:220px;">
+                            <canvas id="kpiTrendChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Per-person breakdown -->
+                <div class="data-section">
+                    <div class="section-header">
+                        <span class="section-title">Per-Person Breakdown</span>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table id="kpiPersonTable" style="min-width:600px;">
+                            <thead><tr>
+                                <th>Team Member</th>
+                                <th style="text-align:right;">Requests</th>
+                                <th style="text-align:right;">Avg Days</th>
+                                <th style="text-align:right;">On-Time (≤2d)</th>
+                                <th style="text-align:right;">On-Time %</th>
+                                <th style="text-align:right;">Fastest</th>
+                                <th style="text-align:right;">Slowest</th>
+                            </tr></thead>
+                            <tbody id="kpiPersonBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══════════════════ TAB 8 — Team Calendar ═══════════════════ -->
+            <div class="dash-tab-content" id="dashTab8Content" style="display:none;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px;">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <button onclick="calPrevMonth()" style="width:32px;height:32px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-card);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;">‹</button>
+                        <h2 id="calMonthLabel" style="font-size:1rem;font-weight:700;color:var(--text-primary);min-width:160px;text-align:center;letter-spacing:-0.01em;">—</h2>
+                        <button onclick="calNextMonth()" style="width:32px;height:32px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-card);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;">›</button>
+                        <button onclick="calGoToday()" style="padding:5px 12px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-card);cursor:pointer;font-size:12px;font-weight:600;color:var(--text-secondary);">Today</button>
+                    </div>
+                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                        <!-- Legend -->
+                        <span style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-secondary);"><span style="width:10px;height:10px;border-radius:50%;background:#8b5cf6;display:inline-block;"></span>Vacation</span>
+                        <span style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-secondary);"><span style="width:10px;height:10px;border-radius:50%;background:#3b82f6;display:inline-block;"></span>Meeting</span>
+                        <span style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-secondary);"><span style="width:10px;height:10px;border-radius:50%;background:#10b981;display:inline-block;"></span>Activity</span>
+                        <span style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-secondary);"><span style="width:10px;height:10px;border-radius:50%;background:#f59e0b;display:inline-block;"></span>Holiday</span>
+                        <button onclick="calOpenAddEvent()" class="btn btn-primary" style="font-size:12px;padding:6px 14px;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            Add Event
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Calendar grid -->
+                <div style="background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm);">
+                    <div style="display:grid;grid-template-columns:repeat(7,1fr);background:var(--bg-secondary);border-bottom:1px solid var(--border);">
+                        <div style="padding:8px;text-align:center;font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:0.06em;">MON</div>
+                        <div style="padding:8px;text-align:center;font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:0.06em;">TUE</div>
+                        <div style="padding:8px;text-align:center;font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:0.06em;">WED</div>
+                        <div style="padding:8px;text-align:center;font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:0.06em;">THU</div>
+                        <div style="padding:8px;text-align:center;font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:0.06em;">FRI</div>
+                        <div style="padding:8px;text-align:center;font-size:11px;font-weight:700;color:#ef4444;letter-spacing:0.06em;">SAT</div>
+                        <div style="padding:8px;text-align:center;font-size:11px;font-weight:700;color:#ef4444;letter-spacing:0.06em;">SUN</div>
+                    </div>
+                    <div id="calGrid" style="display:grid;grid-template-columns:repeat(7,1fr);"></div>
+                </div>
+
+                <!-- Upcoming events sidebar -->
+                <div style="margin-top:1rem;">
+                    <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:8px;">Upcoming Events</div>
+                    <div id="calUpcoming" style="display:flex;flex-direction:column;gap:6px;"></div>
+                </div>
+            </div>
+
             </div><!-- /dash-tab-content-area -->
+
+    <!-- Calendar Event Modal -->
+    <div class="modal" id="calEventModal">
+        <div class="modal-content" style="max-width:460px;">
+            <div class="modal-header">
+                <h2 class="modal-title" id="calEventModalTitle">Add Event</h2>
+                <button class="close-btn" onclick="calCloseEventModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="calEventId">
+                <div class="form-group">
+                    <label class="form-label">Date</label>
+                    <input type="date" class="form-input" id="calEventDate" style="width:100%;">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Title</label>
+                    <input type="text" class="form-input" id="calEventTitle" placeholder="Event title..." style="width:100%;">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Type</label>
+                        <select class="form-select" id="calEventType" style="width:100%;">
+                            <option value="vacation">🟣 Vacation</option>
+                            <option value="meeting">🔵 Meeting</option>
+                            <option value="activity">🟢 Activity</option>
+                            <option value="holiday">🟡 Holiday</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Who</label>
+                        <select class="form-select" id="calEventUser" style="width:100%;">
+                            <option value="all">All Team</option>
+                            <option value="Brandon">Brandon Ramos</option>
+                            <option value="Yannick">Yannick Rojas</option>
+                            <option value="Rosana">Rosana Munoz</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description (optional)</label>
+                    <textarea class="form-input" id="calEventDesc" rows="2" placeholder="Details..." style="width:100%;resize:vertical;"></textarea>
+                </div>
+                <div style="display:flex;gap:8px;margin-top:8px;">
+                    <button class="btn btn-primary" onclick="calSaveEvent()" style="flex:1;">Save Event</button>
+                    <button class="btn btn-secondary" onclick="calCloseEventModal()">Cancel</button>
+                    <button class="btn" id="calDeleteBtn" onclick="calDeleteEvent()" style="display:none;background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Admin Panel Modal -->
     <div class="modal" id="adminModal">
@@ -3836,13 +4004,13 @@ AMERBankingValidation@resideo.com`;
             connect();
         }
 
-        // ── Silent one-time migration: auto-check all COMPLETED records ──────
+        // ── Silent one-time migration: auto-check all COMPLETED + REJECTED records ──
         async function runCompletedMigration() {
-            const FLAG = 'avsfMigV2_checklist';
-            if (localStorage.getItem(FLAG)) return; // already ran
+            const FLAG = 'avsfMigV2b_checklist'; // bumped to re-run for REJECTED records
+            if (localStorage.getItem(FLAG)) return;
 
             const toFix = avsfs.filter(a => {
-                if (a.status !== 'COMPLETED') return false;
+                if (a.status !== 'COMPLETED' && a.status !== 'REJECTED') return false;
                 const reqs = getRequirementsList(a.companyCode || '', a.country || '', a.requestType || '');
                 if (!reqs.length) return false;
                 const done = a.requirements || {};
@@ -3854,8 +4022,8 @@ AMERBankingValidation@resideo.com`;
                 return;
             }
 
-            console.log(`[AutoFix] Checking ${toFix.length} COMPLETED records...`);
-            const CHUNK = 400; // Firestore batch limit
+            console.log(`[AutoFix] Checking ${toFix.length} COMPLETED/REJECTED records...`);
+            const CHUNK = 400;
             for (let i = 0; i < toFix.length; i += CHUNK) {
                 const batch = db.batch();
                 toFix.slice(i, i + CHUNK).forEach(avsf => {
@@ -5038,6 +5206,15 @@ AMERBankingValidation@resideo.com`;
             let skipped = 0;
 
             for (let entry of parsedImportData) {
+                // Auto-fill checklist for COMPLETED / REJECTED records
+                if ((entry.status === 'COMPLETED' || entry.status === 'REJECTED') && entry.companyCode) {
+                    const reqs = getRequirementsList(entry.companyCode, entry.country || '', entry.requestType || '');
+                    if (reqs.length && !Object.keys(entry.requirements || {}).length) {
+                        entry.requirements = {};
+                        reqs.forEach(r => { entry.requirements[r.id] = true; });
+                    }
+                }
+
                 const docRef = db.collection('avsfs').doc(entry.requestNo);
                 const docSnap = await docRef.get();
 
