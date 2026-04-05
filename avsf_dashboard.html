@@ -3178,16 +3178,58 @@ ${f.from}`;
         }
 
         // Real-time sync from Firestore
+        let _firstSnapshotDone = false;
+
         function initializeRealtimeSync() {
             const statusEl = document.getElementById('syncStatus');
             db.collection('avsfs').orderBy('entryDate', 'desc').onSnapshot((snapshot) => {
                 avsfs = snapshot.docs.map(doc => ({ ...doc.data(), _id: doc.id }));
                 refresh();
                 statusEl.textContent = '🟢 Live · synced ' + new Date().toLocaleTimeString();
+                // Run silent migration once after first load
+                if (!_firstSnapshotDone) {
+                    _firstSnapshotDone = true;
+                    setTimeout(runCompletedMigration, 1800);
+                }
             }, (error) => {
                 console.error('Firebase error:', error);
                 statusEl.textContent = '🔴 Offline — check connection';
             });
+        }
+
+        // ── Silent one-time migration: auto-check all COMPLETED records ──────
+        async function runCompletedMigration() {
+            const FLAG = 'avsfMigV2_checklist';
+            if (localStorage.getItem(FLAG)) return; // already ran
+
+            const toFix = avsfs.filter(a => {
+                if (a.status !== 'COMPLETED') return false;
+                const reqs = getRequirementsList(a.companyCode || '', a.country || '', a.requestType || '');
+                if (!reqs.length) return false;
+                const done = a.requirements || {};
+                return !reqs.every(r => done[r.id]); // not all checked
+            });
+
+            if (!toFix.length) {
+                localStorage.setItem(FLAG, '1');
+                return;
+            }
+
+            console.log(`[AutoFix] Checking ${toFix.length} COMPLETED records...`);
+            const CHUNK = 400; // Firestore batch limit
+            for (let i = 0; i < toFix.length; i += CHUNK) {
+                const batch = db.batch();
+                toFix.slice(i, i + CHUNK).forEach(avsf => {
+                    const reqs = getRequirementsList(avsf.companyCode || '', avsf.country || '', avsf.requestType || '');
+                    const newReqs = {};
+                    reqs.forEach(r => { newReqs[r.id] = true; });
+                    batch.update(db.collection('avsfs').doc(avsf.requestNo), { requirements: newReqs });
+                });
+                await batch.commit();
+            }
+
+            localStorage.setItem(FLAG, '1');
+            console.log(`[AutoFix] Done — ${toFix.length} records updated silently.`);
         }
 
         // Update metrics
@@ -3663,20 +3705,33 @@ ${f.from}`;
         // ── SAP Excel / CSV Row Mapper ──────────────────────────────────────
         function sapDateToISO(val) {
             if (!val) return '';
-            // SheetJS returns JS Date objects when cellDates:true
+            // JS Date object (SheetJS cellDates:true + raw:true)
             if (val instanceof Date) {
                 if (isNaN(val.getTime())) return '';
                 return val.toISOString().split('T')[0];
             }
             const s = String(val).trim();
-            // Already ISO or YYYY-MM-DD
+            if (!s || s === 'Invalid Date') return '';
+            // Already ISO YYYY-MM-DD
             if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.substring(0, 10);
-            // Excel serial number fallback (SheetJS without cellDates)
+            // Excel serial number (numeric string, 5 digits = year 1900–2173)
             if (/^\d{5}$/.test(s)) {
                 const d = new Date(Math.round((parseInt(s) - 25569) * 86400 * 1000));
                 return d.toISOString().split('T')[0];
             }
-            return s;
+            // MM/DD/YYYY  (US SAP export format)
+            const m1 = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+            if (m1) return `${m1[3]}-${m1[1].padStart(2,'0')}-${m1[2].padStart(2,'0')}`;
+            // DD.MM.YYYY  (European SAP export format)
+            const m2 = s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+            if (m2) return `${m2[3]}-${m2[2].padStart(2,'0')}-${m2[1].padStart(2,'0')}`;
+            // DD-MM-YYYY
+            const m3 = s.match(/^(\d{1,2})-(\d{1,2})-(\d{4})/);
+            if (m3) return `${m3[3]}-${m3[2].padStart(2,'0')}-${m3[1].padStart(2,'0')}`;
+            // Last resort — native Date parse
+            const d = new Date(s);
+            if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
+            return '';
         }
 
         function mapSAPStatus(raw) {
@@ -3867,7 +3922,7 @@ ${f.from}`;
                             const sheet = workbook.Sheets[sheetName];
                             const rows = XLSX.utils.sheet_to_json(sheet, {
                                 defval: '',           // empty cells = ''
-                                raw: false            // formatted strings for non-dates
+                                raw: true             // raw values: dates → JS Date objects, numbers → numbers
                             });
 
                             if (!rows.length) {
@@ -4291,15 +4346,15 @@ ${f.from}`;
                         <strong>Company Code ${avsf.companyCode}</strong> (${region}) ${avsf.country ? `- ${avsf.country}` : ''}
                     </div>
                     
-                    <div style="margin-bottom: 20px;">
+                    <div style="margin-bottom:20px;display:flex;flex-direction:column;gap:4px;">
                         ${requirements.map(req => `
-                            <div style="margin-bottom: 12px;">
-                                <label style="display: flex; align-items: center; cursor: pointer; font-size: 14px;">
-                                    <input type="checkbox" id="req_${req.id}" ${checklist[req.id] ? 'checked' : ''} 
-                                           style="margin-right: 10px; width: 18px; height: 18px; cursor: pointer;">
-                                    <span>${req.label}</span>
-                                </label>
-                            </div>
+                            <label id="reqLabel_${req.id}"
+                                   style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-radius:8px;cursor:pointer;border:1.5px solid ${checklist[req.id] ? '#86efac' : '#e5e7eb'};background:${checklist[req.id] ? '#f0fdf4' : '#ffffff'};transition:all .15s;">
+                                <input type="checkbox" id="req_${req.id}" ${checklist[req.id] ? 'checked' : ''}
+                                       style="margin-top:2px;width:16px;height:16px;flex-shrink:0;cursor:pointer;accent-color:var(--primary);"
+                                       onchange="const l=this.closest('label');l.style.background=this.checked?'#f0fdf4':'#ffffff';l.style.borderColor=this.checked?'#86efac':'#e5e7eb';">
+                                <span style="font-size:13px;line-height:1.5;color:#1c1917;">${req.label}</span>
+                            </label>
                         `).join('')}
                     </div>
                 `;
