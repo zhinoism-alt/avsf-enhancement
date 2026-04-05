@@ -3171,27 +3171,26 @@ ${f.from}`;
                 const isUS   = f.country === 'US'  || f.country === 'USA' || f.country === 'UNITED STATES';
                 const isEMEA = f.ccRegion === '2';
                 const isAPAC = f.ccRegion === '3';
+                const reqRef = f.reqNo ? `AVSF ${f.reqNo} ` : '';
 
-                // Country-specific doc bullets — no intro sentence, no DPS
-                let docs = '';
+                // Base doc always shown (no DPS), plus country-specific additions
+                let docs = `  • [ ] VAT Certificate / Tax document`;
                 if (isMX && isES) {
-                    docs = `  • [ ] Constancia de situación fiscal reciente\n  • [ ] Carátula bancaria o carta membretada con su cuenta de banco`;
+                    docs += `\n  • [ ] Constancia de situación fiscal reciente\n  • [ ] Carátula bancaria o carta membretada con su cuenta de banco`;
                 } else if (isMX) {
-                    docs = `  • [ ] Constancia de situacion fiscal reciente\n  • [ ] Caratula bancaria o carta membretada con su cuenta de banco`;
+                    docs += `\n  • [ ] Constancia de situacion fiscal reciente\n  • [ ] Caratula bancaria o carta membretada con su cuenta de banco`;
                 } else if (isUS) {
-                    docs = `  • [ ] Bank or company letterhead with the ACH information\n  • [ ] W-9 form`;
+                    docs += `\n  • [ ] Bank or company letterhead with the ACH information\n  • [ ] W-9 form`;
                 } else if (isEMEA) {
-                    docs = `  • [ ] PDF with their IBAN and their VAT ID`;
+                    docs += `\n  • [ ] PDF with their IBAN and their VAT ID`;
                 } else if (isAPAC) {
-                    docs = `  • [ ] Document with their banking details\n  • [ ] VAT Certificate / Tax document`;
-                } else {
-                    docs = `  • [ ] [Add specific missing document here]`;
+                    docs += `\n  • [ ] Document with their banking details`;
                 }
 
                 if (isES) {
                     return `Hola ${firstName},
 
-Gracias por enviar su solicitud de proveedor para ${f.vendNum} ${f.vendName} (Company Code ${f.cc}).
+Gracias por enviar su solicitud de proveedor ${reqRef}para ${f.vendNum} ${f.vendName} (Company Code ${f.cc}).
 
 Actualmente estamos revisando su solicitud y notamos que los siguientes documentos aún son necesarios para continuar:
 
@@ -3208,7 +3207,7 @@ ${f.from}`;
                 }
                 return `Hi ${firstName},
 
-Thank you for submitting your vendor request for ${f.vendNum} ${f.vendName} (Company Code ${f.cc}).
+Thank you for submitting your vendor request ${reqRef}for ${f.vendNum} ${f.vendName} (Company Code ${f.cc}).
 
 We are currently reviewing your request and noticed that the following documents are still needed to proceed:
 
@@ -3285,7 +3284,7 @@ Gracias por tomarse el tiempo de hablar conmigo anteriormente y por confirmar su
 Se nos ha informado que su empresa utiliza la información bancaria proporcionada en el documento adjunto para pagos electrónicos. Para garantizar la exactitud de estos datos y facilitar el procesamiento de las facturas pendientes, le solicitamos amablemente que confirme si los datos bancarios adjuntos son correctos para ${f.vendName || '[Nombre de la empresa]'}. Esto nos ayudará a evitar posibles problemas en el procesamiento de pagos.
 
 [BOLD]Nombre del banco:
-Número de cuenta: ***** XXXX
+Cuenta CLABE: ***** XXXX
 Titular de la cuenta:
 Número de banco (Routing #):
 País: ${f.country || ''}
