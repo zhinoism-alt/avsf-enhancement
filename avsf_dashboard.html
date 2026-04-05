@@ -3743,29 +3743,68 @@ ${f.from}`;
         document.getElementById('statusFilter').addEventListener('change', applyFilters);
 
         function applyFilters() {
-            const searchTerm = document.getElementById('searchBox').value.toLowerCase();
-            const statusFilter = document.getElementById('statusFilter').value;
+            const searchTerm      = document.getElementById('searchBox').value.toLowerCase();
+            const statusFilter    = document.getElementById('statusFilter').value;
+            _completedByFilter    = document.getElementById('completedByFilter').value;
+            _sortOrder            = document.getElementById('sortOrder').value;
+            _dateFrom             = document.getElementById('dateFrom').value;   // YYYY-MM-DD or ''
+            _dateTo               = document.getElementById('dateTo').value;     // YYYY-MM-DD or ''
 
-            let filtered = avsfs;
+            let filtered = [...avsfs];
 
             // Region filter
-            if (typeof _regionFilter !== 'undefined' && _regionFilter) {
+            if (_regionFilter) {
                 filtered = filtered.filter(a => (a.companyCode || '').charAt(0) === _regionFilter);
             }
 
+            // Search
             if (searchTerm) {
-                filtered = filtered.filter(a => 
-                    a.vendorName.toLowerCase().includes(searchTerm) ||
-                    (a.vendorNumber || '').toLowerCase().includes(searchTerm) ||
-                    a.requestNo.toLowerCase().includes(searchTerm)
+                filtered = filtered.filter(a =>
+                    (a.vendorName  || '').toLowerCase().includes(searchTerm) ||
+                    (a.vendorNumber|| '').toLowerCase().includes(searchTerm) ||
+                    (a.requestNo   || '').toLowerCase().includes(searchTerm)
                 );
             }
 
+            // Status
             if (statusFilter) {
                 filtered = filtered.filter(a => a.status === statusFilter);
             }
 
+            // Completed By
+            if (_completedByFilter) {
+                filtered = filtered.filter(a => (a.completedBy || '') === _completedByFilter);
+            }
+
+            // Date range (entryDate stored as YYYY-MM-DD ISO string)
+            if (_dateFrom) {
+                filtered = filtered.filter(a => (a.entryDate || '') >= _dateFrom);
+            }
+            if (_dateTo) {
+                filtered = filtered.filter(a => (a.entryDate || '') <= _dateTo);
+            }
+
+            // Sort by entryDate
+            filtered.sort((a, b) => {
+                const da  = a.entryDate || '';
+                const db2 = b.entryDate || '';
+                if (_sortOrder === 'oldest') return da < db2 ? -1 : da > db2 ? 1 : 0;
+                return da > db2 ? -1 : da < db2 ? 1 : 0; // newest first (default)
+            });
+
             renderTable(filtered);
+        }
+
+        function clearAdvancedFilters() {
+            document.getElementById('completedByFilter').value = '';
+            document.getElementById('sortOrder').value = 'newest';
+            document.getElementById('dateFrom').value = '';
+            document.getElementById('dateTo').value   = '';
+            _completedByFilter = '';
+            _sortOrder = 'newest';
+            _dateFrom  = '';
+            _dateTo    = '';
+            applyFilters();
         }
 
         // Export data
