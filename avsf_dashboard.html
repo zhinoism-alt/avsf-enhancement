@@ -580,22 +580,52 @@
         .audit-added { background: #d1fae5; color: #065f46; }
         .audit-edited { background: #dbeafe; color: #1e40af; }
         .audit-deleted { background: #fee2e2; color: #991b1b; }
-    </style>
+
+        /* Resource Cards (Tab 5) */
+        .res-card { background:white; border-radius:8px; border-left:4px solid #3b82f6; padding:12px 14px; box-shadow:0 1px 3px rgba(0,0,0,.06); display:flex; flex-direction:column; gap:5px; }
+        .res-title { font-size:13px; font-weight:700; color:var(--text-primary); }
+        .res-desc  { font-size:12px; color:var(--text-secondary); line-height:1.5; }
+        .res-link  { font-size:11px; color:var(--primary); text-decoration:none; font-weight:600; word-break:break-all; }
+        .res-link:hover { text-decoration:underline; }
+        .res-tags  { display:flex; gap:4px; flex-wrap:wrap; margin-top:2px; }
+        .res-tag   { padding:1px 7px; border-radius:4px; font-size:10px; font-weight:700; text-transform:uppercase; }
+        .res-tag-vat  { background:#dbeafe; color:#1e40af; }
+        .res-tag-iban { background:#d1fae5; color:#065f46; }
+        .res-tag-reg  { background:#f3f4f6; color:#374151; }
+        </style>
 </head>
 <body>
     <header>
         <h1>📋 AVSF Dashboard</h1>
         <p class="subtitle">Automated Vendor Setup Forms - Track, validate, and manage SAP vendor master data requests</p>
         <div id="syncStatus" style="margin-top:0.5rem;font-size:0.8rem;opacity:0.9;">🔄 Connecting to Firebase...</div>
-        <div style="margin-top:0.5rem;display:flex;align-items:center;gap:10px;">
-            <span style="font-size:0.8rem;opacity:0.85;">Logged in as:</span>
-            <select id="currentUser" onchange="saveCurrentUser()" style="font-size:0.8rem;padding:3px 8px;border-radius:6px;border:none;background:rgba(255,255,255,0.2);color:white;cursor:pointer;">
+        <div style="margin-top:0.75rem;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <!-- User pill -->
+            <div id="userPill" style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:20px;padding:4px 12px 4px 6px;cursor:pointer;" onclick="document.getElementById('userDropdown').classList.toggle('open')">
+                <span id="userAvatar" style="width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,0.3);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:white;flex-shrink:0;">B</span>
+                <span id="userLabel" style="font-size:13px;font-weight:600;color:white;">Brandon Ramos</span>
+                <span style="font-size:10px;color:rgba(255,255,255,0.7);">▾</span>
+            </div>
+            <!-- Hidden native select (synced by JS) -->
+            <select id="currentUser" onchange="saveCurrentUser()" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0;">
                 <option value="Brandon">Brandon Ramos</option>
                 <option value="Yannick">Yannick Rojas</option>
                 <option value="Rosana">Rosana Munoz</option>
             </select>
+            <!-- Custom dropdown -->
+            <div id="userDropdown" style="display:none;position:absolute;margin-top:4px;background:white;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,0.2);z-index:999;min-width:170px;overflow:hidden;border:1px solid #e5e7eb;">
+                <div onclick="setUser('Brandon','B','Brandon Ramos')" style="padding:10px 14px;cursor:pointer;font-size:13px;font-weight:600;color:#111827;display:flex;align-items:center;gap:8px;border-bottom:1px solid #f3f4f6;" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background=''">
+                    <span style="width:24px;height:24px;border-radius:50%;background:#0f766e;color:white;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;">B</span> Brandon Ramos
+                </div>
+                <div onclick="setUser('Yannick','Y','Yannick Rojas')" style="padding:10px 14px;cursor:pointer;font-size:13px;font-weight:600;color:#111827;display:flex;align-items:center;gap:8px;border-bottom:1px solid #f3f4f6;" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background=''">
+                    <span style="width:24px;height:24px;border-radius:50%;background:#0f766e;color:white;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;">Y</span> Yannick Rojas
+                </div>
+                <div onclick="setUser('Rosana','R','Rosana Munoz')" style="padding:10px 14px;cursor:pointer;font-size:13px;font-weight:600;color:#111827;display:flex;align-items:center;gap:8px;" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background=''">
+                    <span style="width:24px;height:24px;border-radius:50%;background:#0f766e;color:white;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;">R</span> Rosana Munoz
+                </div>
+            </div>
             <a href="https://resideoinc-my.sharepoint.com/:x:/g/personal/reyna_valenzuela_resideo_com/Eem_eSQFE_9Mu7owN9Qbd2MB3-iyWlCJWdzM4PUOZtNnXw?e=8766Kv" target="_blank"
-               style="font-size:0.8rem;background:rgba(255,255,255,0.2);color:white;text-decoration:none;padding:4px 12px;border-radius:6px;font-weight:600;">
+               style="font-size:13px;background:rgba(255,255,255,0.15);color:white;text-decoration:none;padding:5px 14px;border-radius:20px;font-weight:600;border:1px solid rgba(255,255,255,0.3);">
                 🏦 Bank Validation Sheet
             </a>
         </div>
@@ -609,6 +639,7 @@
                 <button class="dash-tab-btn" id="dashTab2Btn" onclick="switchDashTab(2)">🏭 Plant / CC Reference</button>
                 <button class="dash-tab-btn" id="dashTab3Btn" onclick="switchDashTab(3)">📜 Audit Log</button>
                 <button class="dash-tab-btn" id="dashTab4Btn" onclick="switchDashTab(4)">💳 Payment Method</button>
+                <button class="dash-tab-btn" id="dashTab5Btn" onclick="switchDashTab(5)">🌐 Resources</button>
             </div>
 
             <div class="dash-tab-content active" id="dashTab1Content">
@@ -854,272 +885,579 @@
 
             <!-- Tab 4: Payment Method Advisor -->
             <div class="dash-tab-content" id="dashTab4Content" style="display:none;">
-                <div class="data-section">
-                    <div class="section-header">
-                        <span class="section-title">💳 Payment Method Advisor <span style="font-size:12px;font-weight:400;color:var(--text-tertiary);">Smart lookup by CC, country &amp; currency</span></span>
+                <!-- PM Advisor Header -->
+                <div class="data-section" style="margin-bottom:0;">
+                    <div class="section-header" style="flex-wrap:wrap;gap:8px;">
+                        <span class="section-title">💳 Payment Method Advisor</span>
+                        <span style="font-size:12px;color:var(--text-tertiary);">Select a Company Code to see applicable payment methods, then enter vendor details for a precise recommendation.</span>
                     </div>
-                    <div style="display:flex;gap:1.5rem;flex-wrap:wrap;padding:1.25rem;">
-                        <!-- Input Panel -->
-                        <div style="flex:1;min-width:300px;max-width:460px;">
-                            <div style="background:var(--bg-hover);border-radius:10px;padding:1.25rem;border:1px solid var(--border);">
-                                <h3 style="margin:0 0 1rem;font-size:15px;color:var(--text-primary);">🔎 Enter Payment Details</h3>
 
-                                <div style="margin-bottom:1rem;">
-                                    <label style="font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Company Code</label>
-                                    <select id="pmCC" class="form-select" onchange="pmAdvise()" style="width:100%;">
-                                        <option value="">— Select CC —</option>
-                                        <optgroup label="🇲🇽 Mexico">
-                                            <option value="1095">1095 – Resideo MX (BBVA)</option>
-                                            <option value="1505">1505 – Resideo MX (HSBC)</option>
-                                            <option value="1552">1552 – Resideo MX 2 (HSBC)</option>
-                                            <option value="1729">1729 – Resideo MX 2 (BBVA)</option>
-                                        </optgroup>
-                                        <optgroup label="🇺🇸 United States">
-                                            <option value="1129">1129 – Resideo US</option>
-                                            <option value="1265">1265 – Resideo US 2</option>
-                                        </optgroup>
-                                        <optgroup label="🇨🇦 Canada">
-                                            <option value="1513">1513 – Resideo Canada</option>
-                                        </optgroup>
-                                        <optgroup label="🇫🇷 France (P&amp;S)">
-                                            <option value="2092">2092</option>
-                                            <option value="2253">2253</option>
-                                            <option value="2418">2418</option>
-                                            <option value="2601">2601</option>
-                                        </optgroup>
-                                        <optgroup label="🇫🇷 France (ADI)">
-                                            <option value="2185">2185</option>
-                                            <option value="2192">2192</option>
-                                        </optgroup>
-                                        <optgroup label="🇩🇪 Germany">
-                                            <option value="2249">2249</option>
-                                            <option value="2531">2531</option>
-                                            <option value="2538">2538</option>
-                                        </optgroup>
-                                        <optgroup label="🇬🇧 United Kingdom">
-                                            <option value="2103">2103</option>
-                                            <option value="2105">2105</option>
-                                            <option value="2223">2223</option>
-                                            <option value="2621">2621</option>
-                                        </optgroup>
-                                        <optgroup label="🇪🇸 Spain">
-                                            <option value="2093">2093</option>
-                                            <option value="2426">2426</option>
-                                        </optgroup>
-                                        <optgroup label="🇧🇪 Belgium">
-                                            <option value="2094">2094</option>
-                                        </optgroup>
-                                        <optgroup label="🇮🇹 Italy">
-                                            <option value="2368">2368</option>
-                                        </optgroup>
-                                        <optgroup label="🇳🇱 Netherlands">
-                                            <option value="2421">2421</option>
-                                            <option value="2566">2566</option>
-                                            <option value="2567">2567</option>
-                                        </optgroup>
-                                        <optgroup label="🇦🇹 Austria">
-                                            <option value="2507">2507</option>
-                                        </optgroup>
-                                        <optgroup label="🇮🇪 Ireland">
-                                            <option value="2130">2130</option>
-                                        </optgroup>
-                                        <optgroup label="🇩🇰 Denmark">
-                                            <option value="2194">2194</option>
-                                            <option value="2518">2518</option>
-                                        </optgroup>
-                                        <optgroup label="🇵🇱 Poland">
-                                            <option value="2430">2430</option>
-                                            <option value="2617">2617</option>
-                                        </optgroup>
-                                        <optgroup label="🇸🇪 Sweden">
-                                            <option value="2581">2581</option>
-                                        </optgroup>
-                                        <optgroup label="🇨🇭 Switzerland">
-                                            <option value="2584">2584</option>
-                                            <option value="2731">2731</option>
-                                            <option value="2817">2817</option>
-                                        </optgroup>
-                                        <optgroup label="🇷🇴 Romania">
-                                            <option value="2660">2660</option>
-                                        </optgroup>
-                                        <optgroup label="🇸🇰 Slovakia">
-                                            <option value="2661">2661</option>
-                                        </optgroup>
-                                        <optgroup label="🇭🇺 Hungary">
-                                            <option value="2720">2720</option>
-                                        </optgroup>
-                                        <optgroup label="🇨🇿 Czech Republic">
-                                            <option value="2727">2727</option>
-                                        </optgroup>
-                                        <optgroup label="🇹🇷 Turkey">
-                                            <option value="2607">2607</option>
-                                        </optgroup>
-                                        <optgroup label="🇿🇦 South Africa">
-                                            <option value="2429">2429</option>
-                                        </optgroup>
-                                        <optgroup label="🇦🇪 UAE">
-                                            <option value="2786">2786</option>
-                                            <option value="2790">2790</option>
-                                        </optgroup>
-                                        <optgroup label="⛔ Special">
-                                            <option value="2576">2576 – No SAP payments</option>
-                                        </optgroup>
-                                    </select>
-                                </div>
+                    <!-- STEP 1: CC Selection bar -->
+                    <div style="padding:1rem 1.25rem;border-bottom:1px solid var(--border);background:var(--bg-hover);">
+                        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                            <span style="font-size:13px;font-weight:700;color:var(--text-primary);white-space:nowrap;">① Company Code</span>
+                            <select id="pmCC" class="form-select" onchange="pmOnCCChange()" style="max-width:340px;min-width:220px;">
+                                <option value="">— Select CC —</option>
+                                <optgroup label="🇲🇽 Mexico">
+                                    <option value="1095">1095 – Resideo MX (BBVA bank)</option>
+                                    <option value="1505">1505 – Resideo MX (HSBC bank)</option>
+                                    <option value="1552">1552 – Resideo MX 2 (HSBC bank)</option>
+                                    <option value="1729">1729 – Resideo MX 2 (BBVA bank)</option>
+                                </optgroup>
+                                <optgroup label="🇺🇸 United States">
+                                    <option value="1129">1129 – Resideo US</option>
+                                    <option value="1265">1265 – Resideo US 2</option>
+                                </optgroup>
+                                <optgroup label="🇨🇦 Canada">
+                                    <option value="1513">1513 – Resideo Canada</option>
+                                </optgroup>
+                                <optgroup label="🇫🇷 France">
+                                    <option value="2092">2092 (P&amp;S)</option>
+                                    <option value="2185">2185 (ADI)</option>
+                                    <option value="2192">2192 (ADI)</option>
+                                    <option value="2253">2253 (P&amp;S)</option>
+                                    <option value="2418">2418 (P&amp;S)</option>
+                                    <option value="2601">2601 (P&amp;S)</option>
+                                </optgroup>
+                                <optgroup label="🇩🇪 Germany">
+                                    <option value="2249">2249</option>
+                                    <option value="2531">2531</option>
+                                    <option value="2538">2538</option>
+                                </optgroup>
+                                <optgroup label="🇬🇧 United Kingdom">
+                                    <option value="2103">2103 (ADI)</option>
+                                    <option value="2105">2105 (ADI)</option>
+                                    <option value="2223">2223 (P&amp;S)</option>
+                                    <option value="2621">2621 (P&amp;S)</option>
+                                </optgroup>
+                                <optgroup label="🇪🇸 Spain">
+                                    <option value="2093">2093 (P&amp;S)</option>
+                                    <option value="2426">2426 (ADI)</option>
+                                </optgroup>
+                                <optgroup label="🇧🇪 Belgium">
+                                    <option value="2094">2094</option>
+                                </optgroup>
+                                <optgroup label="🇮🇹 Italy">
+                                    <option value="2368">2368</option>
+                                </optgroup>
+                                <optgroup label="🇳🇱 Netherlands">
+                                    <option value="2421">2421 (ADI)</option>
+                                    <option value="2566">2566 (P&amp;S)</option>
+                                    <option value="2567">2567 (P&amp;S)</option>
+                                </optgroup>
+                                <optgroup label="🇦🇹 Austria">
+                                    <option value="2507">2507</option>
+                                </optgroup>
+                                <optgroup label="🇮🇪 Ireland">
+                                    <option value="2130">2130 (ADI)</option>
+                                </optgroup>
+                                <optgroup label="🇩🇰 Denmark">
+                                    <option value="2194">2194 (ADI)</option>
+                                    <option value="2518">2518 (P&amp;S)</option>
+                                </optgroup>
+                                <optgroup label="🇵🇱 Poland">
+                                    <option value="2430">2430 (ADI)</option>
+                                    <option value="2617">2617 (P&amp;S)</option>
+                                </optgroup>
+                                <optgroup label="🇸🇪 Sweden">
+                                    <option value="2581">2581 (ADI)</option>
+                                </optgroup>
+                                <optgroup label="🇨🇭 Switzerland">
+                                    <option value="2584">2584 (P&amp;S)</option>
+                                    <option value="2731">2731 (P&amp;S – multi-country)</option>
+                                    <option value="2817">2817 (P&amp;S)</option>
+                                </optgroup>
+                                <optgroup label="🇷🇴 Romania">
+                                    <option value="2660">2660</option>
+                                </optgroup>
+                                <optgroup label="🇸🇰 Slovakia">
+                                    <option value="2661">2661</option>
+                                </optgroup>
+                                <optgroup label="🇭🇺 Hungary">
+                                    <option value="2720">2720</option>
+                                </optgroup>
+                                <optgroup label="🇨🇿 Czech Republic">
+                                    <option value="2727">2727</option>
+                                </optgroup>
+                                <optgroup label="🇹🇷 Turkey">
+                                    <option value="2607">2607 ⚠️ Manual</option>
+                                </optgroup>
+                                <optgroup label="🇿🇦 South Africa">
+                                    <option value="2429">2429 (ADI)</option>
+                                </optgroup>
+                                <optgroup label="🇦🇪 UAE">
+                                    <option value="2786">2786 (P&amp;S)</option>
+                                    <option value="2790">2790 (ADI)</option>
+                                </optgroup>
+                                <optgroup label="⛔ Special">
+                                    <option value="2576">2576 – No SAP payments</option>
+                                </optgroup>
+                            </select>
+                            <!-- CC Info chip (shown after selection) -->
+                            <div id="pmCCInfo" style="display:none;"></div>
+                            <button onclick="pmClear()" class="btn btn-secondary" style="padding:6px 14px;font-size:12px;">↺ Reset</button>
+                        </div>
+                    </div>
 
-                                <!-- Vendor Bank Country -->
-                                <div style="margin-bottom:1rem;" id="pmVendorCountryRow">
-                                    <label style="font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Vendor Bank Country</label>
-                                    <select id="pmVendorCountry" class="form-select" onchange="pmAdvise()" style="width:100%;">
-                                        <option value="">— Select country —</option>
-                                    </select>
-                                </div>
+                    <!-- STEP 2+3: Vendor Details (shown after CC selected) -->
+                    <div id="pmStep2" style="display:none;">
+                        <div style="display:flex;gap:1.5rem;flex-wrap:wrap;padding:1.25rem;align-items:flex-start;">
 
-                                <!-- Currency -->
-                                <div style="margin-bottom:1rem;" id="pmCurrencyRow">
-                                    <label style="font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Payment Currency</label>
-                                    <select id="pmCurrency" class="form-select" onchange="pmAdvise()" style="width:100%;">
-                                        <option value="">— Select currency —</option>
-                                        <option value="USD">USD – US Dollar</option>
-                                        <option value="EUR">EUR – Euro</option>
-                                        <option value="GBP">GBP – British Pound</option>
-                                        <option value="MXN">MXN – Mexican Peso</option>
-                                        <option value="CAD">CAD – Canadian Dollar</option>
-                                        <option value="CHF">CHF – Swiss Franc</option>
-                                        <option value="DKK">DKK – Danish Krone</option>
-                                        <option value="PLN">PLN – Polish Zloty</option>
-                                        <option value="SEK">SEK – Swedish Krona</option>
-                                        <option value="NOK">NOK – Norwegian Krone</option>
-                                        <option value="HUF">HUF – Hungarian Forint</option>
-                                        <option value="CZK">CZK – Czech Koruna</option>
-                                        <option value="RON">RON – Romanian Leu</option>
-                                        <option value="AED">AED – UAE Dirham</option>
-                                        <option value="ZAR">ZAR – South African Rand</option>
-                                        <option value="TRY">TRY – Turkish Lira</option>
-                                        <option value="JPY">JPY – Japanese Yen</option>
-                                        <option value="CNY">CNY – Chinese Yuan</option>
-                                        <option value="INR">INR – Indian Rupee</option>
-                                        <option value="BRL">BRL – Brazilian Real</option>
-                                        <option value="Other">Other</option>
-                                    </select>
-                                </div>
+                            <!-- Inputs column -->
+                            <div style="flex:0 0 auto;width:min(100%,380px);">
+                                <div style="font-size:12px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">② Vendor Payment Details</div>
+                                <div style="display:flex;flex-direction:column;gap:10px;">
 
-                                <!-- Has IBAN -->
-                                <div style="margin-bottom:1rem;" id="pmIbanRow">
-                                    <label style="font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">Vendor Has IBAN?</label>
-                                    <div style="display:flex;gap:10px;">
-                                        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:14px;">
-                                            <input type="radio" name="pmHasIban" value="yes" onchange="pmAdvise()"> Yes
-                                        </label>
-                                        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:14px;">
-                                            <input type="radio" name="pmHasIban" value="no" onchange="pmAdvise()"> No
-                                        </label>
+                                    <!-- Vendor Bank Country -->
+                                    <div id="pmVCRow">
+                                        <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:3px;">Vendor Bank Country</label>
+                                        <select id="pmVendorCountry" class="form-select" onchange="pmAdvise()" style="width:100%;">
+                                            <option value="">— Select country —</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Currency -->
+                                    <div id="pmCurrRow">
+                                        <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:3px;">Payment Currency</label>
+                                        <select id="pmCurrency" class="form-select" onchange="pmAdvise()" style="width:100%;">
+                                            <option value="">— Select currency —</option>
+                                            <option value="USD">USD – US Dollar</option>
+                                            <option value="EUR">EUR – Euro</option>
+                                            <option value="GBP">GBP – British Pound</option>
+                                            <option value="MXN">MXN – Mexican Peso</option>
+                                            <option value="CAD">CAD – Canadian Dollar</option>
+                                            <option value="CHF">CHF – Swiss Franc</option>
+                                            <option value="DKK">DKK – Danish Krone</option>
+                                            <option value="PLN">PLN – Polish Zloty</option>
+                                            <option value="SEK">SEK – Swedish Krona</option>
+                                            <option value="NOK">NOK – Norwegian Krone</option>
+                                            <option value="HUF">HUF – Hungarian Forint</option>
+                                            <option value="CZK">CZK – Czech Koruna</option>
+                                            <option value="RON">RON – Romanian Leu</option>
+                                            <option value="AED">AED – UAE Dirham</option>
+                                            <option value="ZAR">ZAR – South African Rand</option>
+                                            <option value="TRY">TRY – Turkish Lira</option>
+                                            <option value="AUD">AUD – Australian Dollar</option>
+                                            <option value="JPY">JPY – Japanese Yen</option>
+                                            <option value="CNY">CNY – Chinese Yuan</option>
+                                            <option value="INR">INR – Indian Rupee</option>
+                                            <option value="BRL">BRL – Brazilian Real</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Has IBAN -->
+                                    <div id="pmIbanRow">
+                                        <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Vendor Has IBAN?</label>
+                                        <div style="display:flex;gap:12px;">
+                                            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;padding:6px 14px;border-radius:8px;border:2px solid var(--border);transition:all .15s;" id="pmIbanYesLbl">
+                                                <input type="radio" name="pmHasIban" value="yes" onchange="pmAdvise();pmIbanToggle()"> ✅ Yes, has IBAN
+                                            </label>
+                                            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;padding:6px 14px;border-radius:8px;border:2px solid var(--border);transition:all .15s;" id="pmIbanNoLbl">
+                                                <input type="radio" name="pmHasIban" value="no" onchange="pmAdvise();pmIbanToggle()"> ❌ No IBAN
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <!-- Mexico Bank Code -->
+                                    <div id="pmBankCodeRow" style="display:none;">
+                                        <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:3px;">Vendor Bank (Mexico)</label>
+                                        <select id="pmBankCode" class="form-select" onchange="pmAdvise()" style="width:100%;">
+                                            <option value="">— Select bank —</option>
+                                            <option value="002">002 – BANAMEX</option>
+                                            <option value="006">006 – BANCOMEXT</option>
+                                            <option value="009">009 – BANOBRAS</option>
+                                            <option value="012">012 – BBVA BANCOMER</option>
+                                            <option value="014">014 – SANTANDER</option>
+                                            <option value="019">019 – BANJERCITO</option>
+                                            <option value="021">021 – HSBC México</option>
+                                            <option value="030">030 – BAJIO</option>
+                                            <option value="032">032 – IXE</option>
+                                            <option value="036">036 – INBURSA</option>
+                                            <option value="037">037 – INTERACCIONES</option>
+                                            <option value="042">042 – MIFEL</option>
+                                            <option value="044">044 – SCOTIABANK</option>
+                                            <option value="058">058 – BANREGIO</option>
+                                            <option value="059">059 – INVEX</option>
+                                            <option value="060">060 – BANSI</option>
+                                            <option value="062">062 – AFIRME</option>
+                                            <option value="072">072 – BANORTE</option>
+                                            <option value="102">102 – THE ROYAL BANK</option>
+                                            <option value="103">103 – AMERICAN EXPRESS</option>
+                                            <option value="106">106 – BAMSA</option>
+                                            <option value="108">108 – TOKYO</option>
+                                            <option value="110">110 – JP MORGAN</option>
+                                            <option value="112">112 – BMONEX</option>
+                                            <option value="113">113 – VE POR MAS</option>
+                                            <option value="116">116 – ING</option>
+                                            <option value="124">124 – DEUTSCHE</option>
+                                            <option value="126">126 – CREDIT SUISSE</option>
+                                            <option value="127">127 – AZTECA</option>
+                                            <option value="128">128 – AUTOFIN</option>
+                                            <option value="129">129 – BARCLAYS</option>
+                                            <option value="130">130 – COMPARTAMOS</option>
+                                            <option value="131">131 – BANCO FAMSA</option>
+                                            <option value="132">132 – BMULTIVA</option>
+                                            <option value="133">133 – ACTINVER</option>
+                                            <option value="135">135 – NAFIN</option>
+                                            <option value="137">137 – BANCOPPEL</option>
+                                            <option value="138">138 – ABC CAPITAL</option>
+                                            <option value="139">139 – UBS BANK</option>
+                                            <option value="140">140 – CONSUBANCO</option>
+                                            <option value="141">141 – VOLKSWAGEN</option>
+                                            <option value="143">143 – CIBANCO</option>
+                                            <option value="145">145 – BBASE</option>
+                                            <option value="166">166 – BANSEFI</option>
+                                            <option value="168">168 – HIPOTECARIA FEDERAL</option>
+                                            <option value="600">600 – MONEXCB</option>
+                                            <option value="646">646 – STP</option>
+                                            <option value="other">Other / Not listed</option>
+                                        </select>
                                     </div>
                                 </div>
-
-                                <!-- Mexico Bank Code (conditional) -->
-                                <div style="margin-bottom:1rem;display:none;" id="pmBankCodeRow">
-                                    <label style="font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Vendor Bank (Mexico)</label>
-                                    <select id="pmBankCode" class="form-select" onchange="pmAdvise()" style="width:100%;">
-                                        <option value="">— Select bank —</option>
-                                        <option value="002">002 – BANAMEX</option>
-                                        <option value="006">006 – BANCOMEXT</option>
-                                        <option value="009">009 – BANOBRAS</option>
-                                        <option value="012">012 – BBVA BANCOMER</option>
-                                        <option value="014">014 – SANTANDER</option>
-                                        <option value="019">019 – BANJERCITO</option>
-                                        <option value="021">021 – HSBC</option>
-                                        <option value="030">030 – BAJIO</option>
-                                        <option value="032">032 – IXE</option>
-                                        <option value="036">036 – INBURSA</option>
-                                        <option value="037">037 – INTERACCIONES</option>
-                                        <option value="042">042 – MIFEL</option>
-                                        <option value="044">044 – SCOTIABANK</option>
-                                        <option value="058">058 – BANREGIO</option>
-                                        <option value="059">059 – INVEX</option>
-                                        <option value="060">060 – BANSI</option>
-                                        <option value="062">062 – AFIRME</option>
-                                        <option value="072">072 – BANORTE</option>
-                                        <option value="102">102 – THE ROYAL BANK</option>
-                                        <option value="103">103 – AMERICAN EXPRESS</option>
-                                        <option value="106">106 – BAMSA</option>
-                                        <option value="108">108 – TOKYO</option>
-                                        <option value="110">110 – JP MORGAN</option>
-                                        <option value="112">112 – BMONEX</option>
-                                        <option value="113">113 – VE POR MAS</option>
-                                        <option value="116">116 – ING</option>
-                                        <option value="124">124 – DEUTSCHE</option>
-                                        <option value="126">126 – CREDIT SUISSE</option>
-                                        <option value="127">127 – AZTECA</option>
-                                        <option value="128">128 – AUTOFIN</option>
-                                        <option value="129">129 – BARCLAYS</option>
-                                        <option value="130">130 – COMPARTAMOS</option>
-                                        <option value="131">131 – BANCO FAMSA</option>
-                                        <option value="132">132 – BMULTIVA</option>
-                                        <option value="133">133 – ACTINVER</option>
-                                        <option value="135">135 – NAFIN</option>
-                                        <option value="137">137 – BANCOPPEL</option>
-                                        <option value="138">138 – ABC CAPITAL</option>
-                                        <option value="139">139 – UBS BANK</option>
-                                        <option value="140">140 – CONSUBANCO</option>
-                                        <option value="141">141 – VOLKSWAGEN</option>
-                                        <option value="143">143 – CIBANCO</option>
-                                        <option value="145">145 – BBASE</option>
-                                        <option value="166">166 – BANSEFI</option>
-                                        <option value="168">168 – HIPOTECARIA FEDERAL</option>
-                                        <option value="646">646 – STP</option>
-                                        <option value="other">Other</option>
-                                    </select>
-                                </div>
-
-                                <button onclick="pmClear()" class="btn btn-secondary" style="width:100%;margin-top:6px;">🔄 Reset</button>
                             </div>
-                        </div>
 
-                        <!-- Results Panel -->
-                        <div style="flex:1;min-width:300px;">
-                            <div id="pmResult" style="min-height:300px;">
-                                <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:300px;color:var(--text-tertiary);">
-                                    <div style="font-size:48px;margin-bottom:12px;">💳</div>
-                                    <p style="font-size:14px;">Fill in the fields on the left to get your payment method recommendation.</p>
+                            <!-- Result column -->
+                            <div style="flex:1;min-width:280px;">
+                                <div style="font-size:12px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">③ Recommendation</div>
+                                <div id="pmResult">
+                                    <div style="border-radius:10px;background:var(--bg-hover);border:1px solid var(--border);padding:1.5rem;text-align:center;color:var(--text-tertiary);">
+                                        <div style="font-size:36px;margin-bottom:8px;">💳</div>
+                                        <p style="font-size:13px;margin:0;">Complete the fields to get a recommendation.</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Reference Card -->
-                    <div style="margin:0 1.25rem 1.25rem;background:var(--bg-hover);border-radius:10px;padding:1rem;border:1px solid var(--border);">
-                        <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:10px;">📖 Quick Reference — EMEA Payment Methods</div>
-                        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px;font-size:12px;">
-                            <div style="background:white;border-radius:6px;padding:8px 12px;border-left:3px solid #0f766e;">
-                                <strong style="color:#0f766e;">PM 5 — Domestic</strong><br>
-                                <span style="color:var(--text-secondary);">Same country → same country in domestic currency. Note: F110 Posting date = day +1</span>
-                            </div>
-                            <div style="background:white;border-radius:6px;padding:8px 12px;border-left:3px solid #6b7280;">
-                                <strong style="color:#6b7280;">PM 6 — No IBAN</strong><br>
-                                <span style="color:var(--text-secondary);">Vendor has no IBAN — any country, any currency</span>
-                            </div>
-                            <div style="background:white;border-radius:6px;padding:8px 12px;border-left:3px solid #f59e0b;">
-                                <strong style="color:#f59e0b;">PM 7 — Foreign / Non-SEPA</strong><br>
-                                <span style="color:var(--text-secondary);">Foreign non-SEPA country, non-EUR to SEPA, or foreign currency in domestic country</span>
-                            </div>
-                            <div style="background:white;border-radius:6px;padding:8px 12px;border-left:3px solid #3b82f6;">
-                                <strong style="color:#3b82f6;">PM 8 — SEPA EUR</strong><br>
-                                <span style="color:var(--text-secondary);">EUR payment to SEPA zone bank. Requires IBAN + SWIFT. Note: F110 Posting date = day +1</span>
-                            </div>
-                            <div style="background:white;border-radius:6px;padding:8px 12px;border-left:3px solid #8b5cf6;">
-                                <strong style="color:#8b5cf6;">PM B — Swiss Domestic (CHF)</strong><br>
-                                <span style="color:var(--text-secondary);">CH → CH in CHF only. Note: F110 Posting date = day +1</span>
-                            </div>
-                            <div style="background:white;border-radius:6px;padding:8px 12px;border-left:3px solid #ec4899;">
-                                <strong style="color:#ec4899;">PM 3 — FIK (Denmark)</strong><br>
-                                <span style="color:var(--text-secondary);">Danish FIK payment. Requires FIK number in format *71/000000000000000+000000&lt;</span>
-                            </div>
-                            <div style="background:white;border-radius:6px;padding:8px 12px;border-left:3px solid #10b981;">
-                                <strong style="color:#10b981;">PM 4 — Giro/Split (SE/PL)</strong><br>
-                                <span style="color:var(--text-secondary);">SE: Giro payment (no IBAN required). PL: Split payment (requires prework)</span>
+                    <!-- When no CC selected: show quick reference -->
+                    <div id="pmQuickRef">
+                        <div style="padding:1.25rem;">
+                            <div style="font-size:12px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">Quick Reference — EMEA Payment Methods (P&S / ADI)</div>
+                            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;">
+                                <div style="border-radius:8px;border-left:4px solid #0f766e;background:white;padding:10px 14px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+                                    <div style="font-weight:800;font-size:18px;color:#0f766e;">PM 5</div>
+                                    <div style="font-weight:700;font-size:13px;margin:2px 0;">Domestic</div>
+                                    <div style="font-size:12px;color:var(--text-secondary);">Same country → same country in local currency. No IBAN required for domestic. <em>F110: Posting date = Day +1</em></div>
+                                </div>
+                                <div style="border-radius:8px;border-left:4px solid #6b7280;background:white;padding:10px 14px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+                                    <div style="font-weight:800;font-size:18px;color:#6b7280;">PM 6</div>
+                                    <div style="font-weight:700;font-size:13px;margin:2px 0;">No IBAN</div>
+                                    <div style="font-size:12px;color:var(--text-secondary);">Vendor has no IBAN. Works for any country / currency. Uses bank key + account number.</div>
+                                </div>
+                                <div style="border-radius:8px;border-left:4px solid #f59e0b;background:white;padding:10px 14px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+                                    <div style="font-weight:800;font-size:18px;color:#f59e0b;">PM 7</div>
+                                    <div style="font-weight:700;font-size:13px;margin:2px 0;">Foreign / Non-SEPA</div>
+                                    <div style="font-size:12px;color:var(--text-secondary);">Non-SEPA countries · Non-EUR to SEPA · Foreign currency in domestic. IBAN required if vendor has one.</div>
+                                </div>
+                                <div style="border-radius:8px;border-left:4px solid #3b82f6;background:white;padding:10px 14px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+                                    <div style="font-weight:800;font-size:18px;color:#3b82f6;">PM 8</div>
+                                    <div style="font-weight:700;font-size:13px;margin:2px 0;">SEPA EUR</div>
+                                    <div style="font-size:12px;color:var(--text-secondary);">EUR → SEPA zone bank. Requires IBAN + SWIFT. Will fail without both. <em>F110: Posting date = Day +1</em></div>
+                                </div>
+                                <div style="border-radius:8px;border-left:4px solid #8b5cf6;background:white;padding:10px 14px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+                                    <div style="font-weight:800;font-size:18px;color:#8b5cf6;">PM B</div>
+                                    <div style="font-weight:700;font-size:13px;margin:2px 0;">Swiss Domestic CHF</div>
+                                    <div style="font-size:12px;color:var(--text-secondary);">CH → CH in CHF only. Swiss-specific. <em>F110: Posting date = Day +1</em></div>
+                                </div>
+                                <div style="border-radius:8px;border-left:4px solid #ec4899;background:white;padding:10px 14px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+                                    <div style="font-weight:800;font-size:18px;color:#ec4899;">PM 3</div>
+                                    <div style="font-weight:700;font-size:13px;margin:2px 0;">FIK (Denmark)</div>
+                                    <div style="font-size:12px;color:var(--text-secondary);">Danish FIK invoices. Format: <code>*71/000000000000000+000000&lt;</code></div>
+                                </div>
+                                <div style="border-radius:8px;border-left:4px solid #10b981;background:white;padding:10px 14px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+                                    <div style="font-weight:800;font-size:18px;color:#10b981;">PM 4</div>
+                                    <div style="font-weight:700;font-size:13px;margin:2px 0;">Giro / Split (SE·PL)</div>
+                                    <div style="font-size:12px;color:var(--text-secondary);">SE: Giro — no IBAN required. PL: Split payment — prework required.</div>
+                                </div>
+                                <div style="border-radius:8px;border-left:4px solid #f97316;background:white;padding:10px 14px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+                                    <div style="font-weight:800;font-size:18px;color:#f97316;">PM 2</div>
+                                    <div style="font-weight:700;font-size:13px;margin:2px 0;">Foreign (CH) / HSBC MX</div>
+                                    <div style="font-size:12px;color:var(--text-secondary);">CH: Foreign payments. MX: HSBC-to-HSBC (bank 021) — use account number, NOT CLABE.</div>
+                                </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Tab 5: Resources -->
+            <div class="dash-tab-content" id="dashTab5Content" style="display:none;">
+                <div class="data-section">
+                    <div class="section-header">
+                        <span class="section-title">🌐 VAT &amp; IBAN Verification Resources</span>
+                        <span style="font-size:12px;color:var(--text-tertiary);">Official and free websites for verifying vendor VAT numbers, bank accounts, and company registration</span>
+                    </div>
+                    <div style="padding:1.25rem;display:flex;flex-direction:column;gap:1.25rem;">
+
+                        <!-- VIES + Multi-country tools -->
+                        <div>
+                            <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:10px;display:flex;align-items:center;gap:6px;">🇪🇺 EU-Wide Tools</div>
+                            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;">
+                                <div class="res-card" style="border-left-color:#3b82f6;">
+                                    <div class="res-title">🔎 VIES — EU VAT Validation</div>
+                                    <div class="res-desc">Verify VAT numbers for all EU member states in one place. Works for most countries — note: Germany returns valid/invalid only (no company name). Does not cover GB (post-Brexit).</div>
+                                    <a href="https://ec.europa.eu/taxation_customs/vies/" target="_blank" class="res-link">ec.europa.eu/taxation_customs/vies ↗</a>
+                                    <div class="res-tags"><span class="res-tag res-tag-vat">VAT Check</span></div>
+                                </div>
+                                <div class="res-card" style="border-left-color:#3b82f6;">
+                                    <div class="res-title">🔢 IBAN Validator</div>
+                                    <div class="res-desc">Validate IBAN format, check BIC/SWIFT, and calculate IBANs for supported countries. Useful for confirming IBAN structure before entering in SAP.</div>
+                                    <a href="https://www.iban.com/" target="_blank" class="res-link">iban.com ↗</a>
+                                    <div class="res-tags"><span class="res-tag res-tag-iban">IBAN</span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Country-specific resources -->
+                        <div>
+                            <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:10px;">🗺️ Country-Specific Resources</div>
+                            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;">
+
+                                <!-- Poland -->
+                                <div class="res-card" style="border-left-color:#dc2626;">
+                                    <div class="res-title">🇵🇱 Poland — Biała Lista (White List) ⭐</div>
+                                    <div class="res-desc">The <strong>most useful free resource</strong> for Polish vendors. Shows registered bank accounts (IBAN) for Polish VAT payers. Required for B2B payments over 15,000 PLN.</div>
+                                    <a href="https://www.podatki.gov.pl/vat/bezpieczenstwo-transakcji/biala-lista-podatnikow-vat/" target="_blank" class="res-link">podatki.gov.pl – White List ↗</a>
+                                    <div class="res-tags"><span class="res-tag res-tag-iban">IBAN / Bank Account</span><span class="res-tag res-tag-vat">VAT Check</span></div>
+                                </div>
+
+                                <!-- Poland KRS -->
+                                <div class="res-card" style="border-left-color:#dc2626;">
+                                    <div class="res-title">🇵🇱 Poland — KRS (Company Registry)</div>
+                                    <div class="res-desc">National Court Register. Search Polish companies for registration details, legal form, and ownership. Does not directly show IBAN but confirms company existence.</div>
+                                    <a href="https://ekrs.ms.gov.pl/" target="_blank" class="res-link">ekrs.ms.gov.pl ↗</a>
+                                    <div class="res-tags"><span class="res-tag res-tag-reg">Company Registry</span></div>
+                                </div>
+
+                                <!-- Czech Republic ARES -->
+                                <div class="res-card" style="border-left-color:#1d4ed8;">
+                                    <div class="res-title">🇨🇿 Czech Republic — ARES ⭐</div>
+                                    <div class="res-desc">Official Czech business register. Can show bank accounts for Czech VAT-registered businesses. Search by IČO (company ID) or name. Sometimes shows IBAN directly.</div>
+                                    <a href="https://ares.gov.cz/" target="_blank" class="res-link">ares.gov.cz ↗</a>
+                                    <div class="res-tags"><span class="res-tag res-tag-iban">IBAN sometimes visible</span><span class="res-tag res-tag-vat">VAT / IČO</span><span class="res-tag res-tag-reg">Company Registry</span></div>
+                                </div>
+
+                                <!-- Czech DPH -->
+                                <div class="res-card" style="border-left-color:#1d4ed8;">
+                                    <div class="res-title">🇨🇿 Czech Republic — DPH VAT Register</div>
+                                    <div class="res-desc">Czech VAT payer verification portal (DPH = Daň z přidané hodnoty). Confirm if a Czech vendor is VAT-registered. Use with ARES for complete vendor validation.</div>
+                                    <a href="https://adisrws.mfcr.cz/dpr/faces/index.jsf" target="_blank" class="res-link">adisrws.mfcr.cz (DPH Portal) ↗</a>
+                                    <div class="res-tags"><span class="res-tag res-tag-vat">VAT Check</span></div>
+                                </div>
+
+                                <!-- France -->
+                                <div class="res-card" style="border-left-color:#1e40af;">
+                                    <div class="res-title">🇫🇷 France — Annuaire des Entreprises ⭐</div>
+                                    <div class="res-desc">Free official French business directory (SIRENE database). Search by SIREN/SIRET number or company name. Shows company details, activity code. VAT via VIES.</div>
+                                    <a href="https://annuaire-entreprises.data.gouv.fr/" target="_blank" class="res-link">annuaire-entreprises.data.gouv.fr ↗</a>
+                                    <div class="res-tags"><span class="res-tag res-tag-reg">Company Registry</span><span class="res-tag res-tag-vat">SIREN/SIRET</span></div>
+                                </div>
+
+                                <!-- Hungary -->
+                                <div class="res-card" style="border-left-color:#b45309;">
+                                    <div class="res-title">🇭🇺 Hungary — e-Cégjegyzék (Company Registry) ⭐</div>
+                                    <div class="res-desc">Hungarian official company register. Older annual reports sometimes contain IBAN / bank account details. Search by company name or registration number. Free basic access.</div>
+                                    <a href="https://www.e-cegjegyzek.hu/" target="_blank" class="res-link">e-cegjegyzek.hu ↗</a>
+                                    <div class="res-tags"><span class="res-tag res-tag-iban">IBAN in filings</span><span class="res-tag res-tag-reg">Company Registry</span></div>
+                                </div>
+
+                                <!-- Hungary NAV -->
+                                <div class="res-card" style="border-left-color:#b45309;">
+                                    <div class="res-title">🇭🇺 Hungary — NAV (Tax Authority)</div>
+                                    <div class="res-desc">Hungarian National Tax and Customs Administration. Verify Hungarian VAT numbers and check if a vendor is on the blacklist. Interface mostly in Hungarian.</div>
+                                    <a href="https://nav.gov.hu/" target="_blank" class="res-link">nav.gov.hu ↗</a>
+                                    <div class="res-tags"><span class="res-tag res-tag-vat">VAT Check</span></div>
+                                </div>
+
+                                <!-- Spain -->
+                                <div class="res-card" style="border-left-color:#dc2626;">
+                                    <div class="res-title">🇪🇸 Spain — Agencia Tributaria</div>
+                                    <div class="res-desc">Spanish tax authority. Verify NIF/CIF (Spanish tax numbers). VIES also works for Spain. Use for confirming Spanish VAT status. Note: does not show IBAN.</div>
+                                    <a href="https://www.agenciatributaria.es/" target="_blank" class="res-link">agenciatributaria.es ↗</a>
+                                    <div class="res-tags"><span class="res-tag res-tag-vat">VAT / NIF/CIF</span></div>
+                                </div>
+
+                                <!-- Spain BORME -->
+                                <div class="res-card" style="border-left-color:#dc2626;">
+                                    <div class="res-title">🇪🇸 Spain — BORME (Company Gazette)</div>
+                                    <div class="res-desc">Official State Gazette for Spanish companies (Boletín Oficial del Registro Mercantil). Check registration, directors, and legal notices. Free search.</div>
+                                    <a href="https://www.boe.es/diario_borme/" target="_blank" class="res-link">boe.es/diario_borme ↗</a>
+                                    <div class="res-tags"><span class="res-tag res-tag-reg">Company Registry</span></div>
+                                </div>
+
+                                <!-- Switzerland Zefix -->
+                                <div class="res-card" style="border-left-color:#dc2626;">
+                                    <div class="res-title">🇨🇭 Switzerland — Zefix (Central Business Registry) ⭐</div>
+                                    <div class="res-desc">Official Swiss company search. Find CHE (UID) number, registered address, and legal status. <strong>Annual reports filed here sometimes contain IBAN.</strong> Free access.</div>
+                                    <a href="https://www.zefix.ch/" target="_blank" class="res-link">zefix.ch ↗</a>
+                                    <div class="res-tags"><span class="res-tag res-tag-iban">IBAN in annual reports</span><span class="res-tag res-tag-reg">Company Registry</span></div>
+                                </div>
+
+                                <!-- Switzerland UID -->
+                                <div class="res-card" style="border-left-color:#dc2626;">
+                                    <div class="res-title">🇨🇭 Switzerland — UID Register (VAT)</div>
+                                    <div class="res-desc">Swiss UID/MWST number verification. Search by company name or CHE number. Confirms Swiss VAT registration status (MWST-Nummer). Free.</div>
+                                    <a href="https://www.uid.admin.ch/" target="_blank" class="res-link">uid.admin.ch ↗</a>
+                                    <div class="res-tags"><span class="res-tag res-tag-vat">VAT / MWST</span></div>
+                                </div>
+
+                                <!-- Germany DE -->
+                                <div class="res-card" style="border-left-color:#374151;">
+                                    <div class="res-title">🇩🇪 Germany — BZSt VAT Verification ⚠️</div>
+                                    <div class="res-desc"><strong>Note:</strong> Germany does NOT return company name/address through VIES (by law). To confirm a DE VAT number, use the BZSt simple confirmation tool. It only confirms valid/invalid — no company details shown.</div>
+                                    <a href="https://www.bzst.de/DE/Unternehmen/Umsatzsteuer/Umsatzsteuer-Identifikationsnummer/umsatzsteuer-identifikationsnummer_node.html" target="_blank" class="res-link">bzst.de – USt-IdNr check ↗</a>
+                                    <div class="res-tags"><span class="res-tag res-tag-vat">VAT Check (limited)</span></div>
+                                </div>
+
+                                <!-- Germany Handelsregister -->
+                                <div class="res-card" style="border-left-color:#374151;">
+                                    <div class="res-title">🇩🇪 Germany — Handelsregister (Company Registry)</div>
+                                    <div class="res-desc">Official German commercial register. Search company name, registered office, directors, and filed documents. Annual reports may contain bank details. Free to search.</div>
+                                    <a href="https://www.handelsregister.de/" target="_blank" class="res-link">handelsregister.de ↗</a>
+                                    <div class="res-tags"><span class="res-tag res-tag-reg">Company Registry</span></div>
+                                </div>
+
+                                <!-- Germany Bundesanzeiger -->
+                                <div class="res-card" style="border-left-color:#374151;">
+                                    <div class="res-title">🇩🇪 Germany — Bundesanzeiger (Official Gazette)</div>
+                                    <div class="res-desc">Published annual financial reports for German companies. <strong>Financial statements sometimes include IBAN.</strong> Especially useful for larger German vendors. Free access for basic reports.</div>
+                                    <a href="https://www.bundesanzeiger.de/" target="_blank" class="res-link">bundesanzeiger.de ↗</a>
+                                    <div class="res-tags"><span class="res-tag res-tag-iban">IBAN in financials</span><span class="res-tag res-tag-reg">Annual Reports</span></div>
+                                </div>
+
+                                <!-- Denmark CVR -->
+                                <div class="res-card" style="border-left-color:#ef4444;">
+                                    <div class="res-title">🇩🇰 Denmark — CVR (Central Business Register) ⭐</div>
+                                    <div class="res-desc">Official Danish company register. Search by CVR number or name. <strong>Annual reports filed here may contain bank account details (IBAN).</strong> Free. English available.</div>
+                                    <a href="https://datacvr.virk.dk/" target="_blank" class="res-link">datacvr.virk.dk ↗</a>
+                                    <div class="res-tags"><span class="res-tag res-tag-iban">IBAN in filings</span><span class="res-tag res-tag-reg">Company Registry</span></div>
+                                </div>
+
+                                <!-- UK VAT -->
+                                <div class="res-card" style="border-left-color:#1e3a5f;">
+                                    <div class="res-title">🇬🇧 UK — HMRC VAT Number Check</div>
+                                    <div class="res-desc">Official HMRC service to verify UK VAT registration numbers (GB VAT). Works for post-Brexit UK numbers that no longer appear in VIES. Returns company name and address.</div>
+                                    <a href="https://www.tax.service.gov.uk/check-vat-number/enter-vat-details" target="_blank" class="res-link">tax.service.gov.uk – VAT Check ↗</a>
+                                    <div class="res-tags"><span class="res-tag res-tag-vat">VAT Check</span></div>
+                                </div>
+
+                                <!-- UK Companies House -->
+                                <div class="res-card" style="border-left-color:#1e3a5f;">
+                                    <div class="res-title">🇬🇧 UK — Companies House (Company Registry) ⭐</div>
+                                    <div class="res-desc">Official UK company register. Search by company name or number. View filing history, accounts, directors, and registered addresses. Annual accounts may show bank details. Free.</div>
+                                    <a href="https://find-and-update.company-information.service.gov.uk/" target="_blank" class="res-link">find-and-update.company-information.service.gov.uk ↗</a>
+                                    <div class="res-tags"><span class="res-tag res-tag-iban">IBAN in accounts</span><span class="res-tag res-tag-reg">Company Registry</span></div>
+                                </div>
+
+                                <!-- Netherlands KVK -->
+                                <div class="res-card" style="border-left-color:#f97316;">
+                                    <div class="res-title">🇳🇱 Netherlands — KVK (Chamber of Commerce)</div>
+                                    <div class="res-desc">Dutch chamber of commerce. Verify Dutch companies by KVK number. Confirms registration and legal status. VAT via VIES. Does not show IBAN directly but confirms company is legitimate.</div>
+                                    <a href="https://www.kvk.nl/" target="_blank" class="res-link">kvk.nl ↗</a>
+                                    <div class="res-tags"><span class="res-tag res-tag-reg">Company Registry</span></div>
+                                </div>
+
+                                <!-- Belgium BCE/KBO -->
+                                <div class="res-card" style="border-left-color:#fbbf24;">
+                                    <div class="res-title">🇧🇪 Belgium — BCE/KBO (Company Registry)</div>
+                                    <div class="res-desc">Belgian Crossroads Bank for Enterprises. Search Belgian companies, confirm VAT number (BE VAT), and view official publications. Financial filings sometimes include IBAN.</div>
+                                    <a href="https://kbopub.economie.fgov.be/kbopub/zoeknamepage.action" target="_blank" class="res-link">kbopub.economie.fgov.be ↗</a>
+                                    <div class="res-tags"><span class="res-tag res-tag-iban">IBAN in filings</span><span class="res-tag res-tag-vat">VAT / BTW</span><span class="res-tag res-tag-reg">Company Registry</span></div>
+                                </div>
+
+                                <!-- Austria Firmenbuch -->
+                                <div class="res-card" style="border-left-color:#dc2626;">
+                                    <div class="res-title">🇦🇹 Austria — Firmenbuch (Company Register)</div>
+                                    <div class="res-desc">Official Austrian commercial register (Firmenbuch). Search Austrian companies for registration details. VAT via VIES. Annual reports may contain payment information.</div>
+                                    <a href="https://www.justiz.gv.at/web2013/home/firmenbuch/firmenbuch~2c94848542b43780014322c7b6bf0088.de.html" target="_blank" class="res-link">justiz.gv.at – Firmenbuch ↗</a>
+                                    <div class="res-tags"><span class="res-tag res-tag-reg">Company Registry</span></div>
+                                </div>
+
+                                <!-- Italy Registro Imprese -->
+                                <div class="res-card" style="border-left-color:#16a34a;">
+                                    <div class="res-title">🇮🇹 Italy — Registro Imprese</div>
+                                    <div class="res-desc">Italian business register (Registro delle Imprese). Basic company search is free. VAT via VIES. For detailed records including bank details, a small fee may apply for full documents.</div>
+                                    <a href="https://www.registroimprese.it/" target="_blank" class="res-link">registroimprese.it ↗</a>
+                                    <div class="res-tags"><span class="res-tag res-tag-reg">Company Registry</span></div>
+                                </div>
+
+                                <!-- Sweden Bolagsverket -->
+                                <div class="res-card" style="border-left-color:#1d4ed8;">
+                                    <div class="res-title">🇸🇪 Sweden — Bolagsverket (Companies Registration)</div>
+                                    <div class="res-desc">Swedish Companies Registration Office. Verify Swedish companies and search public filings. Annual reports filed here may contain bank details. VAT via VIES.</div>
+                                    <a href="https://www.bolagsverket.se/" target="_blank" class="res-link">bolagsverket.se ↗</a>
+                                    <div class="res-tags"><span class="res-tag res-tag-reg">Company Registry</span></div>
+                                </div>
+
+                                <!-- Romania -->
+                                <div class="res-card" style="border-left-color:#dc2626;">
+                                    <div class="res-title">🇷🇴 Romania — ONRC (Company Registry)</div>
+                                    <div class="res-desc">Romanian National Office for the Trade Register. Search Romanian companies (CUI/CIF number). VAT via VIES. Some financial filings include bank details.</div>
+                                    <a href="https://www.onrc.ro/" target="_blank" class="res-link">onrc.ro ↗</a>
+                                    <div class="res-tags"><span class="res-tag res-tag-reg">Company Registry</span></div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <!-- India GSTIN -->
+                        <div>
+                            <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:10px;">🌏 Asia / Other Regions</div>
+                            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;">
+
+                                <div class="res-card" style="border-left-color:#f97316;">
+                                    <div class="res-title">🇮🇳 India — GSTIN Verifier</div>
+                                    <div class="res-desc">Verify Indian GSTIN (Goods and Services Tax Identification Number). Official GST portal shows business name, state, type, and registration status. Free.</div>
+                                    <a href="https://www.gst.gov.in/commonhome" target="_blank" class="res-link">gst.gov.in ↗</a>
+                                    <div class="res-tags"><span class="res-tag res-tag-vat">GSTIN</span></div>
+                                </div>
+
+                                <div class="res-card" style="border-left-color:#f97316;">
+                                    <div class="res-title">🇮🇳 India — Quick GSTIN Lookup</div>
+                                    <div class="res-desc">Alternative GSTIN search tool — faster interface for quick lookups. Shows company name, PAN, type, and registration date.</div>
+                                    <a href="https://www.knowyourgst.com/gst-number-search/" target="_blank" class="res-link">knowyourgst.com ↗</a>
+                                    <div class="res-tags"><span class="res-tag res-tag-vat">GSTIN</span></div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <!-- Country summary table -->
+                        <div>
+                            <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:10px;">📊 Country Summary — What You Can Find for Free</div>
+                            <div style="overflow-x:auto;">
+                                <table style="width:100%;font-size:12px;border-collapse:collapse;">
+                                    <thead>
+                                        <tr style="background:var(--bg-hover);">
+                                            <th style="padding:8px 12px;text-align:left;border-bottom:2px solid var(--border);">Country</th>
+                                            <th style="padding:8px 12px;text-align:center;border-bottom:2px solid var(--border);">VAT Check</th>
+                                            <th style="padding:8px 12px;text-align:center;border-bottom:2px solid var(--border);">IBAN Findable</th>
+                                            <th style="padding:8px 12px;text-align:center;border-bottom:2px solid var(--border);">VIES Works</th>
+                                            <th style="padding:8px 12px;text-align:left;border-bottom:2px solid var(--border);">Best Source</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td style="padding:6px 12px;">🇵🇱 Poland</td><td style="text-align:center;">✅</td><td style="text-align:center;color:#16a34a;font-weight:700;">⭐ Yes (White List)</td><td style="text-align:center;">✅</td><td style="padding:6px 12px;">Biała Lista — shows bank accounts directly</td></tr>
+                                        <tr style="background:var(--bg-hover);"><td style="padding:6px 12px;">🇨🇿 Czech Rep.</td><td style="text-align:center;">✅</td><td style="text-align:center;color:#16a34a;font-weight:700;">⭐ Often (ARES)</td><td style="text-align:center;">✅</td><td style="padding:6px 12px;">ARES — sometimes shows IBAN in registration</td></tr>
+                                        <tr><td style="padding:6px 12px;">🇩🇰 Denmark</td><td style="text-align:center;">✅</td><td style="text-align:center;color:#ca8a04;">🔸 In filings</td><td style="text-align:center;">✅</td><td style="padding:6px 12px;">CVR / datacvr.virk.dk — annual reports</td></tr>
+                                        <tr style="background:var(--bg-hover);"><td style="padding:6px 12px;">🇨🇭 Switzerland</td><td style="text-align:center;">✅ (UID)</td><td style="text-align:center;color:#ca8a04;">🔸 In filings</td><td style="text-align:center;">✅</td><td style="padding:6px 12px;">Zefix — annual reports sometimes have IBAN</td></tr>
+                                        <tr><td style="padding:6px 12px;">🇭🇺 Hungary</td><td style="text-align:center;">✅</td><td style="text-align:center;color:#ca8a04;">🔸 In filings</td><td style="text-align:center;">✅</td><td style="padding:6px 12px;">e-Cégjegyzék — older filings</td></tr>
+                                        <tr style="background:var(--bg-hover);"><td style="padding:6px 12px;">🇧🇪 Belgium</td><td style="text-align:center;">✅</td><td style="text-align:center;color:#ca8a04;">🔸 In filings</td><td style="text-align:center;">✅</td><td style="padding:6px 12px;">BCE/KBO — financial disclosures</td></tr>
+                                        <tr><td style="padding:6px 12px;">🇬🇧 UK</td><td style="text-align:center;">✅ (HMRC)</td><td style="text-align:center;color:#ca8a04;">🔸 In accounts</td><td style="text-align:center;">❌ (post-Brexit)</td><td style="padding:6px 12px;">Companies House — filed accounts</td></tr>
+                                        <tr style="background:var(--bg-hover);"><td style="padding:6px 12px;">🇩🇪 Germany</td><td style="text-align:center;">⚠️ Limited</td><td style="text-align:center;color:#ca8a04;">🔸 Bundesanzeiger</td><td style="text-align:center;">⚠️ No name</td><td style="padding:6px 12px;">BZSt (VAT valid/invalid only) · Bundesanzeiger (financials)</td></tr>
+                                        <tr><td style="padding:6px 12px;">🇫🇷 France</td><td style="text-align:center;">✅</td><td style="text-align:center;color:#ef4444;">❌ Not public</td><td style="text-align:center;">✅</td><td style="padding:6px 12px;">SIRENE/Annuaire — company info, no IBAN</td></tr>
+                                        <tr style="background:var(--bg-hover);"><td style="padding:6px 12px;">🇪🇸 Spain</td><td style="text-align:center;">✅</td><td style="text-align:center;color:#ef4444;">❌ Not public</td><td style="text-align:center;">✅</td><td style="padding:6px 12px;">Agencia Tributaria + VIES</td></tr>
+                                        <tr><td style="padding:6px 12px;">🇳🇱 Netherlands</td><td style="text-align:center;">✅</td><td style="text-align:center;color:#ef4444;">❌ Not public</td><td style="text-align:center;">✅</td><td style="padding:6px 12px;">KVK — company info only</td></tr>
+                                        <tr style="background:var(--bg-hover);"><td style="padding:6px 12px;">🇮🇹 Italy</td><td style="text-align:center;">✅</td><td style="text-align:center;color:#ef4444;">❌ Paid</td><td style="text-align:center;">✅</td><td style="padding:6px 12px;">Registro Imprese — free basic, paid full</td></tr>
+                                        <tr><td style="padding:6px 12px;">🇮🇳 India</td><td style="text-align:center;">✅ (GSTIN)</td><td style="text-align:center;color:#ef4444;">❌</td><td style="text-align:center;">N/A</td><td style="padding:6px 12px;">gst.gov.in — GSTIN verification</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div style="margin-top:8px;padding:8px 12px;background:#fef3c7;border-radius:6px;font-size:12px;color:#92400e;">
+                                ⭐ = IBAN/bank account directly visible on official website &nbsp;|&nbsp; 🔸 = may appear in annual report filings &nbsp;|&nbsp; ❌ = not publicly available online for free
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </div>
@@ -1542,13 +1880,40 @@ Example formats accepted:
             return localStorage.getItem('avsfCurrentUser') || 'Brandon';
         }
         function loadCurrentUser() {
-            const saved = localStorage.getItem('avsfCurrentUser');
-            if (saved) document.getElementById('currentUser').value = saved;
+            const saved = localStorage.getItem('avsfCurrentUser') || 'Brandon';
+            const MAP = {Brandon:['B','Brandon Ramos'], Yannick:['Y','Yannick Rojas'], Rosana:['R','Rosana Munoz']};
+            const info = MAP[saved] || MAP['Brandon'];
+            document.getElementById('currentUser').value = saved;
+            if (document.getElementById('userAvatar')) document.getElementById('userAvatar').textContent = info[0];
+            if (document.getElementById('userLabel')) document.getElementById('userLabel').textContent = info[1];
         }
+        // ── User Dropdown ─────────────────────────────────────────────
+        function setUser(val, initial, label) {
+            document.getElementById('currentUser').value = val;
+            document.getElementById('userAvatar').textContent = initial;
+            document.getElementById('userLabel').textContent = label;
+            document.getElementById('userDropdown').classList.remove('open');
+            document.getElementById('userDropdown').style.display = 'none';
+            saveCurrentUser();
+        }
+        document.addEventListener('click', function(e) {
+            const pill = document.getElementById('userPill');
+            const dd = document.getElementById('userDropdown');
+            if (dd && !pill.contains(e.target) && !dd.contains(e.target)) {
+                dd.classList.remove('open');
+                dd.style.display = 'none';
+            }
+        });
+        // Toggle dropdown visibility
+        document.getElementById('userPill')?.addEventListener('click', function() {
+            const dd = document.getElementById('userDropdown');
+            if (dd) dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+        });
+
 
         // ── Dashboard Tab Switching ───────────────────────────────
         function switchDashTab(tab) {
-            [1,2,3,4].forEach(t => {
+            [1,2,3,4,5].forEach(t => {
                 const c = document.getElementById(`dashTab${t}Content`);
                 const b = document.getElementById(`dashTab${t}Btn`);
                 if (c) { c.classList.toggle('active', t === tab); c.style.display = t === tab ? 'block' : 'none'; }
@@ -1721,479 +2086,441 @@ Example formats accepted:
 
         // ── Payment Method Advisor ────────────────────────────────────────────
 
-        // CC configuration: cc -> {country, domesticCurrency, type, special}
         const CC_PM_CONFIG = {
-            // ── Mexico (HSBC-based) ──
-            '1505': {type:'MX_HSBC', country:'MX', domesticCurrency:'MXN'},
-            '1552': {type:'MX_HSBC', country:'MX', domesticCurrency:'MXN'},
-            // ── Mexico (BBVA-based) ──
-            '1095': {type:'MX_BBVA', country:'MX', domesticCurrency:'MXN'},
-            '1729': {type:'MX_BBVA', country:'MX', domesticCurrency:'MXN'},
-            // ── United States ──
-            '1265': {type:'US', country:'US', domesticCurrency:'USD'},
-            '1129': {type:'US', country:'US', domesticCurrency:'USD'},
-            // ── Canada ──
-            '1513': {type:'CA', country:'CA', domesticCurrency:'CAD'},
-            // ── EMEA (P&S) ──
-            '2092': {type:'EMEA', country:'FR', domesticCurrency:'EUR'},
-            '2093': {type:'EMEA', country:'ES', domesticCurrency:'EUR'},
-            '2094': {type:'EMEA', country:'BE', domesticCurrency:'EUR'},
-            '2223': {type:'EMEA', country:'GB', domesticCurrency:'GBP'},
-            '2249': {type:'EMEA', country:'DE', domesticCurrency:'EUR'},
-            '2253': {type:'EMEA', country:'FR', domesticCurrency:'EUR'},
-            '2368': {type:'EMEA', country:'IT', domesticCurrency:'EUR'},
-            '2418': {type:'EMEA', country:'FR', domesticCurrency:'EUR'},
-            '2507': {type:'EMEA', country:'AT', domesticCurrency:'EUR'},
-            '2518': {type:'EMEA_DK', country:'DK', domesticCurrency:'DKK'},
-            '2531': {type:'EMEA', country:'DE', domesticCurrency:'EUR'},
-            '2538': {type:'EMEA', country:'DE', domesticCurrency:'EUR'},
-            '2566': {type:'EMEA', country:'NL', domesticCurrency:'EUR'},
-            '2567': {type:'EMEA', country:'NL', domesticCurrency:'EUR'},
-            '2584': {type:'EMEA_CH', country:'CH', domesticCurrency:'CHF'},
-            '2601': {type:'EMEA', country:'FR', domesticCurrency:'EUR'},
-            '2607': {type:'EMEA_TR', country:'TR', domesticCurrency:'TRY'},
-            '2617': {type:'EMEA_PL', country:'PL', domesticCurrency:'PLN'},
-            '2621': {type:'EMEA', country:'GB', domesticCurrency:'GBP'},
-            '2660': {type:'EMEA', country:'RO', domesticCurrency:'RON'},
-            '2661': {type:'EMEA', country:'SK', domesticCurrency:'EUR'},
-            '2720': {type:'EMEA', country:'HU', domesticCurrency:'HUF'},
-            '2727': {type:'EMEA', country:'CZ', domesticCurrency:'CZK'},
-            '2731': {type:'EMEA_CH', country:'CH', domesticCurrency:'CHF'},
-            '2786': {type:'EMEA', country:'AE', domesticCurrency:'AED'},
-            '2817': {type:'EMEA_CH', country:'CH', domesticCurrency:'CHF'},
-            // ── EMEA (ADI) ──
-            '2103': {type:'EMEA', country:'GB', domesticCurrency:'GBP'},
-            '2105': {type:'EMEA', country:'GB', domesticCurrency:'GBP'},
-            '2130': {type:'EMEA', country:'IE', domesticCurrency:'EUR'},
-            '2185': {type:'EMEA', country:'FR', domesticCurrency:'EUR'},
-            '2192': {type:'EMEA', country:'FR', domesticCurrency:'EUR'},
-            '2194': {type:'EMEA_DK', country:'DK', domesticCurrency:'DKK'},
-            '2421': {type:'EMEA', country:'NL', domesticCurrency:'EUR'},
-            '2426': {type:'EMEA', country:'ES', domesticCurrency:'EUR'},
-            '2429': {type:'EMEA_ZA', country:'ZA', domesticCurrency:'ZAR'},
-            '2430': {type:'EMEA_PL', country:'PL', domesticCurrency:'PLN'},
-            '2576': {type:'NO_SAP', country:'',  domesticCurrency:''},
-            '2581': {type:'EMEA_SE', country:'SE', domesticCurrency:'SEK'},
-            '2790': {type:'EMEA', country:'AE', domesticCurrency:'AED'},
+            '1505':{type:'MX_HSBC',country:'MX',domesticCurrency:'MXN',label:'Resideo MX (HSBC)'},
+            '1552':{type:'MX_HSBC',country:'MX',domesticCurrency:'MXN',label:'Resideo MX 2 (HSBC)'},
+            '1095':{type:'MX_BBVA',country:'MX',domesticCurrency:'MXN',label:'Resideo MX (BBVA)'},
+            '1729':{type:'MX_BBVA',country:'MX',domesticCurrency:'MXN',label:'Resideo MX 2 (BBVA)'},
+            '1265':{type:'US',country:'US',domesticCurrency:'USD',label:'Resideo US'},
+            '1129':{type:'US',country:'US',domesticCurrency:'USD',label:'Resideo US 2'},
+            '1513':{type:'CA',country:'CA',domesticCurrency:'CAD',label:'Resideo Canada'},
+            '2092':{type:'EMEA',country:'FR',domesticCurrency:'EUR',label:'France (P&S)'},
+            '2093':{type:'EMEA',country:'ES',domesticCurrency:'EUR',label:'Spain (P&S)'},
+            '2094':{type:'EMEA',country:'BE',domesticCurrency:'EUR',label:'Belgium (P&S)'},
+            '2223':{type:'EMEA',country:'GB',domesticCurrency:'GBP',label:'UK (P&S)'},
+            '2249':{type:'EMEA',country:'DE',domesticCurrency:'EUR',label:'Germany (P&S)'},
+            '2253':{type:'EMEA',country:'FR',domesticCurrency:'EUR',label:'France (P&S)'},
+            '2368':{type:'EMEA',country:'IT',domesticCurrency:'EUR',label:'Italy (P&S)'},
+            '2418':{type:'EMEA',country:'FR',domesticCurrency:'EUR',label:'France (P&S)'},
+            '2507':{type:'EMEA',country:'AT',domesticCurrency:'EUR',label:'Austria (P&S)'},
+            '2518':{type:'EMEA_DK',country:'DK',domesticCurrency:'DKK',label:'Denmark (P&S)'},
+            '2531':{type:'EMEA',country:'DE',domesticCurrency:'EUR',label:'Germany (P&S)'},
+            '2538':{type:'EMEA',country:'DE',domesticCurrency:'EUR',label:'Germany (P&S)'},
+            '2566':{type:'EMEA',country:'NL',domesticCurrency:'EUR',label:'Netherlands (P&S)'},
+            '2567':{type:'EMEA',country:'NL',domesticCurrency:'EUR',label:'Netherlands (P&S)'},
+            '2584':{type:'EMEA_CH',country:'CH',domesticCurrency:'CHF',label:'Switzerland (P&S)'},
+            '2601':{type:'EMEA',country:'FR',domesticCurrency:'EUR',label:'France (P&S)'},
+            '2607':{type:'EMEA_TR',country:'TR',domesticCurrency:'TRY',label:'Turkey (P&S)'},
+            '2617':{type:'EMEA_PL',country:'PL',domesticCurrency:'PLN',label:'Poland (P&S)'},
+            '2621':{type:'EMEA',country:'GB',domesticCurrency:'GBP',label:'UK (P&S)'},
+            '2660':{type:'EMEA',country:'RO',domesticCurrency:'RON',label:'Romania (P&S)'},
+            '2661':{type:'EMEA',country:'SK',domesticCurrency:'EUR',label:'Slovakia (P&S)'},
+            '2720':{type:'EMEA',country:'HU',domesticCurrency:'HUF',label:'Hungary (P&S)'},
+            '2727':{type:'EMEA',country:'CZ',domesticCurrency:'CZK',label:'Czech Rep. (P&S)'},
+            '2731':{type:'EMEA_CH_MULTI',country:'CH',domesticCurrency:'CHF',label:'Switzerland multi-country (P&S)'},
+            '2786':{type:'EMEA',country:'AE',domesticCurrency:'AED',label:'UAE (P&S)'},
+            '2817':{type:'EMEA_CH',country:'CH',domesticCurrency:'CHF',label:'Switzerland (P&S)'},
+            '2103':{type:'EMEA',country:'GB',domesticCurrency:'GBP',label:'UK (ADI)'},
+            '2105':{type:'EMEA',country:'GB',domesticCurrency:'GBP',label:'UK (ADI)'},
+            '2130':{type:'EMEA',country:'IE',domesticCurrency:'EUR',label:'Ireland (ADI)'},
+            '2185':{type:'EMEA',country:'FR',domesticCurrency:'EUR',label:'France (ADI)'},
+            '2192':{type:'EMEA',country:'FR',domesticCurrency:'EUR',label:'France (ADI)'},
+            '2194':{type:'EMEA_DK',country:'DK',domesticCurrency:'DKK',label:'Denmark (ADI)'},
+            '2421':{type:'EMEA',country:'NL',domesticCurrency:'EUR',label:'Netherlands (ADI)'},
+            '2426':{type:'EMEA',country:'ES',domesticCurrency:'EUR',label:'Spain (ADI)'},
+            '2429':{type:'EMEA_ZA',country:'ZA',domesticCurrency:'ZAR',label:'South Africa (ADI)'},
+            '2430':{type:'EMEA_PL',country:'PL',domesticCurrency:'PLN',label:'Poland (ADI)'},
+            '2576':{type:'NO_SAP',country:'',domesticCurrency:'',label:'No SAP payments'},
+            '2581':{type:'EMEA_SE',country:'SE',domesticCurrency:'SEK',label:'Sweden (ADI)'},
+            '2790':{type:'EMEA',country:'AE',domesticCurrency:'AED',label:'UAE (ADI)'},
         };
 
-        const SEPA_COUNTRIES = new Set(['AD','AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE',
+        const SEPA = new Set(['AD','AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE',
             'GR','GG','HU','IS','IE','IM','IT','JE','LV','LI','LT','LU','MT','MC','NL',
             'NO','PL','PT','RO','PM','SM','SK','SI','ES','SE','CH','GB','VA']);
+        const EURO_ZONE = new Set(['AT','BE','HR','CY','EE','FI','FR','DE','GR','IE','IT',
+            'LV','LT','LU','MT','NL','PT','SK','SI','ES']);
+        const IBAN_SUPPORTED = new Set(['AL','AD','AT','AZ','BH','BY','BE','BA','BR','BG',
+            'CR','HR','CY','CZ','DK','DO','EE','FO','FI','FR','GE','DE','GI','GR','GL',
+            'GT','GG','HU','IS','IQ','IE','IM','IL','IT','JE','JO','KZ','XK','KW','LV',
+            'LB','LI','LT','LU','MT','MR','MU','MD','MC','ME','NL','MK','NO','PK','PS',
+            'PL','PT','QA','RO','RU','SM','SA','RS','SC','SK','SI','ES','SE','CH','TR',
+            'UA','AE','GB','VG']);
 
-        const IBAN_COUNTRIES = new Set(['AX','AL','AD','AT','AZ','BH','BY','BE','BA','BR','BG','BI',
-            'IC','EA','CR','HR','CY','CZ','DK','DJ','DO','EG','SV','EE','FO','FI','FR','GF','PF','TF',
-            'GE','DE','GI','GR','GL','GP','GT','GG','VA','HU','IS','IQ','IE','IM','IL','IT','JE','JO',
-            'KZ','XK','KW','LV','LB','LY','LI','LT','LU','MT','MQ','MR','MU','YT','MD','MC','ME','NL',
-            'NC','MK','NO','PK','PS','PL','PT','QA','RE','RO','RU','BL','LC','MF','PM','SM','ST','SA',
-            'RS','SC','SK','SI','SO','ES','SD','SE','CH','TL','TN','TR','UA','AE','GB','VG','WF']);
+        const COUNTRY_LIST = [
+            ['AD','Andorra'],['AE','UAE'],['AT','Austria'],['AU','Australia'],
+            ['AZ','Azerbaijan'],['BA','Bosnia-Herzegovina'],['BE','Belgium'],['BG','Bulgaria'],
+            ['BH','Bahrain'],['BR','Brazil'],['BY','Belarus'],['CA','Canada'],
+            ['CH','Switzerland'],['CN','China'],['CR','Costa Rica'],['CY','Cyprus'],
+            ['CZ','Czech Republic'],['DE','Germany'],['DK','Denmark'],['DO','Dominican Rep.'],
+            ['EE','Estonia'],['EG','Egypt'],['ES','Spain'],['FI','Finland'],['FR','France'],
+            ['GB','United Kingdom'],['GE','Georgia'],['GH','Ghana'],['GI','Gibraltar'],
+            ['GR','Greece'],['GT','Guatemala'],['HR','Croatia'],['HU','Hungary'],
+            ['ID','Indonesia'],['IE','Ireland'],['IL','Israel'],['IN','India'],
+            ['IQ','Iraq'],['IS','Iceland'],['IT','Italy'],['JO','Jordan'],['JP','Japan'],
+            ['KE','Kenya'],['KR','Korea'],['KW','Kuwait'],['KZ','Kazakhstan'],
+            ['LI','Liechtenstein'],['LT','Lithuania'],['LU','Luxembourg'],['LV','Latvia'],
+            ['MA','Morocco'],['MC','Monaco'],['MD','Moldova'],['ME','Montenegro'],
+            ['MK','N. Macedonia'],['MT','Malta'],['MU','Mauritius'],['MX','Mexico'],
+            ['MY','Malaysia'],['NG','Nigeria'],['NL','Netherlands'],['NO','Norway'],
+            ['NZ','New Zealand'],['PK','Pakistan'],['PL','Poland'],['PS','Palestine'],
+            ['PT','Portugal'],['QA','Qatar'],['RO','Romania'],['RS','Serbia'],
+            ['RU','Russia'],['SA','Saudi Arabia'],['SC','Seychelles'],['SE','Sweden'],
+            ['SG','Singapore'],['SI','Slovenia'],['SK','Slovakia'],['SM','San Marino'],
+            ['TH','Thailand'],['TR','Turkey'],['TZ','Tanzania'],['UA','Ukraine'],
+            ['US','United States'],['VG','British Virgin Is.'],['XK','Kosovo'],
+            ['ZA','South Africa'],['ZW','Zimbabwe'],
+        ];
 
-        const COUNTRY_NAMES = {
-            'MX':'Mexico','US':'United States','CA':'Canada','FR':'France','DE':'Germany',
-            'GB':'United Kingdom','ES':'Spain','BE':'Belgium','IT':'Italy','NL':'Netherlands',
-            'AT':'Austria','IE':'Ireland','DK':'Denmark','PL':'Poland','SE':'Sweden','CH':'Switzerland',
-            'RO':'Romania','SK':'Slovakia','HU':'Hungary','CZ':'Czech Republic','TR':'Turkey',
-            'ZA':'South Africa','AE':'United Arab Emirates','PT':'Portugal','FI':'Finland','GR':'Greece',
-            'NO':'Norway','LU':'Luxembourg','LT':'Lithuania','LV':'Latvia','EE':'Estonia','HR':'Croatia',
-            'BG':'Bulgaria','CY':'Cyprus','MT':'Malta','SI':'Slovenia','IS':'Iceland','LI':'Liechtenstein',
-            'MC':'Monaco','SM':'San Marino','VA':'Vatican City','AD':'Andorra','GG':'Guernsey',
-            'JE':'Jersey','IM':'Isle of Man','CN':'China','JP':'Japan','IN':'India','BR':'Brazil',
-            'AU':'Australia','KR':'Korea','SG':'Singapore','TH':'Thailand','MY':'Malaysia',
-            'ID':'Indonesia','SA':'Saudi Arabia','IL':'Israel','EG':'Egypt','NG':'Nigeria',
-            'KE':'Kenya','MA':'Morocco','ZW':'Zimbabwe','TZ':'Tanzania','GH':'Ghana',
-        };
+        const CC_FLAGS = {MX:'🇲🇽',US:'🇺🇸',CA:'🇨🇦',FR:'🇫🇷',DE:'🇩🇪',GB:'🇬🇧',ES:'🇪🇸',
+            BE:'🇧🇪',IT:'🇮🇹',NL:'🇳🇱',AT:'🇦🇹',IE:'🇮🇪',DK:'🇩🇰',PL:'🇵🇱',SE:'🇸🇪',
+            CH:'🇨🇭',RO:'🇷🇴',SK:'🇸🇰',HU:'🇭🇺',CZ:'🇨🇿',TR:'🇹🇷',ZA:'🇿🇦',AE:'🇦🇪'};
 
         function pmPopulateCountries() {
             const sel = document.getElementById('pmVendorCountry');
-            if (sel.options.length > 1) return; // already populated
-            const sorted = Object.entries(COUNTRY_NAMES).sort((a,b) => a[1].localeCompare(b[1]));
-            sorted.forEach(([code, name]) => {
+            if (!sel || sel.options.length > 1) return;
+            COUNTRY_LIST.forEach(([code, name]) => {
                 const o = document.createElement('option');
-                o.value = code; o.textContent = `${code} – ${name}`;
+                o.value = code;
+                const flag = CC_FLAGS[code] || '';
+                o.textContent = `${flag} ${code} – ${name}`;
                 sel.appendChild(o);
             });
         }
 
-        function pmClear() {
-            document.getElementById('pmCC').value = '';
-            document.getElementById('pmVendorCountry').value = '';
-            document.getElementById('pmCurrency').value = '';
+        function pmOnCCChange() {
+            const cc = document.getElementById('pmCC').value;
+            const cfg = cc ? CC_PM_CONFIG[cc] : null;
+            const step2 = document.getElementById('pmStep2');
+            const qref = document.getElementById('pmQuickRef');
+            const info = document.getElementById('pmCCInfo');
+            const bankRow = document.getElementById('pmBankCodeRow');
+
+            if (document.getElementById('pmVendorCountry')) document.getElementById('pmVendorCountry').value = '';
+            if (document.getElementById('pmCurrency')) document.getElementById('pmCurrency').value = '';
             document.querySelectorAll('input[name="pmHasIban"]').forEach(r => r.checked = false);
-            document.getElementById('pmBankCode').value = '';
-            document.getElementById('pmBankCodeRow').style.display = 'none';
-            document.getElementById('pmVendorCountryRow').style.display = 'block';
-            document.getElementById('pmCurrencyRow').style.display = 'block';
-            document.getElementById('pmIbanRow').style.display = 'block';
-            document.getElementById('pmResult').innerHTML = `
-                <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:300px;color:var(--text-tertiary);">
-                    <div style="font-size:48px;margin-bottom:12px;">💳</div>
-                    <p style="font-size:14px;">Fill in the fields on the left to get your payment method recommendation.</p>
-                </div>`;
+            if (document.getElementById('pmBankCode')) document.getElementById('pmBankCode').value = '';
+            if (document.getElementById('pmIbanYesLbl')) { document.getElementById('pmIbanYesLbl').style.borderColor='var(--border)'; document.getElementById('pmIbanNoLbl').style.borderColor='var(--border)'; }
+
+            if (!cc || !cfg) {
+                if (step2) step2.style.display = 'none';
+                if (qref) qref.style.display = 'block';
+                if (info) info.style.display = 'none';
+                const r = document.getElementById('pmResult');
+                if (r) r.innerHTML = '<div style="border-radius:10px;background:var(--bg-hover);border:1px solid var(--border);padding:1.5rem;text-align:center;color:var(--text-tertiary);"><div style="font-size:36px;margin-bottom:8px;">💳</div><p style="font-size:13px;margin:0;">Complete the fields to get a recommendation.</p></div>';
+                return;
+            }
+
+            const flag = CC_FLAGS[cfg.country] || '';
+            const isMX = cfg.type === 'MX_HSBC' || cfg.type === 'MX_BBVA';
+            if (info) { info.style.display = 'flex'; info.style.alignItems = 'center'; info.style.gap = '8px';
+                info.innerHTML = `<span style="background:rgba(15,118,110,.1);border:1px solid rgba(15,118,110,.3);border-radius:8px;padding:4px 12px;font-size:13px;font-weight:700;color:var(--primary);">${flag} CC ${cc} · ${cfg.label}</span>`; }
+            if (bankRow) bankRow.style.display = isMX ? 'block' : 'none';
+
+            const isUSCA = cfg.type === 'US' || cfg.type === 'CA';
+            ['pmVCRow','pmCurrRow','pmIbanRow'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = isUSCA ? 'none' : 'block';
+            });
+
+            if (step2) step2.style.display = 'block';
+            if (qref) qref.style.display = 'none';
+            pmPopulateCountries();
+            pmAdvise();
         }
 
-        function pmResultCard(methods) {
-            // methods: array of {pm, label, color, description, requirements, remarks, warning}
-            return methods.map(m => {
-                const warnHtml = m.warning ? `<div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:6px;padding:8px 12px;margin-top:8px;font-size:12px;color:#92400e;">⚠️ ${m.warning}</div>` : '';
-                const reqHtml = m.requirements ? `<div style="margin-top:8px;font-size:12px;color:var(--text-secondary);"><strong>Requirements:</strong> ${m.requirements}</div>` : '';
-                const remarkHtml = m.remark ? `<div style="background:#eff6ff;border:1px solid #93c5fd;border-radius:6px;padding:8px 12px;margin-top:8px;font-size:12px;color:#1e40af;">📌 ${m.remark}</div>` : '';
-                return `
-                <div style="background:white;border-radius:10px;padding:1rem 1.25rem;border:2px solid ${m.color};margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);">
-                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
-                        <span style="display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:8px;background:${m.color};color:white;font-size:20px;font-weight:800;">${m.pm}</span>
-                        <div>
-                            <div style="font-size:15px;font-weight:700;color:var(--text-primary);">${m.label}</div>
-                            <div style="font-size:12px;color:var(--text-secondary);">${m.description}</div>
-                        </div>
-                    </div>
-                    ${reqHtml}${remarkHtml}${warnHtml}
-                </div>`;
-            }).join('');
+        function pmIbanToggle() {
+            const yes = document.querySelector('input[name="pmHasIban"][value="yes"]');
+            const no  = document.querySelector('input[name="pmHasIban"][value="no"]');
+            const yl = document.getElementById('pmIbanYesLbl');
+            const nl = document.getElementById('pmIbanNoLbl');
+            if (yl) yl.style.borderColor = yes?.checked ? 'var(--primary)' : 'var(--border)';
+            if (nl) nl.style.borderColor = no?.checked  ? '#ef4444'       : 'var(--border)';
+        }
+
+        function pmClear() {
+            document.getElementById('pmCC').value = '';
+            pmOnCCChange();
+        }
+
+        function pmCard(pm, color, label, desc, opts) {
+            const {req='',remark='',warning='',secondary=false} = opts||{};
+            const border = secondary ? `1px dashed ${color}` : `2px solid ${color}`;
+            const op = secondary ? 'opacity:.82;' : '';
+            const badge = secondary ? `<span style="font-size:10px;padding:1px 7px;border-radius:4px;background:#f3f4f6;color:#6b7280;font-weight:700;margin-left:6px;">ALSO VALID</span>` : '';
+            const reqHtml  = req     ? `<div style="margin-top:5px;font-size:12px;color:var(--text-secondary);"><strong>📋</strong> ${req}</div>` : '';
+            const rkHtml   = remark  ? `<div style="margin-top:5px;padding:5px 10px;background:#eff6ff;border:1px solid #93c5fd;border-radius:6px;font-size:12px;color:#1e40af;">📌 ${remark}</div>` : '';
+            const warnHtml = warning ? `<div style="margin-top:5px;padding:5px 10px;background:#fef3c7;border:1px solid #fbbf24;border-radius:6px;font-size:12px;color:#92400e;">⚠️ ${warning}</div>` : '';
+            return `<div style="${op}background:white;border-radius:10px;padding:10px 14px;border:${border};margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.05);">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+                    <span style="min-width:40px;height:40px;border-radius:8px;background:${color};color:white;font-size:17px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;">${pm}</span>
+                    <div style="flex:1;"><div style="font-size:14px;font-weight:700;color:var(--text-primary);">${label}${badge}</div><div style="font-size:12px;color:var(--text-secondary);">${desc}</div></div>
+                </div>${reqHtml}${rkHtml}${warnHtml}
+            </div>`;
+        }
+
+        function pmPlaceholder(msg) {
+            return `<div style="border-radius:10px;background:var(--bg-hover);border:1px solid var(--border);padding:1.5rem;text-align:center;color:var(--text-tertiary);"><div style="font-size:28px;margin-bottom:8px;">💳</div><p style="font-size:13px;margin:0;">${msg}</p></div>`;
         }
 
         function pmAdvise() {
-            const cc = document.getElementById('pmCC').value;
-            const vendorCountry = document.getElementById('pmVendorCountry').value;
-            const currency = document.getElementById('pmCurrency').value;
-            const hasIbanEl = document.querySelector('input[name="pmHasIban"]:checked');
-            const hasIban = hasIbanEl ? hasIbanEl.value === 'yes' : null;
-            const bankCode = document.getElementById('pmBankCode').value;
-
+            const cc = document.getElementById('pmCC')?.value;
             const cfg = cc ? CC_PM_CONFIG[cc] : null;
+            if (!cfg) return;
+            const vc      = document.getElementById('pmVendorCountry')?.value || '';
+            const cur     = document.getElementById('pmCurrency')?.value || '';
+            const ibanEl  = document.querySelector('input[name="pmHasIban"]:checked');
+            const hasIban = ibanEl ? ibanEl.value === 'yes' : null;
+            const bank    = document.getElementById('pmBankCode')?.value || '';
+            const res     = document.getElementById('pmResult');
+            if (!res) return;
 
-            // Show/hide Mexico bank code row
-            const isMX = cfg && (cfg.type === 'MX_HSBC' || cfg.type === 'MX_BBVA');
-            document.getElementById('pmBankCodeRow').style.display = isMX ? 'block' : 'none';
-
-            // Show/hide country/currency/iban for US/CA (not needed for basic US/CA guidance)
-            const isUSCA = cfg && (cfg.type === 'US' || cfg.type === 'CA');
-
-            if (!cc) return;
-
-            const resultEl = document.getElementById('pmResult');
-
-            // ── Special: No SAP payments ─────────────────────────────────────
+            // ── No SAP ──────────────────────────────────────────────
             if (cfg.type === 'NO_SAP') {
-                resultEl.innerHTML = `<div style="background:#fee2e2;border:2px solid #ef4444;border-radius:10px;padding:1.25rem;color:#991b1b;">
-                    <div style="font-size:18px;font-weight:700;margin-bottom:6px;">⛔ CC 2576 — No SAP Payments</div>
-                    <p>This company code does NOT process payments in SAP. Payments must be loaded manually from payment file.</p>
-                </div>`;
-                return;
+                res.innerHTML = `<div style="background:#fee2e2;border:2px solid #ef4444;border-radius:10px;padding:1.25rem;">
+                    <div style="font-size:16px;font-weight:800;color:#991b1b;margin-bottom:6px;">⛔ CC 2576 — No SAP Payments</div>
+                    <p style="font-size:13px;color:#991b1b;margin:0;">This CC does NOT process payments in SAP. Load manually from payment file.</p></div>`; return;
             }
 
-            // ── US ───────────────────────────────────────────────────────────
+            // ── US ──────────────────────────────────────────────────
             if (cfg.type === 'US') {
-                resultEl.innerHTML = `
-                <div style="font-size:13px;color:var(--text-tertiary);margin-bottom:10px;">CC ${cc} — United States payments</div>
-                ` + pmResultCard([
-                    {pm:'D', color:'#0f766e', label:'ACH', description:'Automated Clearing House — domestic USD transfer'},
-                    {pm:'J', color:'#3b82f6', label:'Wire', description:'Standard wire transfer'},
-                    {pm:'T', color:'#8b5cf6', label:'Manual Wire', description:'Manual wire transfer — requires manual processing'},
-                    {pm:'C', color:'#6b7280', label:'Check', description:'Paper check payment'},
-                ]);
-                return;
+                res.innerHTML = pmCard('D','#0f766e','ACH — PM D','Automated Clearing House — standard domestic USD') +
+                    pmCard('J','#3b82f6','Wire — PM J','Standard wire transfer') +
+                    pmCard('T','#8b5cf6','Manual Wire — PM T','Manual wire',{warning:'Requires manual intervention — use only when standard wire fails'}) +
+                    pmCard('C','#6b7280','Check — PM C','Paper check'); return;
             }
 
-            // ── Canada ───────────────────────────────────────────────────────
+            // ── Canada ──────────────────────────────────────────────
             if (cfg.type === 'CA') {
-                resultEl.innerHTML = `
-                <div style="font-size:13px;color:var(--text-tertiary);margin-bottom:10px;">CC ${cc} — Canada payments</div>
-                ` + pmResultCard([
-                    {pm:'S', color:'#0f766e', label:'CAD ACH Wire', description:'Canadian ACH wire transfer'},
-                    {pm:'T', color:'#3b82f6', label:'EFT CAD Account', description:'Electronic funds transfer — CAD account'},
-                    {pm:'D', color:'#10b981', label:'USD ACH', description:'ACH transfer in US Dollars'},
-                    {pm:'U', color:'#8b5cf6', label:'EFT USD Account', description:'Electronic funds transfer — USD account'},
-                    {pm:'C', color:'#6b7280', label:'Check', description:'Paper check payment'},
-                ]);
-                return;
+                res.innerHTML = pmCard('S','#0f766e','CAD ACH Wire — PM S','Standard CAD ACH wire') +
+                    pmCard('T','#3b82f6','EFT CAD — PM T','Electronic funds transfer · CAD account') +
+                    pmCard('D','#10b981','USD ACH — PM D','ACH in USD') +
+                    pmCard('U','#8b5cf6','EFT USD — PM U','Electronic funds transfer · USD account') +
+                    pmCard('C','#6b7280','Check — PM C','Paper check'); return;
             }
 
-            // ── Mexico HSBC-based (1505, 1552) ───────────────────────────────
+            // ── Mexico HSBC (1505, 1552) ─────────────────────────────
             if (cfg.type === 'MX_HSBC') {
-                if (!currency && !bankCode) {
-                    resultEl.innerHTML = `<div style="background:var(--bg-hover);border-radius:10px;padding:1rem;color:var(--text-secondary);font-size:14px;">
-                        Select currency and bank to get recommendation for CC ${cc}.</div>`;
-                    return;
-                }
-                const methods = [];
-                if (currency === 'USD') {
-                    methods.push({pm:'W', color:'#3b82f6', label:'USD Payment — PM W',
-                        description:'USD payment from Mexican CC',
-                        remark:'Use when paying in US Dollars from this Mexican company code.'});
-                } else if (currency === 'MXN' || !currency) {
-                    if (bankCode === '021') {
-                        methods.push({pm:'2', color:'#0f766e', label:'HSBC to HSBC — PM 2',
-                            description:'Vendor bank is HSBC México (021)',
-                            remark:'⚠️ Enter the ACCOUNT NUMBER in the bank account field — do NOT use the CLABE. Place the CLABE number in the Reference Details / Payment Notes field instead.'});
-                    } else if (bankCode && bankCode !== '021') {
-                        methods.push({pm:'1', color:'#f59e0b', label:'Non-HSBC — PM 1',
-                            description:`Vendor bank is not HSBC (bank code: ${bankCode})`});
+                let cards = '';
+                if (cur === 'USD') {
+                    cards = pmCard('W','#3b82f6','USD Payment — PM W','USD payment from HSBC-based MX CC');
+                } else {
+                    if (bank === '021') {
+                        cards = pmCard('2','#0f766e','HSBC to HSBC — PM 2','Vendor bank is HSBC México (021)',
+                            {remark:'Enter the ACCOUNT NUMBER in the bank account field — do NOT enter the CLABE here. The CLABE must go in the Reference Details / Payment Notes field only.'});
+                    } else if (bank && bank !== 'other') {
+                        cards = pmCard('1','#f59e0b',`Non-HSBC — PM 1`,`Vendor bank: ${bank} (not HSBC)`);
                     } else {
-                        methods.push({pm:'1', color:'#f59e0b', label:'Non-HSBC — PM 1',
-                            description:'Vendor bank is any bank other than HSBC'});
-                        methods.push({pm:'2', color:'#0f766e', label:'HSBC to HSBC — PM 2',
-                            description:'Use only if vendor bank is HSBC México (bank code 021)',
-                            remark:'⚠️ If PM 2: Enter ACCOUNT NUMBER (not CLABE) in bank field. Put CLABE in Reference Details.'});
+                        cards = pmCard('1','#f59e0b','Non-HSBC — PM 1','For any bank other than HSBC México') +
+                            pmCard('2','#0f766e','HSBC to HSBC — PM 2','Only if vendor bank is HSBC México (code 021)',
+                                {remark:'If PM 2: use ACCOUNT NUMBER (not CLABE) in bank field. CLABE → Reference Details only.',secondary:true});
                     }
+                    cards += pmCard('Z','#6b7280','Manual — PM Z','Manual payment fallback');
                 }
-                methods.push({pm:'Z', color:'#6b7280', label:'Manual Payment — PM Z',
-                    description:'Manual payment — use when standard processing fails'});
-                resultEl.innerHTML = `<div style="font-size:13px;color:var(--text-tertiary);margin-bottom:10px;">CC ${cc} (Mexico · HSBC-based)</div>` + pmResultCard(methods);
-                return;
+                res.innerHTML = cards; return;
             }
 
-            // ── Mexico BBVA-based (1095, 1729) ───────────────────────────────
+            // ── Mexico BBVA (1095, 1729) ─────────────────────────────
             if (cfg.type === 'MX_BBVA') {
-                if (!currency && !bankCode) {
-                    resultEl.innerHTML = `<div style="background:var(--bg-hover);border-radius:10px;padding:1rem;color:var(--text-secondary);font-size:14px;">
-                        Select currency and bank to get recommendation for CC ${cc}.</div>`;
-                    return;
-                }
-                const methods = [];
-                if (currency === 'USD') {
-                    methods.push({pm:'W', color:'#3b82f6', label:'USD Payment — PM W',
-                        description:'USD payment from Mexican CC'});
-                } else if (currency === 'MXN' || !currency) {
-                    if (bankCode === '012') {
-                        methods.push({pm:'P', color:'#0f766e', label:'BBVA to BBVA — PM P',
-                            description:'Vendor bank is BBVA Bancomer (012)'});
-                    } else if (bankCode && bankCode !== '012') {
-                        methods.push({pm:'V', color:'#f59e0b', label:'Non-BBVA — PM V',
-                            description:`Vendor bank is not BBVA (bank code: ${bankCode})`});
+                let cards = '';
+                if (cur === 'USD') {
+                    cards = pmCard('W','#3b82f6','USD Payment — PM W','USD payment from BBVA-based MX CC');
+                } else {
+                    if (bank === '012') {
+                        cards = pmCard('P','#0f766e','BBVA to BBVA — PM P','Vendor bank is BBVA Bancomer (012)');
+                    } else if (bank && bank !== 'other') {
+                        cards = pmCard('V','#f59e0b',`Non-BBVA — PM V`,`Vendor bank: ${bank} (not BBVA)`);
                     } else {
-                        methods.push({pm:'P', color:'#0f766e', label:'BBVA to BBVA — PM P',
-                            description:'Use only if vendor bank is BBVA Bancomer (bank code 012)'});
-                        methods.push({pm:'V', color:'#f59e0b', label:'Non-BBVA — PM V',
-                            description:'Vendor bank is any bank other than BBVA'});
+                        cards = pmCard('V','#f59e0b','Non-BBVA — PM V','For any bank other than BBVA Bancomer') +
+                            pmCard('P','#0f766e','BBVA to BBVA — PM P','Only if vendor bank is BBVA Bancomer (code 012)',{secondary:true});
                     }
+                    cards += pmCard('Z','#6b7280','Manual — PM Z','Manual payment fallback');
                 }
-                methods.push({pm:'Z', color:'#6b7280', label:'Manual Payment — PM Z',
-                    description:'Manual payment — use when standard processing fails'});
-                resultEl.innerHTML = `<div style="font-size:13px;color:var(--text-tertiary);margin-bottom:10px;">CC ${cc} (Mexico · BBVA-based)</div>` + pmResultCard(methods);
-                return;
+                res.innerHTML = cards; return;
             }
 
-            // ── Switzerland ──────────────────────────────────────────────────
+            // ── Switzerland (2584, 2817) ─────────────────────────────
             if (cfg.type === 'EMEA_CH') {
-                const methods = [];
-                if (!vendorCountry && !currency) {
-                    resultEl.innerHTML = `<div style="background:var(--bg-hover);border-radius:10px;padding:1rem;color:var(--text-secondary);font-size:14px;">
-                        Select vendor country and currency for Swiss CC ${cc}.</div>`;
-                    return;
-                }
-                if (vendorCountry === 'CH' && currency === 'CHF') {
-                    methods.push({pm:'B', color:'#8b5cf6', label:'Swiss Domestic CHF — PM B',
-                        description:'Domestic CH to CH in CHF currency',
-                        requirements:'F110 Posting date = day +1'});
-                } else if (currency === 'EUR' && SEPA_COUNTRIES.has(vendorCountry)) {
-                    methods.push({pm:'8', color:'#3b82f6', label:'SEPA EUR — PM 8',
-                        description:`EUR payment to SEPA zone country (${vendorCountry})`,
-                        requirements:'Requires IBAN + SWIFT. F110 Posting date = day +1'});
-                } else if (!hasIban) {
-                    methods.push({pm:'6', color:'#6b7280', label:'No IBAN — PM 6',
-                        description:'Vendor does not have an IBAN'});
+                if (!vc && !cur) { res.innerHTML = pmPlaceholder('Select vendor country + currency for Swiss CC'); return; }
+                let cards = '';
+                if (vc === 'CH' && cur === 'CHF') {
+                    cards = pmCard('B','#8b5cf6','Swiss Domestic CHF — PM B','CH → CH in CHF',{req:'F110: Posting date = day +1'});
+                } else if (cur === 'EUR' && SEPA.has(vc)) {
+                    cards = pmCard('8','#3b82f6','SEPA EUR — PM 8',`EUR → SEPA zone (${vc})`,{req:'Requires IBAN + SWIFT. F110: Posting date = day +1'}) +
+                        pmCard('7','#f59e0b','Foreign — PM 7',`Alternative for ${vc} if no SWIFT available`,{secondary:true});
+                } else if (hasIban === false || (!IBAN_SUPPORTED.has(vc) && vc)) {
+                    cards = pmCard('6','#6b7280','No IBAN — PM 6','Vendor has no IBAN / IBAN not used in this country');
                 } else {
-                    methods.push({pm:'2', color:'#ec4899', label:'Foreign Payment — PM 2',
-                        description:`Foreign payment from Switzerland to ${vendorCountry || 'foreign country'}`});
-                    if (vendorCountry && vendorCountry !== 'CH' && hasIban === false) {
-                        methods.push({pm:'6', color:'#6b7280', label:'No IBAN — PM 6',
-                            description:'Alternative if vendor has no IBAN'});
-                    }
+                    cards = pmCard('2','#f97316','Foreign — PM 2',`Foreign payment from CH to ${vc||'foreign country'}`);
+                    if (hasIban === false) cards += pmCard('6','#6b7280','No IBAN — PM 6','Alternative if vendor has no IBAN',{secondary:true});
                 }
-                resultEl.innerHTML = `<div style="font-size:13px;color:var(--text-tertiary);margin-bottom:10px;">CC ${cc} (Switzerland)</div>` + pmResultCard(methods);
-                return;
+                res.innerHTML = cards; return;
             }
 
-            // ── Turkey (special manual) ──────────────────────────────────────
+            // ── Switzerland Multi-country (2731) ─────────────────────
+            if (cfg.type === 'EMEA_CH_MULTI') {
+                if (!vc && !cur) { res.innerHTML = pmPlaceholder('CC 2731 covers CH, GB, HU, CZ + EUR SEPA. Select vendor country + currency.'); return; }
+                let cards = '';
+                if (vc === 'CH' && cur === 'CHF') {
+                    cards = pmCard('B','#8b5cf6','Swiss Domestic CHF — PM B','CH → CH in CHF',{req:'F110: Posting date = day +1'});
+                } else if (vc === 'GB' && cur === 'GBP') {
+                    cards = pmCard('4','#10b981','UK Domestic GBP — PM 4','GB → GB in GBP',{req:'F110: Posting date = day +1'});
+                } else if (vc === 'HU' && cur === 'HUF') {
+                    cards = pmCard('5','#0f766e','Hungary Domestic HUF — PM 5','HU → HU in HUF',{req:'F110: Posting date = day +1'});
+                } else if (vc === 'CZ' && cur === 'CZK') {
+                    cards = pmCard('5','#0f766e','Czech Domestic CZK — PM 5','CZ → CZ in CZK',{req:'F110: Posting date = day +1'});
+                } else if (cur === 'EUR' && SEPA.has(vc)) {
+                    cards = pmCard('8','#3b82f6','SEPA EUR — PM 8',`EUR → SEPA zone (${vc})`,{req:'Requires IBAN + SWIFT. F110: Posting date = day +1'}) +
+                        pmCard('5','#0f766e','Domestic CH EUR — PM 5 (alternative)','CH → other SEPA in EUR',{secondary:true,req:'F110: Posting date = day +1'});
+                } else if (hasIban === false) {
+                    cards = pmCard('6','#6b7280','No IBAN — PM 6','Vendor has no IBAN');
+                } else {
+                    cards = pmCard('7','#f59e0b','Foreign — PM 7','Foreign / non-standard payment from CH');
+                }
+                res.innerHTML = `<div style="font-size:11px;background:#eff6ff;padding:5px 10px;border-radius:6px;color:#1e40af;margin-bottom:8px;">ℹ️ CC 2731 covers: CH·CHF (B) · GB·GBP (4) · HU·HUF (5) · CZ·CZK (5) · EUR SEPA (8) · No IBAN (6) · Foreign (7)</div>` + cards; return;
+            }
+
+            // ── Turkey ───────────────────────────────────────────────
             if (cfg.type === 'EMEA_TR') {
-                const methods = [];
-                if (vendorCountry === 'TR' && currency === 'TRY') {
-                    methods.push({pm:'5', color:'#0f766e', label:'Domestic TR — PM 5',
-                        description:'Domestic Turkey to Turkey in TRY',
-                        warning:'Will NOT be picked up in weekly autoruns. Must be run manually and sent for approval to Nur Sirin / Paolo Raffaelli / John Tracey.'});
-                } else if (!hasIban || hasIban === false) {
-                    methods.push({pm:'6', color:'#6b7280', label:'No IBAN — PM 6',
-                        description:'Vendor has no IBAN',
-                        warning:'Will NOT be picked up in weekly autoruns. Must run manually.'});
+                if (!vc && !cur) { res.innerHTML = pmPlaceholder('Turkey CC — select vendor country and currency'); return; }
+                const manualWarn = 'Will NOT be picked up in weekly autoruns. Must be run manually and sent for approval to Nur Sirin / Paolo Raffaelli / John Tracey.';
+                let cards = '';
+                if (vc === 'TR' && cur === 'TRY') {
+                    cards = pmCard('5','#0f766e','Domestic TRY — PM 5','TR → TR in TRY',{req:'F110: Posting date = day +1',warning:manualWarn});
+                } else if (hasIban === false) {
+                    cards = pmCard('6','#6b7280','No IBAN — PM 6','No IBAN available',{warning:manualWarn});
                 } else {
-                    methods.push({pm:'7', color:'#f59e0b', label:'Foreign — PM 7',
-                        description:'Foreign or different currency payment',
-                        warning:'Will NOT be picked up in weekly autoruns. Must run manually.'});
+                    cards = pmCard('7','#f59e0b','Foreign — PM 7','Foreign or different currency from TR CC',{warning:manualWarn});
                 }
-                resultEl.innerHTML = `<div style="font-size:13px;color:var(--text-tertiary);margin-bottom:10px;">CC ${cc} (Turkey)</div>` + pmResultCard(methods);
-                return;
+                res.innerHTML = cards; return;
             }
 
-            // ── Denmark (includes FIK) ───────────────────────────────────────
+            // ── Denmark ──────────────────────────────────────────────
             if (cfg.type === 'EMEA_DK') {
-                const methods = [];
-                if (vendorCountry === 'DK') {
-                    methods.push({pm:'3', color:'#ec4899', label:'FIK Payment — PM 3',
-                        description:'Danish FIK payment',
-                        remark:'Requires FIK number entered in text field in format: *71/000000000000000+000000&lt;',
-                        requirements:'F110 Posting date = day +1'});
-                    if (currency === 'DKK') {
-                        methods.push({pm:'5', color:'#0f766e', label:'Domestic DKK — PM 5',
-                            description:'Domestic DK to DK in DKK currency',
-                            requirements:'F110 Posting date = day +1'});
+                if (!vc && !cur) { res.innerHTML = pmPlaceholder('Denmark CC — select vendor country and currency'); return; }
+                let cards = '';
+                if (vc === 'DK') {
+                    cards = pmCard('3','#ec4899','FIK Payment — PM 3','Danish FIK invoice',
+                        {req:'FIK number in format: <code>*71/000000000000000+000000&lt;</code>. F110: Posting date = day +1'});
+                    if (cur === 'DKK') {
+                        cards += pmCard('5','#0f766e','Domestic DKK — PM 5','DK → DK in DKK (non-FIK)',{req:'F110: Posting date = day +1',secondary:true});
                     }
-                } else if (!hasIban || hasIban === false) {
-                    methods.push({pm:'6', color:'#6b7280', label:'No IBAN — PM 6', description:'Vendor has no IBAN'});
-                } else if (currency === 'EUR' && SEPA_COUNTRIES.has(vendorCountry)) {
-                    methods.push({pm:'8', color:'#3b82f6', label:'SEPA EUR — PM 8',
-                        description:'EUR payment to SEPA zone country',
-                        requirements:'Requires IBAN + SWIFT. F110 Posting date = day +1'});
+                } else if (hasIban === false) {
+                    cards = pmCard('6','#6b7280','No IBAN — PM 6','Vendor has no IBAN');
+                } else if (cur === 'EUR' && SEPA.has(vc)) {
+                    cards = pmCard('8','#3b82f6','SEPA EUR — PM 8',`EUR → SEPA zone (${vc})`,{req:'Requires IBAN + SWIFT. F110: Posting date = day +1'});
                 } else {
-                    methods.push({pm:'7', color:'#f59e0b', label:'Foreign — PM 7',
-                        description:'Foreign or non-SEPA payment'});
+                    cards = pmCard('7','#f59e0b','Foreign — PM 7','Foreign / non-SEPA / non-EUR from DK CC');
                 }
-                resultEl.innerHTML = `<div style="font-size:13px;color:var(--text-tertiary);margin-bottom:10px;">CC ${cc} (Denmark)</div>` + pmResultCard(methods);
-                return;
+                res.innerHTML = cards; return;
             }
 
-            // ── Poland (includes split payment) ──────────────────────────────
+            // ── Poland ───────────────────────────────────────────────
             if (cfg.type === 'EMEA_PL') {
-                const methods = [];
-                if (vendorCountry === 'PL' && currency === 'PLN') {
+                if (!vc && !cur) { res.innerHTML = pmPlaceholder('Poland CC — select vendor country and currency'); return; }
+                let cards = '';
+                if (vc === 'PL' && cur === 'PLN') {
                     if (cc === '2430') {
-                        methods.push({pm:'4', color:'#10b981', label:'PL Split Payment — PM 4',
-                            description:'Poland to Poland split payment',
-                            requirements:'Requires prework. F110 Posting date = day +1'});
+                        cards = pmCard('4','#10b981','Split Payment — PM 4','PL → PL split payment',{req:'Requires prework. F110: Posting date = day +1'});
                     }
-                    methods.push({pm:'5', color:'#0f766e', label:'Domestic PLN — PM 5',
-                        description:'Domestic PL to PL in PLN currency',
-                        requirements:'Requires prework. F110 Posting date = day +1'});
-                } else if (!hasIban || hasIban === false) {
-                    methods.push({pm:'6', color:'#6b7280', label:'No IBAN — PM 6', description:'Vendor has no IBAN'});
-                } else if (currency === 'EUR' && SEPA_COUNTRIES.has(vendorCountry)) {
-                    methods.push({pm:'8', color:'#3b82f6', label:'SEPA EUR — PM 8',
-                        description:'EUR payment to SEPA zone country',
-                        requirements:'Requires IBAN + SWIFT. F110 Posting date = day +1'});
+                    cards += pmCard('5','#0f766e','Domestic PLN — PM 5','PL → PL in PLN',{req:'Requires prework. F110: Posting date = day +1',secondary:cc==='2430'});
+                } else if (hasIban === false) {
+                    cards = pmCard('6','#6b7280','No IBAN — PM 6','Vendor has no IBAN');
+                } else if (cur === 'EUR' && SEPA.has(vc)) {
+                    cards = pmCard('8','#3b82f6','SEPA EUR — PM 8',`EUR → SEPA zone (${vc})`,{req:'Requires IBAN + SWIFT. F110: Posting date = day +1'});
                 } else {
-                    methods.push({pm:'7', color:'#f59e0b', label:'Foreign — PM 7',
-                        description:'Foreign or non-SEPA payment'});
+                    cards = pmCard('7','#f59e0b','Foreign — PM 7','Foreign / non-EUR from PL CC');
                 }
-                resultEl.innerHTML = `<div style="font-size:13px;color:var(--text-tertiary);margin-bottom:10px;">CC ${cc} (Poland)</div>` + pmResultCard(methods);
-                return;
+                res.innerHTML = cards; return;
             }
 
-            // ── Sweden (includes Giro) ───────────────────────────────────────
+            // ── Sweden ───────────────────────────────────────────────
             if (cfg.type === 'EMEA_SE') {
-                const methods = [];
-                if (vendorCountry === 'SE') {
-                    methods.push({pm:'4', color:'#10b981', label:'Giro Payment — PM 4',
-                        description:'Swedish Giro payment — does NOT require IBAN',
-                        requirements:'F110 Posting date = day +1'});
-                    if (currency === 'SEK') {
-                        methods.push({pm:'5', color:'#0f766e', label:'Domestic SEK — PM 5',
-                            description:'Domestic SE to SE in SEK currency',
-                            requirements:'F110 Posting date = day +1'});
+                if (!vc && !cur) { res.innerHTML = pmPlaceholder('Sweden CC — select vendor country and currency'); return; }
+                let cards = '';
+                if (vc === 'SE') {
+                    cards = pmCard('4','#10b981','Giro Payment — PM 4','SE Giro — no IBAN required',{req:'F110: Posting date = day +1'});
+                    if (cur === 'SEK') {
+                        cards += pmCard('5','#0f766e','Domestic SEK — PM 5','SE → SE in SEK (non-Giro)',{req:'F110: Posting date = day +1',secondary:true});
                     }
-                } else if (!hasIban || hasIban === false) {
-                    methods.push({pm:'6', color:'#6b7280', label:'No IBAN (non-SE) — PM 6',
-                        description:'Vendor outside Sweden with no IBAN'});
-                } else if (currency === 'EUR' && SEPA_COUNTRIES.has(vendorCountry)) {
-                    methods.push({pm:'8', color:'#3b82f6', label:'SEPA EUR — PM 8',
-                        description:'EUR payment to SEPA zone country',
-                        requirements:'Requires IBAN + SWIFT. F110 Posting date = day +1'});
+                } else if (hasIban === false) {
+                    cards = pmCard('6','#6b7280','No IBAN (non-SE) — PM 6','Non-Swedish vendor with no IBAN');
+                } else if (cur === 'EUR' && SEPA.has(vc)) {
+                    cards = pmCard('8','#3b82f6','SEPA EUR — PM 8',`EUR → SEPA zone (${vc})`,{req:'Requires IBAN + SWIFT. F110: Posting date = day +1'});
                 } else {
-                    methods.push({pm:'7', color:'#f59e0b', label:'Foreign — PM 7',
-                        description:'Foreign or non-SEPA payment'});
+                    cards = pmCard('7','#f59e0b','Foreign — PM 7','Foreign / non-EUR from SE CC');
                 }
-                resultEl.innerHTML = `<div style="font-size:13px;color:var(--text-tertiary);margin-bottom:10px;">CC ${cc} (Sweden)</div>` + pmResultCard(methods);
-                return;
+                res.innerHTML = cards; return;
             }
 
-            // ── South Africa ─────────────────────────────────────────────────
+            // ── South Africa ─────────────────────────────────────────
             if (cfg.type === 'EMEA_ZA') {
-                const methods = [];
-                if (vendorCountry === 'ZA' && currency === 'ZAR') {
-                    methods.push({pm:'5', color:'#0f766e', label:'Domestic ZAR — PM 5',
-                        description:'Domestic ZA to ZA in ZAR — note: South Africa does not use IBAN',
-                        requirements:'F110 Posting date = day +1'});
-                } else if (!hasIban || hasIban === false) {
-                    methods.push({pm:'6', color:'#6b7280', label:'No IBAN (non-ZAR) — PM 6',
-                        description:'Non-ZAR vendor with no IBAN',
-                        remark:'Requires SAD document backup from prework — email to fsd@za.hsbc.com'});
+                if (!vc && !cur) { res.innerHTML = pmPlaceholder('South Africa CC — select vendor country and currency'); return; }
+                let cards = '';
+                if (vc === 'ZA' && cur === 'ZAR') {
+                    cards = pmCard('5','#0f766e','Domestic ZAR — PM 5','ZA → ZA in ZAR. Note: SA does not use IBAN',{req:'F110: Posting date = day +1'});
+                } else if (hasIban === false) {
+                    cards = pmCard('6','#6b7280','No IBAN (non-ZAR) — PM 6','',{remark:'Requires SAD document backup from prework. Email to fsd@za.hsbc.com'});
                 } else {
-                    methods.push({pm:'7', color:'#f59e0b', label:'Foreign — PM 7',
-                        description:'Foreign or different currency payment',
-                        remark:'Requires SAD document backup from prework — email to fsd@za.hsbc.com'});
+                    cards = pmCard('7','#f59e0b','Foreign — PM 7','Foreign / different currency from SA CC',{remark:'Requires SAD document backup from prework. Email to fsd@za.hsbc.com'});
                 }
-                resultEl.innerHTML = `<div style="font-size:13px;color:var(--text-tertiary);margin-bottom:10px;">CC ${cc} (South Africa)</div>` + pmResultCard(methods);
-                return;
+                res.innerHTML = cards; return;
             }
 
-            // ── Standard EMEA (PM 5 / 6 / 7 / 8) ──────────────────────────
+            // ── Standard EMEA (PM 5 / 6 / 7 / 8) ──────────────────────
             if (cfg.type === 'EMEA') {
-                if (!vendorCountry || !currency || hasIban === null) {
-                    resultEl.innerHTML = `<div style="background:var(--bg-hover);border-radius:10px;padding:1rem;color:var(--text-secondary);font-size:14px;">
-                        Please select <strong>Vendor Bank Country</strong>, <strong>Currency</strong>, and whether the vendor <strong>Has IBAN</strong> to get a recommendation for CC ${cc}.</div>`;
+                if (!vc || !cur || hasIban === null) {
+                    res.innerHTML = pmPlaceholder(`CC ${cc} (${CC_FLAGS[cfg.country]||''}${cfg.label}) — select vendor country, currency, and IBAN status`);
                     return;
                 }
+                const ccCty = cfg.country;
+                const ccCur = cfg.domesticCurrency;
+                const isDomCty  = vc === ccCty;
+                const isDomCur  = cur === ccCur;
+                const isSepa    = SEPA.has(vc);
+                const ibanOK    = IBAN_SUPPORTED.has(vc);
 
-                const ccCountry = cfg.country;
-                const ccCurrency = cfg.domesticCurrency;
-                const isSepa = SEPA_COUNTRIES.has(vendorCountry);
-                const isDomestic = vendorCountry === ccCountry;
-                const isDomesticCurrency = currency === ccCurrency;
+                const sepaTag = isSepa
+                    ? `<span style="padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;background:#d1fae5;color:#065f46;">SEPA ✓</span>`
+                    : `<span style="padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;background:#f3f4f6;color:#374151;">Non-SEPA</span>`;
+                const ibanTag = hasIban
+                    ? `<span style="padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;background:#dbeafe;color:#1e40af;">IBAN ✓</span>`
+                    : `<span style="padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;background:#fee2e2;color:#991b1b;">No IBAN</span>`;
+                const ctxBar = `<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px;padding:8px 10px;background:var(--bg-hover);border-radius:8px;font-size:12px;color:var(--text-secondary);">
+                    <span>CC ${cc} (${CC_FLAGS[ccCty]||''}${ccCty})</span><span>→</span>
+                    <span>${CC_FLAGS[vc]||''}${vc}</span>${sepaTag}<span>· ${cur}</span>${ibanTag}
+                </div>`;
 
-                const methods = [];
-
+                let cards = '';
                 if (!hasIban) {
-                    // PM 6: No IBAN
-                    methods.push({pm:'6', color:'#6b7280', label:'No IBAN — PM 6',
-                        description:'Vendor does not have an IBAN — any country, any currency'});
-                    // If domestic, PM5 may still apply (some countries don't require IBAN for domestic)
-                    if (isDomestic && isDomesticCurrency) {
-                        methods.push({pm:'5', color:'#0f766e', label:'Domestic — PM 5 (alternative)',
-                            description:`Domestic ${ccCountry} → ${ccCountry} in ${ccCurrency} — use if no IBAN available in domestic`,
-                            requirements:'F110 Posting date = day +1'});
+                    cards = pmCard('6','#6b7280','No IBAN — PM 6','Vendor has no IBAN — any country, any currency');
+                    if (isDomCty && isDomCur && !ibanOK) {
+                        cards += pmCard('5','#0f766e',`Domestic ${ccCty} — PM 5 (also valid)`,`${ccCty}→${ccCty} in ${ccCur} — domestic works without IBAN`,{req:'F110: Posting date = day +1',secondary:true});
                     }
-                } else if (isDomestic && isDomesticCurrency) {
-                    // PM 5: Domestic same country, same currency
-                    methods.push({pm:'5', color:'#0f766e', label:`Domestic ${ccCountry} — PM 5`,
-                        description:`${ccCountry} → ${ccCountry} in ${ccCurrency} currency`,
-                        requirements:'F110 Posting date = day +1'});
-                    // If domestic country is also SEPA and EUR, PM8 also works
-                    if (currency === 'EUR' && isSepa) {
-                        methods.push({pm:'8', color:'#3b82f6', label:'SEPA EUR — PM 8 (also valid)',
-                            description:`${ccCountry} is a SEPA country — PM 8 also routes this correctly`,
-                            requirements:'Requires IBAN + SWIFT. F110 Posting date = day +1'});
+                } else if (isDomCty && isDomCur) {
+                    cards = pmCard('5','#0f766e',`Domestic ${ccCty} — PM 5`,`${ccCty}→${ccCty} in ${ccCur}`,{req:'F110: Posting date = day +1'});
+                    if (EURO_ZONE.has(ccCty) && cur === 'EUR') {
+                        cards += pmCard('8','#3b82f6','SEPA EUR — PM 8 (also valid)',`${ccCty} is euro-zone SEPA — PM 8 routes correctly too`,{req:'Requires IBAN + SWIFT. F110: Posting date = day +1',secondary:true});
                     }
-                } else if (currency === 'EUR' && isSepa) {
-                    // PM 8: EUR to SEPA zone
-                    methods.push({pm:'8', color:'#3b82f6', label:'SEPA EUR — PM 8',
-                        description:`EUR payment to SEPA zone (${vendorCountry})`,
-                        requirements:'Requires IBAN + SWIFT. F110 Posting date = day +1'});
-                } else if (!isSepa || currency !== 'EUR') {
-                    // PM 7: Foreign / non-SEPA / non-EUR
-                    let reason = '';
-                    if (!isSepa) reason = `${vendorCountry} is not a SEPA zone country`;
-                    else if (currency !== 'EUR') reason = `Payment is in ${currency}, not EUR`;
-                    methods.push({pm:'7', color:'#f59e0b', label:'Foreign / Non-SEPA — PM 7',
-                        description:reason || 'Foreign payment or different currency'});
+                } else if (isDomCty && !isDomCur) {
+                    cards = pmCard('7','#f59e0b','Foreign Currency in Domestic Country — PM 7',`${ccCty}→${ccCty} but ${cur} ≠ domestic ${ccCur}`);
+                } else if (!isDomCty && isSepa && cur === 'EUR') {
+                    cards = pmCard('8','#3b82f6','SEPA EUR — PM 8',`EUR → SEPA zone (${vc})`,{req:'Requires IBAN + SWIFT. F110: Posting date = day +1'}) +
+                        pmCard('7','#f59e0b','Foreign — PM 7 (fallback)','Use PM 7 if vendor lacks SWIFT',{secondary:true});
+                } else if (!isDomCty && isSepa && cur !== 'EUR') {
+                    cards = pmCard('7','#f59e0b','Non-EUR to SEPA — PM 7',`${vc} is SEPA but payment is ${cur} (not EUR)`);
+                } else if (!isDomCty && !isSepa && ibanOK) {
+                    cards = pmCard('7','#f59e0b','Foreign Non-SEPA (with IBAN) — PM 7',`${vc} uses IBAN but is outside SEPA zone`);
+                } else if (!isDomCty && !isSepa && !ibanOK) {
+                    cards = pmCard('6','#6b7280','No IBAN Country — PM 6',`${vc} does not use IBAN — use bank key + account number`) +
+                        pmCard('7','#f59e0b','Foreign — PM 7 (if SWIFT provided)','Use PM 7 if vendor has BIC/SWIFT',{secondary:true});
                 } else {
-                    methods.push({pm:'7', color:'#f59e0b', label:'Foreign — PM 7',
-                        description:'Foreign payment'});
+                    cards = pmCard('7','#f59e0b','Foreign — PM 7','Foreign payment');
                 }
-
-                const ccCountryName = COUNTRY_NAMES[ccCountry] || ccCountry;
-                const vendorCountryName = COUNTRY_NAMES[vendorCountry] || vendorCountry;
-                const sepaTag = isSepa ? `<span style="display:inline-block;padding:1px 6px;border-radius:4px;background:#d1fae5;color:#065f46;font-size:11px;font-weight:600;margin-left:4px;">SEPA</span>` : `<span style="display:inline-block;padding:1px 6px;border-radius:4px;background:#f3f4f6;color:#374151;font-size:11px;font-weight:600;margin-left:4px;">Non-SEPA</span>`;
-                const ibanTag = hasIban ? `<span style="display:inline-block;padding:1px 6px;border-radius:4px;background:#dbeafe;color:#1e40af;font-size:11px;font-weight:600;margin-left:4px;">Has IBAN</span>` : `<span style="display:inline-block;padding:1px 6px;border-radius:4px;background:#fee2e2;color:#991b1b;font-size:11px;font-weight:600;margin-left:4px;">No IBAN</span>`;
-
-                resultEl.innerHTML = `
-                <div style="font-size:12px;color:var(--text-tertiary);margin-bottom:12px;display:flex;flex-wrap:wrap;gap:4px;align-items:center;">
-                    <span>CC ${cc} (${ccCountryName})</span> <span>→</span>
-                    <span>${vendorCountryName}</span>${sepaTag}
-                    <span style="margin-left:4px;">· ${currency}</span>
-                    ${ibanTag}
-                </div>` + pmResultCard(methods);
-                return;
+                res.innerHTML = ctxBar + cards; return;
             }
 
-            resultEl.innerHTML = `<div style="padding:1rem;color:var(--text-secondary);">Could not determine payment method for CC ${cc}. Please contact your team lead.</div>`;
+            res.innerHTML = pmPlaceholder('Unable to determine — please contact your supervisor.');
         }
 
         // Real-time sync from Firestore
