@@ -1733,9 +1733,13 @@ Example formats accepted:
                                     📤 Requestor Comms
                                 </div>
                                 <div style="display:flex;flex-direction:column;gap:3px;">
-                                    <button id="tplBtn_docs_missing" onclick="selectEmailTemplate('docs_missing')"
+                                    <button id="tplBtn_docs_missing_en" onclick="selectEmailTemplate('docs_missing_en')"
                                             style="text-align:left;padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:white;color:var(--text-primary);font-size:12px;cursor:pointer;font-weight:600;line-height:1.3;">
-                                        📋 Documents Missing<br><span style="font-weight:400;font-size:11px;color:var(--text-tertiary);">Request missing docs from requester</span>
+                                        📋 Documents Missing 🇺🇸<br><span style="font-weight:400;font-size:11px;color:var(--text-tertiary);">Request missing docs — English</span>
+                                    </button>
+                                    <button id="tplBtn_docs_missing_es" onclick="selectEmailTemplate('docs_missing_es')"
+                                            style="text-align:left;padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:white;color:var(--text-primary);font-size:12px;cursor:pointer;font-weight:600;line-height:1.3;">
+                                        📋 Documents Missing 🇲🇽<br><span style="font-weight:400;font-size:11px;color:var(--text-tertiary);">Solicitar documentos — Español</span>
                                     </button>
                                     <button id="tplBtn_req_completed" onclick="selectEmailTemplate('req_completed')"
                                             style="text-align:left;padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:white;color:var(--text-primary);font-size:12px;cursor:pointer;font-weight:600;line-height:1.3;">
@@ -3079,7 +3083,7 @@ ${from}`;
 
         function selectEmailTemplate(type) {
             _tab6Template = type;
-            ['extend','create','docs_missing','req_completed','req_received','validation_en','validation_es'].forEach(t => {
+            ['extend','create','docs_missing_en','docs_missing_es','req_completed','req_received','validation_en','validation_es'].forEach(t => {
                 const btn = document.getElementById('tplBtn_' + t);
                 if (!btn) return;
                 const active = t === type;
@@ -3110,7 +3114,8 @@ ${from}`;
         const TAB6_TEMPLATE_META = {
             extend:         { to: 'VendorMaintenanceAudit@resideo.com',  label: 'Audit Team — Extend/FBL1N' },
             create:         { to: 'VendorMaintenanceAudit@resideo.com',  label: 'Audit Team — Create/IBAN' },
-            docs_missing:   { to: 'requestor',                           label: 'Requestor — Docs Missing' },
+            docs_missing_en: { to: 'requestor', label: 'Requestor — Docs Missing (EN)' },
+            docs_missing_es: { to: 'requestor', label: 'Requestor — Docs Missing (ES)' },
             req_completed:  { to: 'requestor',                           label: 'Requestor — Completed' },
             req_received:   { to: 'requestor',                           label: 'Requestor — Received' },
             validation_en:  { to: 'vendor', from: 'AMERBankingValidation@resideo.com', label: 'Vendor — Banking Validation (EN)' },
@@ -3160,44 +3165,63 @@ ${f.fullName}
 Vendor Master Team | Resideo
 ${f.from}`;
             }
-            if (_tab6Template === 'docs_missing') {
-                // Country-specific document requirements
+            if (_tab6Template === 'docs_missing_en' || _tab6Template === 'docs_missing_es') {
+                const isES   = _tab6Template === 'docs_missing_es';
                 const isMX   = f.country === 'MX'  || f.country === 'MEXICO';
                 const isUS   = f.country === 'US'  || f.country === 'USA' || f.country === 'UNITED STATES';
                 const isEMEA = f.ccRegion === '2';
                 const isAPAC = f.ccRegion === '3';
 
-                let docSection = '';
-                if (isMX) {
-                    docSection = `\nDado que su empresa es de México, necesitamos los siguientes documentos adicionales:\n\n` +
-                        `  • [ ] Constancia de situación fiscal reciente\n` +
-                        `  • [ ] Carátula bancaria o carta membretada con su cuenta de banco`;
+                // Country-specific doc bullets — no intro sentence, no DPS
+                let docs = '';
+                if (isMX && isES) {
+                    docs = `  • [ ] Constancia de situación fiscal reciente\n  • [ ] Carátula bancaria o carta membretada con su cuenta de banco`;
+                } else if (isMX) {
+                    docs = `  • [ ] Constancia de situacion fiscal reciente\n  • [ ] Caratula bancaria o carta membretada con su cuenta de banco`;
                 } else if (isUS) {
-                    docSection = `\nSince your company is based in the US, we also require:\n\n` +
-                        `  • [ ] Bank or company letterhead with the ACH information\n` +
-                        `  • [ ] W-9 form`;
+                    docs = `  • [ ] Bank or company letterhead with the ACH information\n  • [ ] W-9 form`;
                 } else if (isEMEA) {
-                    docSection = `\nSince your company is based in Europe / EMEA, we also require:\n\n` +
-                        `  • [ ] PDF with their IBAN and their VAT ID`;
+                    docs = `  • [ ] PDF with their IBAN and their VAT ID`;
                 } else if (isAPAC) {
-                    docSection = `\nSince your company is in APAC, we also require:\n\n` +
-                        `  • [ ] Document with their banking details\n` +
-                        `  • [ ] VAT Certificate / Tax document`;
+                    docs = `  • [ ] Document with their banking details\n  • [ ] VAT Certificate / Tax document`;
+                } else {
+                    docs = `  • [ ] [Add specific missing document here]`;
                 }
 
-                const greeting = isMX
-                    ? `Hola ${firstName},\n\nGracias por enviar su solicitud de proveedor para ${f.vendNum} ${f.vendName} (Código de empresa ${f.cc}).\n\nActualmente estamos revisando su solicitud y notamos que los siguientes documentos aún son necesarios para continuar:`
-                    : `Hi ${firstName},\n\nThank you for submitting your vendor request for ${f.vendNum} ${f.vendName} (Company Code ${f.cc}).\n\nWe are currently reviewing your request and noticed that the following documents are still needed to proceed:`;
+                if (isES) {
+                    return `Hola ${firstName},
 
-                const closing = isMX
-                    ? `\n\n¿Podría proporcionarnos lo anterior a la brevedad posible para que podamos continuar con el proceso?\n\nSi tiene alguna pregunta, no dude en comunicarse con nosotros.\n\nSaludos,\n${f.fullName}\nVendor Master Team | Resideo\n${f.from}`
-                    : `\n\nCould you please provide the above at your earliest convenience so we can move forward with processing?\n\nIf you have any questions, feel free to reach out.\n\nBest regards,\n${f.fullName}\nVendor Master Team | Resideo\n${f.from}`;
+Gracias por enviar su solicitud de proveedor para ${f.vendNum} ${f.vendName} (Company Code ${f.cc}).
 
-                const stdDocs = isMX
-                    ? `\n\n  • [ ] DPS — Resultado de Denied Party Screening`
-                    : `\n\n  • [ ] DPS — Denied Party Screening result`;
+Actualmente estamos revisando su solicitud y notamos que los siguientes documentos aún son necesarios para continuar:
 
-                return greeting + stdDocs + docSection + closing;
+${docs}
+
+¿Podría proporcionarnos lo anterior a la brevedad posible para que podamos continuar con el proceso?
+
+Si tiene alguna pregunta, no dude en comunicarse con nosotros.
+
+Saludos,
+${f.fullName}
+Vendor Master Team | Resideo
+${f.from}`;
+                }
+                return `Hi ${firstName},
+
+Thank you for submitting your vendor request for ${f.vendNum} ${f.vendName} (Company Code ${f.cc}).
+
+We are currently reviewing your request and noticed that the following documents are still needed to proceed:
+
+${docs}
+
+Could you please provide the above at your earliest convenience so we can move forward with processing?
+
+If you have any questions, feel free to reach out.
+
+Best regards,
+${f.fullName}
+Vendor Master Team | Resideo
+${f.from}`;
             }
             if (_tab6Template === 'req_completed') {
                 return `Hi ${firstName},
@@ -3907,12 +3931,16 @@ AMERBankingValidation@resideo.com`;
                 filtered = filtered.filter(a => (a.completedBy || '') === _completedByFilter);
             }
 
-            // Date range (entryDate stored as YYYY-MM-DD ISO string)
-            if (_dateFrom) {
-                filtered = filtered.filter(a => (a.entryDate || '') >= _dateFrom);
-            }
-            if (_dateTo) {
-                filtered = filtered.filter(a => (a.entryDate || '') <= _dateTo);
+            // Date range — normalize stored value to YYYY-MM-DD before comparing
+            // (handles dates stored with time component like 2026-03-09T00:00:00Z)
+            if (_dateFrom || _dateTo) {
+                filtered = filtered.filter(a => {
+                    const dk = String(a.entryDate || '').split('T')[0]; // first 10 chars
+                    if (!dk) return false; // records with no date are excluded when filtering by date
+                    if (_dateFrom && dk < _dateFrom) return false;
+                    if (_dateTo   && dk > _dateTo)   return false;
+                    return true;
+                });
             }
 
             // Sort by entryDate
