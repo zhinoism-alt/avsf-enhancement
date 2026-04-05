@@ -652,44 +652,67 @@
         }
 
         /* Tab Navigation */
+        .dash-tabs-wrap {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+            border: 1px solid var(--border-light);
+            border-bottom: none;
+            padding: 0 0.5rem;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 0;
+        }
+
         .dash-tabs {
             display: flex;
             gap: 2px;
-            margin-bottom: 1.25rem;
-            border-bottom: 1.5px solid var(--border);
-            padding-bottom: 0;
             overflow-x: auto;
             scrollbar-width: none;
         }
         .dash-tabs::-webkit-scrollbar { display: none; }
 
+        .dash-tab-content-area {
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-top: 2px solid var(--primary);
+            border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            padding: 1.375rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Sub-content inside the tab content area should not double-round */
+        .dash-tab-content-area .controls { box-shadow: none; border-color: var(--border); }
+        .dash-tab-content-area .data-section { box-shadow: none; }
+
         .dash-tab-btn {
-            padding: 8px 16px;
+            padding: 10px 15px;
             border: none;
-            border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+            border-radius: 0;
             font-family: 'DM Sans', sans-serif;
             font-size: 0.8125rem;
             font-weight: 600;
             cursor: pointer;
-            transition: color var(--duration-base), background var(--duration-base), border-color var(--duration-fast);
+            transition: color var(--duration-base), background var(--duration-base);
             background: transparent;
             color: var(--text-tertiary);
-            border-bottom: 2px solid transparent;
-            margin-bottom: -1.5px;
+            border-bottom: 2.5px solid transparent;
             white-space: nowrap;
             display: flex;
             align-items: center;
             gap: 6px;
+            position: relative;
         }
         .dash-tab-btn:hover:not(.active) {
-            color: var(--text-secondary);
+            color: var(--text-primary);
             background: var(--bg-hover);
         }
         .dash-tab-btn.active {
             color: var(--primary);
             border-bottom-color: var(--primary);
-            background: var(--primary-50);
+            font-weight: 700;
         }
+        .dash-tab-btn svg { opacity: 0.7; }
+        .dash-tab-btn.active svg { opacity: 1; }
 
         .dash-tab-content { display: none; }
         .dash-tab-content.active { display: block; }
@@ -798,32 +821,35 @@
     <div class="container">
         <div class="content-wrapper">
             <!-- Dashboard Tab Navigation -->
-            <div class="dash-tabs">
-                <button class="dash-tab-btn active" id="dashTab1Btn" onclick="switchDashTab(1)">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="m9 12 2 2 4-4"/></svg>
-                    AVSF Tracker
-                </button>
-                <button class="dash-tab-btn" id="dashTab2Btn" onclick="switchDashTab(2)">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                    Plant / CC Ref
-                </button>
-                <button class="dash-tab-btn" id="dashTab3Btn" onclick="switchDashTab(3)">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-                    Audit Log
-                </button>
-                <button class="dash-tab-btn" id="dashTab4Btn" onclick="switchDashTab(4)">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-                    Payment Method
-                </button>
-                <button class="dash-tab-btn" id="dashTab5Btn" onclick="switchDashTab(5)">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                    Resources
-                </button>
-                <button class="dash-tab-btn" id="dashTab6Btn" onclick="switchDashTab(6)">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                    Email Templates
-                </button>
+            <div class="dash-tabs-wrap">
+                <div class="dash-tabs">
+                    <button class="dash-tab-btn active" id="dashTab1Btn" onclick="switchDashTab(1)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="m9 12 2 2 4-4"/></svg>
+                        AVSF Tracker
+                    </button>
+                    <button class="dash-tab-btn" id="dashTab2Btn" onclick="switchDashTab(2)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                        Plant / CC Ref
+                    </button>
+                    <button class="dash-tab-btn" id="dashTab3Btn" onclick="switchDashTab(3)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                        Audit Log
+                    </button>
+                    <button class="dash-tab-btn" id="dashTab4Btn" onclick="switchDashTab(4)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                        Payment Method
+                    </button>
+                    <button class="dash-tab-btn" id="dashTab5Btn" onclick="switchDashTab(5)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                        Resources
+                    </button>
+                    <button class="dash-tab-btn" id="dashTab6Btn" onclick="switchDashTab(6)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                        Email Templates
+                    </button>
+                </div>
             </div>
+            <div class="dash-tab-content-area">
 
             <div class="dash-tab-content active" id="dashTab1Content">
             <div class="metrics-grid">
@@ -2049,6 +2075,8 @@ Select a request from the left to preview the email...
                     </div>
                 </div>
             </div>
+
+            </div><!-- /dash-tab-content-area -->
 
     <!-- Admin Panel Modal -->
     <div class="modal" id="adminModal">
@@ -3963,8 +3991,12 @@ AMERBankingValidation@resideo.com`;
                         const KNOWN=['Brandon Ramos','Rosana Munoz','Yannick Rojas'];
                         const cb=avsf.completedBy||'';
                         if(KNOWN.includes(cb)) return `<span style="color:var(--primary);font-weight:600;">${cb}</span>`;
+                        if(avsf.status==='REJECTED') {
+                            const rejector = avsf.approverName || avsf.completedBy || '—';
+                            return `<span style="color:#dc2626;font-weight:600;" title="Rejected by">${rejector}</span>`;
+                        }
                         if(avsf.status==='COMPLETED') return '<span style="color:#9ca3af;">—</span>';
-                        return '<span style="color:#d97706;font-size:11px;font-weight:600;">⏳ Pending</span>';
+                        return '<span style="color:#9ca3af;font-size:11px;">—</span>';
                     })()}</td>
                     <td style="font-size:12px;">${avsf.requestorName || '-'}</td>
                     <td>
@@ -4615,8 +4647,8 @@ AMERBankingValidation@resideo.com`;
                 if (!['PROCESSING','COMPLETED','REJECTED','PENDING_BUYER','IDOC_ERROR','ON_HOLD','CANCELLED'].includes(r.status)) {
                     r.status = 'PROCESSING';
                 }
-                // Auto-check all requirements for already-COMPLETED records
-                if (r.status === 'COMPLETED' && r.companyCode) {
+                // Auto-check all requirements for COMPLETED or REJECTED records
+                if ((r.status === 'COMPLETED' || r.status === 'REJECTED') && r.companyCode) {
                     const reqs = getRequirementsList(r.companyCode, r.country || '', r.requestType || '');
                     r.requirements = {};
                     reqs.forEach(req => { r.requirements[req.id] = true; });
