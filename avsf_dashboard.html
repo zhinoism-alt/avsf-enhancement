@@ -322,6 +322,10 @@
             position: sticky;
             top: 0;
             z-index: 10;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        thead th {
+            background: var(--bg-hover);
         }
 
         th {
@@ -714,7 +718,7 @@
                     </div>
                 </div>
 
-                <div style="overflow-x: auto;">
+                <div style="overflow-x: auto; overflow-y: auto; max-height: calc(100vh - 310px); border: 1px solid var(--border); border-radius: 8px;">
                     <table id="avsfTable">
                         <colgroup>
                             <col style="width:100px">
@@ -3774,6 +3778,14 @@ ${f.from}`;
                 if (!['PROCESSING','COMPLETED','REJECTED','PENDING_BUYER','IDOC_ERROR','ON_HOLD','CANCELLED'].includes(r.status)) {
                     r.status = 'PROCESSING';
                 }
+                // Auto-check all requirements for already-COMPLETED records
+                if (r.status === 'COMPLETED' && r.companyCode) {
+                    const reqs = getRequirementsList(r.companyCode, r.country || '', r.requestType || '');
+                    r.requirements = {};
+                    reqs.forEach(req => { r.requirements[req.id] = true; });
+                } else if (!r.requirements) {
+                    r.requirements = {};
+                }
             });
 
             // Build preview summary
@@ -4313,8 +4325,35 @@ ${f.from}`;
                 if (checkbox) checklist[req.id] = checkbox.checked;
             });
 
-            await db.collection('avsfs').doc(avsf.requestNo).update({ requirements: checklist });
-            closeRequirementsModal();
+            const allChecked = requirements.length > 0 && requirements.every(req => checklist[req.id]);
+            const noneChecked = requirements.every(req => !checklist[req.id]);
+
+            const updates = { requirements: checklist };
+
+            if (allChecked && avsf.status !== 'COMPLETED') {
+                // All items checked → auto-complete
+                const today = new Date().toISOString().split('T')[0];
+                const user = getCurrentUser();
+                const fullName = user === 'Brandon' ? 'Brandon Ramos'
+                    : user === 'Yannick' ? 'Yannick Rojas' : 'Rosana Munoz';
+                updates.status = 'COMPLETED';
+                updates.completionDate = today;
+                updates.completedBy = fullName;
+                await db.collection('avsfs').doc(avsf.requestNo).update(updates);
+                closeRequirementsModal();
+                setTimeout(() => alert('✅ All requirements checked — status automatically set to Completed!'), 200);
+            } else if (!allChecked && avsf.status === 'COMPLETED') {
+                // Unchecked an item on a Completed record → revert to Processing
+                updates.status = 'PROCESSING';
+                updates.completionDate = '';
+                updates.completedBy = '';
+                await db.collection('avsfs').doc(avsf.requestNo).update(updates);
+                closeRequirementsModal();
+                setTimeout(() => alert('⚠️ Checklist incomplete — status reverted to Processing.'), 200);
+            } else {
+                await db.collection('avsfs').doc(avsf.requestNo).update(updates);
+                closeRequirementsModal();
+            }
         }
 
         function checkCompletionRequirements() {
