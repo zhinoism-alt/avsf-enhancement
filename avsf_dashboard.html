@@ -1638,7 +1638,7 @@ Example formats accepted:
 
     <!-- Validation Tools Modal -->
     <div class="modal" id="validationToolsModal">
-        <div class="modal-content" style="max-width: 700px;">
+        <div class="modal-content" style="max-width: 740px;">
             <div class="modal-header">
                 <h2 class="modal-title">🔧 Validation Tools</h2>
                 <button class="close-btn" onclick="closeValidationToolsModal()">&times;</button>
@@ -1647,7 +1647,7 @@ Example formats accepted:
             <div class="modal-body">
             <div style="margin-bottom: 20px;">
                 <p style="color: #6b7280; font-size: 14px;">
-                    Validate IBAN and VAT numbers for audit documentation. Results can be exported as PDF.
+                    Validate IBAN and VAT numbers for audit documentation, or generate Outlook email templates.
                 </p>
             </div>
 
@@ -1667,18 +1667,33 @@ Example formats accepted:
 
             <!-- Tab Navigation -->
             <div style="display: flex; border-bottom: 2px solid #e5e7eb; margin-bottom: 20px;">
-                <button id="ibanTab" onclick="switchValidationTab('iban')" 
-                        style="flex: 1; padding: 12px; border: none; background: #3b82f6; color: white; font-weight: 600; cursor: pointer; border-radius: 6px 6px 0 0; font-size: 14px;">
+                <button id="ibanTab" onclick="switchValidationTab('iban')"
+                        style="flex: 1; padding: 10px; border: none; background: #3b82f6; color: white; font-weight: 600; cursor: pointer; border-radius: 6px 6px 0 0; font-size: 13px;">
                     📊 IBAN Validator
                 </button>
-                <button id="vatTab" onclick="switchValidationTab('vat')" 
-                        style="flex: 1; padding: 12px; border: none; background: #f3f4f6; color: #6b7280; font-weight: 600; cursor: pointer; border-radius: 6px 6px 0 0; font-size: 14px; margin-left: 4px;">
+                <button id="vatTab" onclick="switchValidationTab('vat')"
+                        style="flex: 1; padding: 10px; border: none; background: #f3f4f6; color: #6b7280; font-weight: 600; cursor: pointer; border-radius: 6px 6px 0 0; font-size: 13px; margin-left: 4px;">
                     📋 VAT Validator
+                </button>
+                <button id="emailTab" onclick="switchValidationTab('email')"
+                        style="flex: 1; padding: 10px; border: none; background: #f3f4f6; color: #6b7280; font-weight: 600; cursor: pointer; border-radius: 6px 6px 0 0; font-size: 13px; margin-left: 4px;">
+                    ✉️ Email Template
                 </button>
             </div>
 
             <!-- IBAN Tab Content -->
             <div id="ibanTabContent" style="display: block;">
+                <!-- AVSF select for IBAN/VAT tabs -->
+                <div style="background: #f9fafb; padding: 12px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #e5e7eb;">
+                    <label style="font-size: 12px; font-weight: 600; color: #374151; display: block; margin-bottom: 6px;">
+                        Select AVSF (Optional — for PDF reference)
+                    </label>
+                    <select id="validationAVSFSelect" class="form-select" onchange="updateVendorNameForValidation()" style="font-size:13px;">
+                        <option value="">-- Or enter vendor name manually below --</option>
+                    </select>
+                    <input type="text" id="manualVendorName" class="form-input" placeholder="Or enter vendor name manually"
+                           style="font-size: 13px; margin-top: 8px;">
+                </div>
                 <div style="background: #f0f9ff; padding: 20px; border-radius: 8px; border: 2px solid #3b82f6;">
                     
                     <!-- API Mode Selection -->
@@ -1774,6 +1789,63 @@ Example formats accepted:
                     <button id="vatPdfBtn" onclick="exportVATPDF()" class="btn btn-secondary" style="width: 100%; display: none;">
                         📄 Export VAT Validation as PDF
                     </button>
+                </div>
+            </div>
+
+            <!-- Email Template Tab Content -->
+            <div id="emailTabContent" style="display: none;">
+                <div style="background: #fdf4ff; padding: 20px; border-radius: 8px; border: 2px solid #a855f7;">
+
+                    <!-- FROM + AVSF row -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+                        <div>
+                            <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:5px;">From Mailbox</label>
+                            <select id="emailFromSelect" class="form-select" style="font-size:13px;" onchange="buildEmailPreview()">
+                                <option value="USMXVendorMaintenance@resideo.com">🇺🇸 USMXVendorMaintenance@resideo.com</option>
+                                <option value="VendorMaintenance_EMEA@resideo.com">🇪🇺 VendorMaintenance_EMEA@resideo.com</option>
+                                <option value="ApacVendorMaintenance@resideo.com">🌏 ApacVendorMaintenance@resideo.com</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:5px;">Select AVSF / Vendor</label>
+                            <select id="emailAVSFSelect" class="form-select" style="font-size:13px;" onchange="buildEmailPreview()">
+                                <option value="">-- Select a request --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Template type -->
+                    <div style="margin-bottom:14px;">
+                        <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:6px;">Email Template</label>
+                        <div style="display:flex;gap:8px;">
+                            <button id="tplExtendBtn" onclick="setEmailTemplate('extend')"
+                                    style="flex:1;padding:8px 10px;border:2px solid #a855f7;background:#a855f7;color:white;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">
+                                🔓 Extend — FBL1N Activity
+                            </button>
+                            <button id="tplCreateBtn" onclick="setEmailTemplate('create')"
+                                    style="flex:1;padding:8px 10px;border:2px solid #e5e7eb;background:white;color:#6b7280;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">
+                                ✅ Create — IBAN on VAT Site
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Live Preview -->
+                    <div style="margin-bottom:14px;">
+                        <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:5px;">Email Preview</label>
+                        <div id="emailPreviewBox" style="background:white;border:1px solid #e5e7eb;border-radius:6px;padding:14px;font-size:12px;font-family:monospace;white-space:pre-wrap;color:#111827;min-height:200px;max-height:320px;overflow-y:auto;line-height:1.7;">
+                            Select a request and template to preview...
+                        </div>
+                    </div>
+
+                    <!-- Action buttons -->
+                    <div style="display:flex;gap:8px;">
+                        <button onclick="openOutlookEmail()" class="btn btn-primary" style="flex:1;font-size:13px;">
+                            📧 Open in Outlook
+                        </button>
+                        <button onclick="copyEmailToClipboard()" class="btn btn-secondary" style="flex:1;font-size:13px;">
+                            📋 Copy to Clipboard
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -2569,6 +2641,185 @@ Example formats accepted:
             if (el) el.style.display = (rt === 'MO') ? 'block' : 'none';
         }
 
+
+        // ── Email Template Functions ──────────────────────────────────────────
+        function populateEmailAVSFSelect() {
+            const sel = document.getElementById('emailAVSFSelect');
+            if (!sel) return;
+            const cur = sel.value;
+            sel.innerHTML = '<option value="">-- Select a request --</option>';
+            (avsfs || []).forEach((avsf, idx) => {
+                const opt = document.createElement('option');
+                opt.value = idx;
+                const reqFmt = formatRequestNumber(avsf.requestNo);
+                const vn = avsf.vendorNumber ? ' · ' + avsf.vendorNumber : '';
+                opt.textContent = `${reqFmt} - ${avsf.vendorName}${vn}`;
+                sel.appendChild(opt);
+            });
+            if (cur) sel.value = cur;
+        }
+
+        function setEmailTemplate(type) {
+            _emailTemplate = type;
+            const extBtn = document.getElementById('tplExtendBtn');
+            const creBtn = document.getElementById('tplCreateBtn');
+            if (extBtn && creBtn) {
+                extBtn.style.background = type === 'extend' ? '#a855f7' : 'white';
+                extBtn.style.color = type === 'extend' ? 'white' : '#6b7280';
+                extBtn.style.borderColor = type === 'extend' ? '#a855f7' : '#e5e7eb';
+                creBtn.style.background = type === 'create' ? '#a855f7' : 'white';
+                creBtn.style.color = type === 'create' ? 'white' : '#6b7280';
+                creBtn.style.borderColor = type === 'create' ? '#a855f7' : '#e5e7eb';
+            }
+            buildEmailPreview();
+        }
+
+        function getEmailInitials() {
+            const u = getCurrentUser();
+            return u === 'Brandon' ? 'BR' : u === 'Yannick' ? 'YR' : 'RM';
+        }
+
+        function getEmailFullName() {
+            const u = getCurrentUser();
+            return u === 'Brandon' ? 'Brandon Ramos' : u === 'Yannick' ? 'Yannick Rojas' : 'Rosana Munoz';
+        }
+
+        function buildEmailPreview() {
+            const selEl = document.getElementById('emailAVSFSelect');
+            const fromEl = document.getElementById('emailFromSelect');
+            const previewEl = document.getElementById('emailPreviewBox');
+            if (!previewEl) return;
+
+            const idx = selEl ? selEl.value : '';
+            if (idx === '') {
+                previewEl.textContent = 'Select a request and template to preview...';
+                return;
+            }
+
+            const avsf = avsfs[parseInt(idx)];
+            if (!avsf) { previewEl.textContent = 'Record not found.'; return; }
+
+            const from = fromEl ? fromEl.value : 'USMXVendorMaintenance@resideo.com';
+            const initials = getEmailInitials();
+            const fullName = getEmailFullName();
+            const vendNum = avsf.vendorNumber || '';
+            const vendName = avsf.vendorName || '';
+            const cc = avsf.companyCode || '';
+            const subject = `${initials} - Vendor ${vendNum} ${vendName} CC ${cc}`;
+
+            let body = '';
+            if (_emailTemplate === 'extend') {
+                body = `Hi Audit team,
+
+We received the request to extend vendor ${vendNum} ${vendName} to company code ${cc}.
+
+Due to recent activity on FBL1N we are requesting to unblock this vendor. Can you please help us with this request?
+
+If anything else is needed, please let us know.
+
+Best regards,
+${fullName}
+Vendor Master Team | Resideo
+${from}`;
+            } else {
+                body = `Hi Audit team,
+
+We received the request to create vendor ${vendNum} ${vendName} to company code ${cc}.
+
+Since this vendor has the account on the VAT website, can you please unblock this?
+
+If anything else is needed, please let us know.
+
+Best regards,
+${fullName}
+Vendor Master Team | Resideo
+${from}`;
+            }
+
+            previewEl.textContent =
+                'To: VendorMaintenanceAudit@resideo.com\n' +
+                'CC: ' + from + '\n' +
+                'Subject: ' + subject + '\n' +
+                '────────────────────────────────\n' +
+                body;
+        }
+
+        function openOutlookEmail() {
+            const selEl = document.getElementById('emailAVSFSelect');
+            const fromEl = document.getElementById('emailFromSelect');
+            const idx = selEl ? selEl.value : '';
+            if (idx === '') { alert('Please select an AVSF request first.'); return; }
+
+            const avsf = avsfs[parseInt(idx)];
+            if (!avsf) return;
+
+            const from = fromEl ? fromEl.value : 'USMXVendorMaintenance@resideo.com';
+            const initials = getEmailInitials();
+            const fullName = getEmailFullName();
+            const vendNum = avsf.vendorNumber || '';
+            const vendName = avsf.vendorName || '';
+            const cc = avsf.companyCode || '';
+            const subject = `${initials} - Vendor ${vendNum} ${vendName} CC ${cc}`;
+
+            let body = '';
+            if (_emailTemplate === 'extend') {
+                body = `Hi Audit team,
+
+We received the request to extend vendor ${vendNum} ${vendName} to company code ${cc}.
+
+Due to recent activity on FBL1N we are requesting to unblock this vendor. Can you please help us with this request?
+
+If anything else is needed, please let us know.
+
+Best regards,
+${fullName}
+Vendor Master Team | Resideo
+${from}`;
+            } else {
+                body = `Hi Audit team,
+
+We received the request to create vendor ${vendNum} ${vendName} to company code ${cc}.
+
+Since this vendor has the account on the VAT website, can you please unblock this?
+
+If anything else is needed, please let us know.
+
+Best regards,
+${fullName}
+Vendor Master Team | Resideo
+${from}`;
+            }
+
+            const mailto = 'mailto:VendorMaintenanceAudit@resideo.com' +
+                '?cc=' + encodeURIComponent(from) +
+                '&subject=' + encodeURIComponent(subject) +
+                '&body=' + encodeURIComponent(body);
+
+            window.open(mailto, '_blank');
+        }
+
+        function copyEmailToClipboard() {
+            const previewEl = document.getElementById('emailPreviewBox');
+            if (!previewEl || !previewEl.textContent || previewEl.textContent.startsWith('Select')) {
+                alert('Please select a request and template first.'); return;
+            }
+            navigator.clipboard.writeText(previewEl.textContent).then(() => {
+                const btn = event.target;
+                const orig = btn.textContent;
+                btn.textContent = '✅ Copied!';
+                setTimeout(() => { btn.textContent = orig; }, 2000);
+            }).catch(() => {
+                // fallback
+                const ta = document.createElement('textarea');
+                ta.value = previewEl.textContent;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                alert('Copied to clipboard!');
+            });
+        }
+
         // Real-time sync from Firestore
         function initializeRealtimeSync() {
             const statusEl = document.getElementById('syncStatus');
@@ -2634,6 +2885,7 @@ Example formats accepted:
                     <td>${formatDate(avsf.entryDate)}</td>
                     <td>${formatDate(avsf.completionDate)}</td>
                     <td style="font-size:12px;color:var(--text-secondary);">${avsf.completedBy || (avsf.status==='COMPLETED' ? '—' : '<span style=\'color:#9ca3af;font-size:11px;\'>VM Team</span>')}</td>
+                    <td style="font-size:12px;">${avsf.requestorName || '-'}</td>
                     <td>
                         <div class="action-buttons" style="display:flex;gap:6px;justify-content:center;">
                             <button class="action-btn" onclick="editAvsf('${avsf.requestNo}')" title="Edit">✏️</button>
@@ -2991,56 +3243,147 @@ Example formats accepted:
             alert(`✓ Data exported!\n\nFile: avsf_data_${new Date().toISOString().split('T')[0]}.json\n\nShare this file with your colleagues via OneDrive/Teams.\nThey can import it using the "📥 Import Data" button.`);
         }
 
-        // Import data from JSON file (merge with existing)
+        // ── CSV Import (SAP export format) ──────────────────────────────────
+        function parseCSVText(text) {
+            text = text.replace(/^\uFEFF/, ''); // strip BOM
+            const lines = text.split(/\r?\n/);
+            function splitLine(line) {
+                const cols = []; let cur = '', inQ = false;
+                for (let i = 0; i < line.length; i++) {
+                    const c = line[i];
+                    if (c === '"' && !inQ) { inQ = true; }
+                    else if (c === '"' && inQ && line[i+1] === '"') { cur += '"'; i++; }
+                    else if (c === '"' && inQ) { inQ = false; }
+                    else if ((c === ',' || c === ';' || c === '\t') && !inQ) { cols.push(cur.trim()); cur = ''; }
+                    else cur += c;
+                }
+                cols.push(cur.trim());
+                return cols;
+            }
+            // Find first non-empty row as header
+            let headerIdx = 0;
+            while (headerIdx < lines.length && !lines[headerIdx].trim()) headerIdx++;
+            if (headerIdx >= lines.length) return { headers: [], rows: [] };
+            const headers = splitLine(lines[headerIdx]).map(h => h.replace(/^['"]+|['"]+$/g,'').trim());
+            const rows = [];
+            for (let i = headerIdx+1; i < lines.length; i++) {
+                if (!lines[i].trim()) continue;
+                const vals = splitLine(lines[i]);
+                const row = {};
+                headers.forEach((h, idx) => {
+                    row[h] = (vals[idx] || '').replace(/^['"]+|['"]+$/g,'').trim();
+                });
+                rows.push(row);
+            }
+            return { headers, rows };
+        }
+
+        function mapSAPRow(row) {
+            // Try multiple SAP column name variants (case-insensitive)
+            const keys = Object.fromEntries(Object.entries(row).map(([k,v]) => [k.toLowerCase().trim(), v]));
+            function get(...names) {
+                for (const n of names) {
+                    const v = keys[n.toLowerCase()];
+                    if (v !== undefined && v !== '') return v;
+                }
+                return '';
+            }
+            return {
+                requestNo:      get('request no','request number','request','ticket','ticket no','ticket number','req','req no','#','request#','req#','number','no'),
+                vendorName:     get('vendor name','name','name 1','name1','vendor','supplier name','supplier','kreditoren name'),
+                vendorNumber:   get('vendor number','vendor no','vendor #','vendor#','account','kred.-nr.','kreditor','vendor account','supplier number','account no','lifnr'),
+                companyCode:    get('company code','cocode','co. code','co.code','cc','bukrs','company'),
+                country:        get('country','country key','land1','vendor country','land','country code'),
+                status:         get('status','request status','state','bearbeitungsstatus'),
+                entryDate:      get('entry date','date received','date','created on','creation date','request date','received date','erstellungsdatum','created','eingangsdatum'),
+                completionDate: get('completion date','completed date','completed on','finish date','fertigstellungsdatum'),
+                requestorName:  get('requestor','requestor name','requested by','requester','requester name','anforderer'),
+                approverName:   get('approver','approver name','approved by','genehmigt von'),
+                notes:          get('notes','comments','comment','description','remarks','notizen','bemerkung'),
+            };
+        }
+
         function importDataFile() {
             const input = document.createElement('input');
             input.type = 'file';
-            input.accept = '.json';
+            input.accept = '.csv,.CSV,.txt';
 
             input.onchange = e => {
                 const file = e.target.files[0];
                 if (!file) return;
-
                 const reader = new FileReader();
                 reader.onload = async event => {
                     try {
-                        const importedData = JSON.parse(event.target.result);
-
-                        if (!importedData.avsfs || !Array.isArray(importedData.avsfs)) {
-                            alert('❌ Invalid file format. Please select a valid AVSF data export file.');
+                        const { headers, rows } = parseCSVText(event.target.result);
+                        if (!rows.length) {
+                            alert('❌ No data rows found in CSV. Make sure the file has a header row and data rows.');
                             return;
                         }
 
-                        let newCount = 0;
-                        let updatedCount = 0;
-
-                        for (const imported of importedData.avsfs) {
-                            const docRef = db.collection('avsfs').doc(imported.requestNo);
-                            const docSnap = await docRef.get();
-
-                            if (!docSnap.exists) {
-                                await docRef.set(imported);
-                                newCount++;
-                            } else {
-                                const existing = docSnap.data();
-                                const importedDate = new Date(imported.entryDate);
-                                const existingDate = new Date(existing.entryDate);
-                                if (importedDate >= existingDate) {
-                                    imported.requirements = { ...existing.requirements, ...imported.requirements };
-                                    await docRef.set(imported, { merge: true });
-                                    updatedCount++;
-                                }
-                            }
+                        // Map rows
+                        const mapped = rows.map(mapSAPRow).filter(r => r.requestNo || r.vendorName);
+                        if (!mapped.length) {
+                            const detected = headers.slice(0,8).join(', ');
+                            alert('❌ Could not map CSV columns to AVSF fields.\n\nDetected headers:\n' + detected + '\n\nExpected columns like: Request No, Vendor Name, Company Code, Country, Status, Entry Date');
+                            return;
                         }
 
-                        alert(`✓ Data imported successfully!\n\n${newCount} new entries added\n${updatedCount} entries updated`);
+                        // Validate — rows without requestNo get one generated
+                        let autoGenCount = 0;
+                        mapped.forEach((r, i) => {
+                            if (!r.requestNo) {
+                                r.requestNo = 'CSV-' + Date.now() + '-' + i;
+                                autoGenCount++;
+                            }
+                            // Normalize status
+                            const s = (r.status || '').toUpperCase();
+                            if (!['PROCESSING','COMPLETED','REJECTED','PENDING_BUYER','IDOC_ERROR'].includes(s)) {
+                                r.status = s.includes('COMP') ? 'COMPLETED' : s.includes('REJ') ? 'REJECTED' : s.includes('PEND') ? 'PENDING_BUYER' : 'PROCESSING';
+                            }
+                        });
+
+                        const detectedCols = headers.filter(h => {
+                            const lo = h.toLowerCase();
+                            return ['vendor','name','company','code','country','status','date','request','number'].some(k => lo.includes(k));
+                        }).slice(0, 6).join(', ');
+
+                        const confirm = window.confirm(
+                            `📊 CSV Preview\n\n` +
+                            `Records found: ${mapped.length}\n` +
+                            (autoGenCount ? `Auto-generated IDs: ${autoGenCount}\n` : '') +
+                            `Detected columns: ${detectedCols || headers.slice(0,5).join(', ')}\n\n` +
+                            `Import ${mapped.length} records into AVSF Dashboard?`
+                        );
+                        if (!confirm) return;
+
+                        let newCount = 0, updatedCount = 0, skippedCount = 0;
+                        for (const record of mapped) {
+                            try {
+                                const docRef = db.collection('avsfs').doc(record.requestNo);
+                                const docSnap = await docRef.get();
+                                if (!docSnap.exists) {
+                                    record.requirements = {};
+                                    record.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+                                    await docRef.set(record);
+                                    newCount++;
+                                } else {
+                                    const existing = docSnap.data();
+                                    record.requirements = existing.requirements || {};
+                                    await docRef.set(record, { merge: true });
+                                    updatedCount++;
+                                }
+                            } catch (err) { skippedCount++; }
+                        }
+                        alert('✅ CSV Import Complete!\n\n' +
+                              newCount + ' new records added\n' +
+                              updatedCount + ' existing records updated\n' +
+                              (skippedCount ? skippedCount + ' skipped (errors)' : ''));
                     } catch (error) {
-                        alert('❌ Error importing file: ' + error.message);
+                        alert('❌ Error reading CSV: ' + error.message);
                     }
                 };
-                reader.readAsText(file);
+                reader.readAsText(file, 'UTF-8');
             };
-
             input.click();
         }
 
@@ -3459,7 +3802,7 @@ Example formats accepted:
             if (currentRequirementsIndex === null) return;
 
             const avsf = avsfs[currentRequirementsIndex];
-            const requirements = getRequirementsList(avsf.companyCode, avsf.country);
+            const requirements = getRequirementsList(avsf.companyCode, avsf.country, avsf.requestType || '');
 
             const checklist = {};
             requirements.forEach(req => {
@@ -3566,16 +3909,19 @@ Example formats accepted:
         }
 
         function openValidationToolsModal() {
-            // Populate AVSF dropdown
+            // Populate AVSF dropdown (IBAN/VAT tab)
             const select = document.getElementById('validationAVSFSelect');
-            select.innerHTML = '<option value="">-- Or enter vendor name manually below --</option>';
-            
-            avsfs.forEach((avsf, index) => {
-                const option = document.createElement('option');
-                option.value = index;
-                option.textContent = `${formatRequestNumber(avsf.requestNo)} - ${avsf.vendorName}`;
-                select.appendChild(option);
-            });
+            if (select) {
+                select.innerHTML = '<option value="">-- Or enter vendor name manually below --</option>';
+                avsfs.forEach((avsf, index) => {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = `${formatRequestNumber(avsf.requestNo)} - ${avsf.vendorName}${avsf.vendorNumber ? ' · ' + avsf.vendorNumber : ''}`;
+                    select.appendChild(option);
+                });
+            }
+            // Populate email tab AVSF dropdown
+            populateEmailAVSFSelect();
 
             // Clear previous results
             document.getElementById('ibanInputMain').value = '';
@@ -3601,32 +3947,30 @@ Example formats accepted:
             document.getElementById('validationToolsModal').classList.add('active');
         }
 
+        let _emailTemplate = 'extend';
+
         function switchValidationTab(tab) {
             const ibanTab = document.getElementById('ibanTab');
             const vatTab = document.getElementById('vatTab');
+            const emailTab = document.getElementById('emailTab');
             const ibanContent = document.getElementById('ibanTabContent');
             const vatContent = document.getElementById('vatTabContent');
+            const emailContent = document.getElementById('emailTabContent');
+
+            // Reset all
+            [ibanTab, vatTab, emailTab].forEach(b => { if (b) { b.style.background = '#f3f4f6'; b.style.color = '#6b7280'; } });
+            [ibanContent, vatContent, emailContent].forEach(c => { if (c) c.style.display = 'none'; });
 
             if (tab === 'iban') {
-                // Style tabs
-                ibanTab.style.background = '#3b82f6';
-                ibanTab.style.color = 'white';
-                vatTab.style.background = '#f3f4f6';
-                vatTab.style.color = '#6b7280';
-                
-                // Show/hide content
-                ibanContent.style.display = 'block';
-                vatContent.style.display = 'none';
-            } else {
-                // Style tabs
-                vatTab.style.background = '#10b981';
-                vatTab.style.color = 'white';
-                ibanTab.style.background = '#f3f4f6';
-                ibanTab.style.color = '#6b7280';
-                
-                // Show/hide content
-                ibanContent.style.display = 'none';
-                vatContent.style.display = 'block';
+                if (ibanTab) { ibanTab.style.background = '#3b82f6'; ibanTab.style.color = 'white'; }
+                if (ibanContent) ibanContent.style.display = 'block';
+            } else if (tab === 'vat') {
+                if (vatTab) { vatTab.style.background = '#10b981'; vatTab.style.color = 'white'; }
+                if (vatContent) vatContent.style.display = 'block';
+            } else if (tab === 'email') {
+                if (emailTab) { emailTab.style.background = '#a855f7'; emailTab.style.color = 'white'; }
+                if (emailContent) emailContent.style.display = 'block';
+                populateEmailAVSFSelect();
             }
         }
 
