@@ -726,6 +726,25 @@
                             <button class="btn btn-secondary" onclick="exportData()" title="Export current view as CSV">📊 Export CSV</button>
                         </div>
                     </div>
+                    <!-- Advanced filters row -->
+                    <div class="filter-group" style="margin-top:0.4rem;flex-wrap:wrap;gap:8px;align-items:center;padding:6px 10px;background:var(--bg-secondary);border-radius:8px;border:1px solid var(--border);">
+                        <span style="font-size:11px;color:var(--text-tertiary);font-weight:600;white-space:nowrap;">&#9656; Filters:</span>
+                        <select id="completedByFilter" class="filter-select" style="font-size:12px;padding:4px 8px;min-width:150px;" onchange="applyFilters()">
+                            <option value="">All Completed By</option>
+                            <option value="Rosana Munoz">Rosana Munoz</option>
+                            <option value="Brandon Ramos">Brandon Ramos</option>
+                            <option value="Yannick Rojas">Yannick Rojas</option>
+                        </select>
+                        <select id="sortOrder" class="filter-select" style="font-size:12px;padding:4px 8px;min-width:145px;" onchange="applyFilters()">
+                            <option value="newest">&#128197; Newest First</option>
+                            <option value="oldest">&#128197; Oldest First</option>
+                        </select>
+                        <span style="font-size:11px;color:var(--text-tertiary);font-weight:600;white-space:nowrap;">Date Received:</span>
+                        <input type="date" id="dateFrom" class="form-input" style="font-size:12px;padding:4px 8px;width:138px;height:28px;" title="From date (inclusive)" onchange="applyFilters()">
+                        <span style="font-size:11px;color:var(--text-tertiary);">to</span>
+                        <input type="date" id="dateTo" class="form-input" style="font-size:12px;padding:4px 8px;width:138px;height:28px;" title="To date (inclusive)" onchange="applyFilters()">
+                        <button onclick="clearAdvancedFilters()" style="padding:3px 10px;border-radius:6px;border:1px solid var(--border);background:white;color:var(--text-secondary);font-size:11px;cursor:pointer;white-space:nowrap;">&#x2715; Clear</button>
+                    </div>
                 </div>
 
                 <div style="overflow-x: auto; overflow-y: auto; max-height: calc(100vh - 310px); border: 1px solid var(--border); border-radius: 8px;">
@@ -1731,11 +1750,18 @@ Example formats accepted:
 
                             <!-- Category: Validation -->
                             <div style="margin-bottom:16px;">
-                                <div style="font-size:12px;font-weight:700;color:var(--text-tertiary);margin-bottom:6px;">
-                                    ✅ Validation Confirmations
+                                <div style="font-size:12px;font-weight:700;color:var(--primary);margin-bottom:6px;display:flex;align-items:center;gap:5px;">
+                                    🔒 Banking Validation
                                 </div>
-                                <div style="padding:8px 10px;border-radius:6px;border:1px dashed var(--border);font-size:12px;color:var(--text-tertiary);">
-                                    🔒 More templates coming soon
+                                <div style="display:flex;flex-direction:column;gap:3px;">
+                                    <button id="tplBtn_validation_en" onclick="selectEmailTemplate('validation_en')"
+                                            style="text-align:left;padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:white;color:var(--text-primary);font-size:12px;cursor:pointer;font-weight:600;line-height:1.3;">
+                                        🇺🇸 Banking Validation (EN)<br><span style="font-weight:400;font-size:11px;color:var(--text-tertiary);">Confirm bank details with vendor</span>
+                                    </button>
+                                    <button id="tplBtn_validation_es" onclick="selectEmailTemplate('validation_es')"
+                                            style="text-align:left;padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:white;color:var(--text-primary);font-size:12px;cursor:pointer;font-weight:600;line-height:1.3;">
+                                        🇲🇽 Validación Bancaria (ES)<br><span style="font-weight:400;font-size:11px;color:var(--text-tertiary);">Confirmar datos bancarios con proveedor</span>
+                                    </button>
                                 </div>
                             </div>
 
@@ -3070,7 +3096,7 @@ ${from}`;
 
         function selectEmailTemplate(type) {
             _tab6Template = type;
-            ['extend','create','docs_missing','req_completed','req_received'].forEach(t => {
+            ['extend','create','docs_missing','req_completed','req_received','validation_en','validation_es'].forEach(t => {
                 const btn = document.getElementById('tplBtn_' + t);
                 if (!btn) return;
                 const active = t === type;
@@ -3092,23 +3118,31 @@ ${from}`;
             const vendNum  = document.getElementById('tab6VendorNum')?.value  || (avsf?.vendorNumber  || '');
             const vendName = document.getElementById('tab6VendorName')?.value || (avsf?.vendorName   || '');
             const cc       = document.getElementById('tab6CC')?.value         || (avsf?.companyCode  || '');
-            return { from, initials, fullName, vendNum, vendName, cc, avsf };
+            const reqNo    = avsf?.requestNo || '';
+            const country  = (avsf?.country || '').toUpperCase().trim();
+            const ccRegion = (cc || '1').charAt(0); // '1'=Americas '2'=EMEA '3'=APAC
+            return { from, initials, fullName, vendNum, vendName, cc, reqNo, country, ccRegion, avsf };
         }
 
         const TAB6_TEMPLATE_META = {
-            extend:        { to: 'VendorMaintenanceAudit@resideo.com', label: 'Audit Team — Extend/FBL1N' },
-            create:        { to: 'VendorMaintenanceAudit@resideo.com', label: 'Audit Team — Create/IBAN' },
-            docs_missing:  { to: 'requestor', label: 'Requestor — Docs Missing' },
-            req_completed: { to: 'requestor', label: 'Requestor — Completed' },
-            req_received:  { to: 'requestor', label: 'Requestor — Received' },
+            extend:         { to: 'VendorMaintenanceAudit@resideo.com',  label: 'Audit Team — Extend/FBL1N' },
+            create:         { to: 'VendorMaintenanceAudit@resideo.com',  label: 'Audit Team — Create/IBAN' },
+            docs_missing:   { to: 'requestor',                           label: 'Requestor — Docs Missing' },
+            req_completed:  { to: 'requestor',                           label: 'Requestor — Completed' },
+            req_received:   { to: 'requestor',                           label: 'Requestor — Received' },
+            validation_en:  { to: 'vendor', from: 'AMERBankingValidation@resideo.com', label: 'Vendor — Banking Validation (EN)' },
+            validation_es:  { to: 'vendor', from: 'AMERBankingValidation@resideo.com', label: 'Vendor — Banking Validation (ES)' },
         };
 
         function tab6GetTO(f) {
             const meta = TAB6_TEMPLATE_META[_tab6Template] || {};
-            if (meta.to === 'requestor') {
-                return f.avsf?.requestorEmail || '[requestor email]';
-            }
+            if (meta.to === 'requestor') return f.avsf?.requestorEmail || '[requestor email]';
+            if (meta.to === 'vendor')    return '[vendor contact email]';
             return 'VendorMaintenanceAudit@resideo.com';
+        }
+        function tab6GetFROM(f) {
+            const meta = TAB6_TEMPLATE_META[_tab6Template] || {};
+            return meta.from || f.from;
         }
 
         function tab6BuildBody(f) {
@@ -3144,24 +3178,43 @@ Vendor Master Team | Resideo
 ${f.from}`;
             }
             if (_tab6Template === 'docs_missing') {
-                return `Hi ${firstName},
+                // Country-specific document requirements
+                const isMX   = f.country === 'MX'  || f.country === 'MEXICO';
+                const isUS   = f.country === 'US'  || f.country === 'USA' || f.country === 'UNITED STATES';
+                const isEMEA = f.ccRegion === '2';
+                const isAPAC = f.ccRegion === '3';
 
-Thank you for submitting your vendor request for ${f.vendNum} ${f.vendName} (Company Code ${f.cc}).
+                let docSection = '';
+                if (isMX) {
+                    docSection = `\nDado que su empresa es de México, necesitamos los siguientes documentos adicionales:\n\n` +
+                        `  • [ ] Constancia de situación fiscal reciente\n` +
+                        `  • [ ] Carátula bancaria o carta membretada con su cuenta de banco`;
+                } else if (isUS) {
+                    docSection = `\nSince your company is based in the US, we also require:\n\n` +
+                        `  • [ ] Bank or company letterhead with the ACH information\n` +
+                        `  • [ ] W-9 form`;
+                } else if (isEMEA) {
+                    docSection = `\nSince your company is based in Europe / EMEA, we also require:\n\n` +
+                        `  • [ ] PDF with their IBAN and their VAT ID`;
+                } else if (isAPAC) {
+                    docSection = `\nSince your company is in APAC, we also require:\n\n` +
+                        `  • [ ] Document with their banking details\n` +
+                        `  • [ ] VAT Certificate / Tax document`;
+                }
 
-We are currently reviewing your request and noticed that the following documents are still needed to proceed:
+                const greeting = isMX
+                    ? `Hola ${firstName},\n\nGracias por enviar su solicitud de proveedor para ${f.vendNum} ${f.vendName} (Código de empresa ${f.cc}).\n\nActualmente estamos revisando su solicitud y notamos que los siguientes documentos aún son necesarios para continuar:`
+                    : `Hi ${firstName},\n\nThank you for submitting your vendor request for ${f.vendNum} ${f.vendName} (Company Code ${f.cc}).\n\nWe are currently reviewing your request and noticed that the following documents are still needed to proceed:`;
 
-  • [ ] DPS — Denied Party Screening result
-  • [ ] VAT Certificate / Tax document
-  • [ ] [Add specific missing document here]
+                const closing = isMX
+                    ? `\n\n¿Podría proporcionarnos lo anterior a la brevedad posible para que podamos continuar con el proceso?\n\nSi tiene alguna pregunta, no dude en comunicarse con nosotros.\n\nSaludos,\n${f.fullName}\nVendor Master Team | Resideo\n${f.from}`
+                    : `\n\nCould you please provide the above at your earliest convenience so we can move forward with processing?\n\nIf you have any questions, feel free to reach out.\n\nBest regards,\n${f.fullName}\nVendor Master Team | Resideo\n${f.from}`;
 
-Could you please provide the above at your earliest convenience so we can move forward with processing?
+                const stdDocs = isMX
+                    ? `\n\n  • [ ] DPS — Resultado de Denied Party Screening`
+                    : `\n\n  • [ ] DPS — Denied Party Screening result`;
 
-If you have any questions, feel free to reach out.
-
-Best regards,
-${f.fullName}
-Vendor Master Team | Resideo
-${f.from}`;
+                return greeting + stdDocs + docSection + closing;
             }
             if (_tab6Template === 'req_completed') {
                 return `Hi ${firstName},
@@ -3191,6 +3244,64 @@ ${f.fullName}
 Vendor Master Team | Resideo
 ${f.from}`;
             }
+            if (_tab6Template === 'validation_en') {
+                return `Dear [Name of supplier contact],
+
+Thank you for taking the time to speak with me earlier and for confirming your email address ([email from the vendor]) during our call at ([phone number we dialed]).
+
+We have been informed that your company is utilizing the bank information provided in the attached document for electronic payments. To ensure the accuracy of these details and facilitate the processing of pending invoices, we kindly request that you confirm whether the attached bank details are correct for ${f.vendName || '[Company name]'}. This will help us avoid potential payment processing issues.
+
+Bank Name: [Suppliers Bank]
+Account number: ***** XXXX
+
+Account holder: [Name of account holder]
+Bank Number (Routing #): XXXXXXXX
+
+Country: ${f.country || '[Supplier\'s country]'}
+
+Currency: [Supplier\'s currency]
+
+Please note that the attached file is encrypted to protect the integrity of your company\'s information. The password to access the file will be sent to you in a separate email with the same subject line.
+
+For our records, please reply to this email with your confirmation and include any attachments you received. This will help us accurately reference the information provided.
+
+Please be aware that no payments will be processed until we receive your confirmation.
+
+Thank you for your prompt attention to this matter.
+
+${f.fullName}
+Vendor Master Team | Resideo
+AMERBankingValidation@resideo.com`;
+            }
+            if (_tab6Template === 'validation_es') {
+                return `Estimado/a [Nombre del contacto del proveedor],
+
+Gracias por tomarse el tiempo de hablar conmigo anteriormente y por confirmar su dirección de correo electrónico ([correo del proveedor]) durante nuestra llamada al ([número de teléfono marcado]).
+
+Se nos ha informado que su empresa utiliza la información bancaria proporcionada en el documento adjunto para pagos electrónicos. Para garantizar la exactitud de estos datos y facilitar el procesamiento de las facturas pendientes, le solicitamos amablemente que confirme si los datos bancarios adjuntos son correctos para ${f.vendName || '[Nombre de la empresa]'}. Esto nos ayudará a evitar posibles problemas en el procesamiento de pagos.
+
+Nombre del banco: [Banco del proveedor]
+Número de cuenta: ***** XXXX
+
+Titular de la cuenta: [Nombre del titular de la cuenta]
+Número de banco (Routing #): XXXXXXXX
+
+País: ${f.country || '[País del proveedor]'}
+
+Moneda: [Moneda del proveedor]
+
+Tenga en cuenta que el archivo adjunto está cifrado para proteger la integridad de la información de su empresa. La contraseña para acceder al archivo se enviará en un correo electrónico separado con el mismo asunto.
+
+Para nuestros registros, por favor responda a este correo con su confirmación e incluya los archivos adjuntos que recibió. Esto nos ayudará a referenciar con precisión la información proporcionada.
+
+Tenga en cuenta que no se procesará ningún pago hasta que recibamos su confirmación.
+
+Gracias por su pronta atención a este asunto.
+
+${f.fullName}
+Vendor Master Team | Resideo
+AMERBankingValidation@resideo.com`;
+            }
             return '';
         }
 
@@ -3206,16 +3317,18 @@ ${f.from}`;
                 return;
             }
 
-            const subject = `${f.initials} - Vendor ${f.vendNum} ${f.vendName} CC ${f.cc}`;
+            const avsf_part = f.reqNo ? `AVSF ${f.reqNo} ` : '';
+            const subject = `${f.initials} - ${avsf_part}Vendor ${f.vendNum} ${f.vendName} CC ${f.cc}`;
             const body = tab6BuildBody(f);
 
             if (badgeEl) badgeEl.textContent = 'Subject: ' + subject;
 
-            const toAddr = tab6GetTO(f);
-            const meta = TAB6_TEMPLATE_META[_tab6Template] || {};
+            const toAddr  = tab6GetTO(f);
+            const fromAddr = tab6GetFROM(f);
             previewEl.textContent =
+                'From:    ' + fromAddr + '\n' +
                 'To:      ' + toAddr + '\n' +
-                'CC:      ' + f.from + '\n' +
+                'CC:      ' + fromAddr + '\n' +
                 'Subject: ' + subject + '\n' +
                 '─'.repeat(52) + '\n' +
                 body;
@@ -3224,11 +3337,13 @@ ${f.from}`;
         function tab6OpenOutlook() {
             const f = tab6GetFields();
             if (!f.vendName) { alert('Please select an AVSF request first.'); return; }
-            const subject = `${f.initials} - Vendor ${f.vendNum} ${f.vendName} CC ${f.cc}`;
-            const body    = tab6BuildBody(f).replace(/\n/g, '\r\n');
-            const toAddr  = tab6GetTO(f);
-            const mailto  = 'mailto:' + encodeURIComponent(toAddr) +
-                '?cc=' + encodeURIComponent(f.from) +
+            const avsf_part = f.reqNo ? `AVSF ${f.reqNo} ` : '';
+            const subject  = `${f.initials} - ${avsf_part}Vendor ${f.vendNum} ${f.vendName} CC ${f.cc}`;
+            const body     = tab6BuildBody(f).replace(/\n/g, '\r\n');
+            const toAddr   = tab6GetTO(f);
+            const fromAddr = tab6GetFROM(f);
+            const mailto   = 'mailto:' + encodeURIComponent(toAddr) +
+                '?cc=' + encodeURIComponent(fromAddr) +
                 '&subject=' + encodeURIComponent(subject) +
                 '&body=' + encodeURIComponent(body);
             window.open(mailto, '_blank');
@@ -3250,7 +3365,8 @@ ${f.from}`;
         function tab6CopySubject() {
             const f = tab6GetFields();
             if (!f.vendName) { alert('Select a request first.'); return; }
-            const subject = `${f.initials} - Vendor ${f.vendNum} ${f.vendName} CC ${f.cc}`;
+            const avsf_part = f.reqNo ? `AVSF ${f.reqNo} ` : '';
+            const subject = `${f.initials} - ${avsf_part}Vendor ${f.vendNum} ${f.vendName} CC ${f.cc}`;
             navigator.clipboard.writeText(subject).then(() => {
                 const btn = event.target; const orig = btn.textContent;
                 btn.textContent = '✅ Copied!'; setTimeout(() => btn.textContent = orig, 2000);
@@ -3745,10 +3861,11 @@ ${f.from}`;
         function applyFilters() {
             const searchTerm      = document.getElementById('searchBox').value.toLowerCase();
             const statusFilter    = document.getElementById('statusFilter').value;
-            _completedByFilter    = document.getElementById('completedByFilter').value;
-            _sortOrder            = document.getElementById('sortOrder').value;
-            _dateFrom             = document.getElementById('dateFrom').value;   // YYYY-MM-DD or ''
-            _dateTo               = document.getElementById('dateTo').value;     // YYYY-MM-DD or ''
+            // null-safe reads — elements may not exist on first call before DOM is ready
+            _completedByFilter    = (document.getElementById('completedByFilter') || {value:''}).value || '';
+            _sortOrder            = (document.getElementById('sortOrder')         || {value:'newest'}).value || 'newest';
+            _dateFrom             = (document.getElementById('dateFrom')          || {value:''}).value || '';
+            _dateTo               = (document.getElementById('dateTo')            || {value:''}).value || '';
 
             let filtered = [...avsfs];
 
