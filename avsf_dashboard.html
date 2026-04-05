@@ -1184,277 +1184,239 @@
             <div class="dash-tab-content" id="dashTab5Content" style="display:none;">
                 <div class="data-section">
                     <div class="section-header">
-                        <span class="section-title">🌐 VAT &amp; IBAN Verification Resources</span>
-                        <span style="font-size:12px;color:var(--text-tertiary);">Official and free websites for verifying vendor VAT numbers, bank accounts, and company registration</span>
+                        <span class="section-title">🌐 Verification Resources</span>
+                        <span style="font-size:12px;color:var(--text-tertiary);">Official and free tools for VAT, IBAN, company registration, and compliance checks</span>
                     </div>
-                    <div style="padding:1.25rem;display:flex;flex-direction:column;gap:1.25rem;">
+                    <div style="padding:1.25rem;display:flex;flex-direction:column;gap:1.5rem;">
 
-                        <!-- VIES + Multi-country tools -->
+                        <!-- ── Resideo Internal ── -->
                         <div>
-                            <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:10px;display:flex;align-items:center;gap:6px;">🇪🇺 EU-Wide Tools</div>
+                            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--primary);margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+                                🏢 Resideo Internal Tools
+                            </div>
                             <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;">
-                                <div class="res-card" style="border-left-color:#3b82f6;">
-                                    <div class="res-title">🔎 VIES — EU VAT Validation</div>
-                                    <div class="res-desc">Verify VAT numbers for all EU member states in one place. Works for most countries — note: Germany returns valid/invalid only (no company name). Does not cover GB (post-Brexit).</div>
-                                    <a href="https://ec.europa.eu/taxation_customs/vies/" target="_blank" class="res-link">ec.europa.eu/taxation_customs/vies ↗</a>
-                                    <div class="res-tags"><span class="res-tag res-tag-vat">VAT Check</span></div>
-                                </div>
-                                <div class="res-card" style="border-left-color:#3b82f6;">
-                                    <div class="res-title">🔢 IBAN Validator</div>
-                                    <div class="res-desc">Validate IBAN format, check BIC/SWIFT, and calculate IBANs for supported countries. Useful for confirming IBAN structure before entering in SAP.</div>
-                                    <a href="https://www.iban.com/" target="_blank" class="res-link">iban.com ↗</a>
-                                    <div class="res-tags"><span class="res-tag res-tag-iban">IBAN</span></div>
+                                <div class="res-card" style="border-left-color:#0f766e;">
+                                    <div class="res-title">🔒 DPS — Denied Party Screening</div>
+                                    <div class="res-desc">Resideo Integration Point portal for trade compliance and DPS queries. Use to screen vendors against restricted/denied party lists before setup. <strong>Requires Resideo login.</strong></div>
+                                    <a href="https://resideo.integrationpoint.net/Logon.aspx?ReturnUrl=%2fgtm%2faspx%3fhref%3d%2fDTS%2ffxdDPSQuery.aspx" target="_blank" class="res-link">resideo.integrationpoint.net – DPS Query ↗</a>
+                                    <div class="res-tags"><span class="res-tag" style="background:#f0fdf4;color:#166534;">Internal</span><span class="res-tag res-tag-vat">Compliance</span></div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Country-specific resources -->
+                        <!-- ── EU-Wide ── -->
                         <div>
-                            <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:10px;">🗺️ Country-Specific Resources</div>
+                            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#1e40af;margin-bottom:10px;">🇪🇺 EU-Wide Tools</div>
                             <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;">
 
-                                <!-- Poland -->
-                                <div class="res-card" style="border-left-color:#dc2626;">
-                                    <div class="res-title">🇵🇱 Poland — Biała Lista (White List) ⭐</div>
-                                    <div class="res-desc">The <strong>most useful free resource</strong> for Polish vendors. Shows registered bank accounts (IBAN) for Polish VAT payers. Required for B2B payments over 15,000 PLN.</div>
-                                    <a href="https://www.podatki.gov.pl/vat/bezpieczenstwo-transakcji/biala-lista-podatnikow-vat/" target="_blank" class="res-link">podatki.gov.pl – White List ↗</a>
-                                    <div class="res-tags"><span class="res-tag res-tag-iban">IBAN / Bank Account</span><span class="res-tag res-tag-vat">VAT Check</span></div>
+                                <div class="res-card" style="border-left-color:#3b82f6;">
+                                    <div class="res-title">🔎 VIES — EU VAT Validation</div>
+                                    <div class="res-desc">Verify VAT numbers for all EU member states. Note: Germany returns valid/invalid only (no company name shown — privacy law). Does <strong>not</strong> cover GB (post-Brexit).</div>
+                                    <a href="https://ec.europa.eu/taxation_customs/vies/#/vat-validation" target="_blank" class="res-link">ec.europa.eu/taxation_customs/vies ↗</a>
+                                    <div class="res-tags"><span class="res-tag res-tag-vat">VAT Check</span><span class="res-tag res-tag-reg">All EU</span></div>
                                 </div>
 
-                                <!-- Poland KRS -->
-                                <div class="res-card" style="border-left-color:#dc2626;">
-                                    <div class="res-title">🇵🇱 Poland — KRS (Company Registry)</div>
-                                    <div class="res-desc">National Court Register. Search Polish companies for registration details, legal form, and ownership. Does not directly show IBAN but confirms company existence.</div>
-                                    <a href="https://ekrs.ms.gov.pl/" target="_blank" class="res-link">ekrs.ms.gov.pl ↗</a>
-                                    <div class="res-tags"><span class="res-tag res-tag-reg">Company Registry</span></div>
+                                <div class="res-card" style="border-left-color:#3b82f6;">
+                                    <div class="res-title">🔢 IBAN Calculator</div>
+                                    <div class="res-desc">Calculate and validate IBANs for all supported countries. Enter bank code + account number to generate IBAN, or validate an existing IBAN structure.</div>
+                                    <a href="https://www.ibancalculator.com/" target="_blank" class="res-link">ibancalculator.com ↗</a>
+                                    <div class="res-tags"><span class="res-tag res-tag-iban">IBAN</span></div>
                                 </div>
 
-                                <!-- Czech Republic ARES -->
-                                <div class="res-card" style="border-left-color:#1d4ed8;">
-                                    <div class="res-title">🇨🇿 Czech Republic — ARES ⭐</div>
-                                    <div class="res-desc">Official Czech business register. Can show bank accounts for Czech VAT-registered businesses. Search by IČO (company ID) or name. Sometimes shows IBAN directly.</div>
-                                    <a href="https://ares.gov.cz/" target="_blank" class="res-link">ares.gov.cz ↗</a>
-                                    <div class="res-tags"><span class="res-tag res-tag-iban">IBAN sometimes visible</span><span class="res-tag res-tag-vat">VAT / IČO</span><span class="res-tag res-tag-reg">Company Registry</span></div>
-                                </div>
+                            </div>
+                        </div>
 
-                                <!-- Czech DPH -->
-                                <div class="res-card" style="border-left-color:#1d4ed8;">
-                                    <div class="res-title">🇨🇿 Czech Republic — DPH VAT Register</div>
-                                    <div class="res-desc">Czech VAT payer verification portal (DPH = Daň z přidané hodnoty). Confirm if a Czech vendor is VAT-registered. Use with ARES for complete vendor validation.</div>
-                                    <a href="https://adisrws.mfcr.cz/dpr/faces/index.jsf" target="_blank" class="res-link">adisrws.mfcr.cz (DPH Portal) ↗</a>
-                                    <div class="res-tags"><span class="res-tag res-tag-vat">VAT Check</span></div>
-                                </div>
+                        <!-- ── United Kingdom ── -->
+                        <div>
+                            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#1e3a5f;margin-bottom:10px;">🇬🇧 United Kingdom</div>
+                            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;">
 
-                                <!-- France -->
-                                <div class="res-card" style="border-left-color:#1e40af;">
-                                    <div class="res-title">🇫🇷 France — Annuaire des Entreprises ⭐</div>
-                                    <div class="res-desc">Free official French business directory (SIRENE database). Search by SIREN/SIRET number or company name. Shows company details, activity code. VAT via VIES.</div>
-                                    <a href="https://annuaire-entreprises.data.gouv.fr/" target="_blank" class="res-link">annuaire-entreprises.data.gouv.fr ↗</a>
-                                    <div class="res-tags"><span class="res-tag res-tag-reg">Company Registry</span><span class="res-tag res-tag-vat">SIREN/SIRET</span></div>
-                                </div>
-
-                                <!-- Hungary -->
-                                <div class="res-card" style="border-left-color:#b45309;">
-                                    <div class="res-title">🇭🇺 Hungary — e-Cégjegyzék (Company Registry) ⭐</div>
-                                    <div class="res-desc">Hungarian official company register. Older annual reports sometimes contain IBAN / bank account details. Search by company name or registration number. Free basic access.</div>
-                                    <a href="https://www.e-cegjegyzek.hu/" target="_blank" class="res-link">e-cegjegyzek.hu ↗</a>
-                                    <div class="res-tags"><span class="res-tag res-tag-iban">IBAN in filings</span><span class="res-tag res-tag-reg">Company Registry</span></div>
-                                </div>
-
-                                <!-- Hungary NAV -->
-                                <div class="res-card" style="border-left-color:#b45309;">
-                                    <div class="res-title">🇭🇺 Hungary — NAV (Tax Authority)</div>
-                                    <div class="res-desc">Hungarian National Tax and Customs Administration. Verify Hungarian VAT numbers and check if a vendor is on the blacklist. Interface mostly in Hungarian.</div>
-                                    <a href="https://nav.gov.hu/" target="_blank" class="res-link">nav.gov.hu ↗</a>
-                                    <div class="res-tags"><span class="res-tag res-tag-vat">VAT Check</span></div>
-                                </div>
-
-                                <!-- Spain -->
-                                <div class="res-card" style="border-left-color:#dc2626;">
-                                    <div class="res-title">🇪🇸 Spain — Agencia Tributaria</div>
-                                    <div class="res-desc">Spanish tax authority. Verify NIF/CIF (Spanish tax numbers). VIES also works for Spain. Use for confirming Spanish VAT status. Note: does not show IBAN.</div>
-                                    <a href="https://www.agenciatributaria.es/" target="_blank" class="res-link">agenciatributaria.es ↗</a>
-                                    <div class="res-tags"><span class="res-tag res-tag-vat">VAT / NIF/CIF</span></div>
-                                </div>
-
-                                <!-- Spain BORME -->
-                                <div class="res-card" style="border-left-color:#dc2626;">
-                                    <div class="res-title">🇪🇸 Spain — BORME (Company Gazette)</div>
-                                    <div class="res-desc">Official State Gazette for Spanish companies (Boletín Oficial del Registro Mercantil). Check registration, directors, and legal notices. Free search.</div>
-                                    <a href="https://www.boe.es/diario_borme/" target="_blank" class="res-link">boe.es/diario_borme ↗</a>
-                                    <div class="res-tags"><span class="res-tag res-tag-reg">Company Registry</span></div>
-                                </div>
-
-                                <!-- Switzerland Zefix -->
-                                <div class="res-card" style="border-left-color:#dc2626;">
-                                    <div class="res-title">🇨🇭 Switzerland — Zefix (Central Business Registry) ⭐</div>
-                                    <div class="res-desc">Official Swiss company search. Find CHE (UID) number, registered address, and legal status. <strong>Annual reports filed here sometimes contain IBAN.</strong> Free access.</div>
-                                    <a href="https://www.zefix.ch/" target="_blank" class="res-link">zefix.ch ↗</a>
-                                    <div class="res-tags"><span class="res-tag res-tag-iban">IBAN in annual reports</span><span class="res-tag res-tag-reg">Company Registry</span></div>
-                                </div>
-
-                                <!-- Switzerland UID -->
-                                <div class="res-card" style="border-left-color:#dc2626;">
-                                    <div class="res-title">🇨🇭 Switzerland — UID Register (VAT)</div>
-                                    <div class="res-desc">Swiss UID/MWST number verification. Search by company name or CHE number. Confirms Swiss VAT registration status (MWST-Nummer). Free.</div>
-                                    <a href="https://www.uid.admin.ch/" target="_blank" class="res-link">uid.admin.ch ↗</a>
-                                    <div class="res-tags"><span class="res-tag res-tag-vat">VAT / MWST</span></div>
-                                </div>
-
-                                <!-- Germany DE -->
-                                <div class="res-card" style="border-left-color:#374151;">
-                                    <div class="res-title">🇩🇪 Germany — BZSt VAT Verification ⚠️</div>
-                                    <div class="res-desc"><strong>Note:</strong> Germany does NOT return company name/address through VIES (by law). To confirm a DE VAT number, use the BZSt simple confirmation tool. It only confirms valid/invalid — no company details shown.</div>
-                                    <a href="https://www.bzst.de/DE/Unternehmen/Umsatzsteuer/Umsatzsteuer-Identifikationsnummer/umsatzsteuer-identifikationsnummer_node.html" target="_blank" class="res-link">bzst.de – USt-IdNr check ↗</a>
-                                    <div class="res-tags"><span class="res-tag res-tag-vat">VAT Check (limited)</span></div>
-                                </div>
-
-                                <!-- Germany Handelsregister -->
-                                <div class="res-card" style="border-left-color:#374151;">
-                                    <div class="res-title">🇩🇪 Germany — Handelsregister (Company Registry)</div>
-                                    <div class="res-desc">Official German commercial register. Search company name, registered office, directors, and filed documents. Annual reports may contain bank details. Free to search.</div>
-                                    <a href="https://www.handelsregister.de/" target="_blank" class="res-link">handelsregister.de ↗</a>
-                                    <div class="res-tags"><span class="res-tag res-tag-reg">Company Registry</span></div>
-                                </div>
-
-                                <!-- Germany Bundesanzeiger -->
-                                <div class="res-card" style="border-left-color:#374151;">
-                                    <div class="res-title">🇩🇪 Germany — Bundesanzeiger (Official Gazette)</div>
-                                    <div class="res-desc">Published annual financial reports for German companies. <strong>Financial statements sometimes include IBAN.</strong> Especially useful for larger German vendors. Free access for basic reports.</div>
-                                    <a href="https://www.bundesanzeiger.de/" target="_blank" class="res-link">bundesanzeiger.de ↗</a>
-                                    <div class="res-tags"><span class="res-tag res-tag-iban">IBAN in financials</span><span class="res-tag res-tag-reg">Annual Reports</span></div>
-                                </div>
-
-                                <!-- Denmark CVR -->
-                                <div class="res-card" style="border-left-color:#ef4444;">
-                                    <div class="res-title">🇩🇰 Denmark — CVR (Central Business Register) ⭐</div>
-                                    <div class="res-desc">Official Danish company register. Search by CVR number or name. <strong>Annual reports filed here may contain bank account details (IBAN).</strong> Free. English available.</div>
-                                    <a href="https://datacvr.virk.dk/" target="_blank" class="res-link">datacvr.virk.dk ↗</a>
-                                    <div class="res-tags"><span class="res-tag res-tag-iban">IBAN in filings</span><span class="res-tag res-tag-reg">Company Registry</span></div>
-                                </div>
-
-                                <!-- UK VAT -->
                                 <div class="res-card" style="border-left-color:#1e3a5f;">
-                                    <div class="res-title">🇬🇧 UK — HMRC VAT Number Check</div>
-                                    <div class="res-desc">Official HMRC service to verify UK VAT registration numbers (GB VAT). Works for post-Brexit UK numbers that no longer appear in VIES. Returns company name and address.</div>
+                                    <div class="res-title">🏛️ Companies House — Company Registration</div>
+                                    <div class="res-desc">Search UK companies by name or registration number. View directors, filing history, and annual accounts. Filed accounts sometimes contain bank/IBAN details. Free.</div>
+                                    <a href="https://find-and-update.company-information.service.gov.uk/search?q=" target="_blank" class="res-link">find-and-update.company-information.service.gov.uk ↗</a>
+                                    <div class="res-tags"><span class="res-tag res-tag-reg">Company Registry</span><span class="res-tag res-tag-iban">IBAN in filings</span></div>
+                                </div>
+
+                                <div class="res-card" style="border-left-color:#1e3a5f;">
+                                    <div class="res-title">📋 HMRC — UK VAT Number Check</div>
+                                    <div class="res-desc">Official HMRC service for verifying UK VAT (GB VAT) numbers. Returns company name and address. Use this for UK vendors — VIES does not cover UK post-Brexit.</div>
                                     <a href="https://www.tax.service.gov.uk/check-vat-number/enter-vat-details" target="_blank" class="res-link">tax.service.gov.uk – VAT Check ↗</a>
                                     <div class="res-tags"><span class="res-tag res-tag-vat">VAT Check</span></div>
                                 </div>
 
-                                <!-- UK Companies House -->
-                                <div class="res-card" style="border-left-color:#1e3a5f;">
-                                    <div class="res-title">🇬🇧 UK — Companies House (Company Registry) ⭐</div>
-                                    <div class="res-desc">Official UK company register. Search by company name or number. View filing history, accounts, directors, and registered addresses. Annual accounts may show bank details. Free.</div>
-                                    <a href="https://find-and-update.company-information.service.gov.uk/" target="_blank" class="res-link">find-and-update.company-information.service.gov.uk ↗</a>
-                                    <div class="res-tags"><span class="res-tag res-tag-iban">IBAN in accounts</span><span class="res-tag res-tag-reg">Company Registry</span></div>
-                                </div>
+                            </div>
+                        </div>
 
-                                <!-- Netherlands KVK -->
-                                <div class="res-card" style="border-left-color:#f97316;">
-                                    <div class="res-title">🇳🇱 Netherlands — KVK (Chamber of Commerce)</div>
-                                    <div class="res-desc">Dutch chamber of commerce. Verify Dutch companies by KVK number. Confirms registration and legal status. VAT via VIES. Does not show IBAN directly but confirms company is legitimate.</div>
-                                    <a href="https://www.kvk.nl/" target="_blank" class="res-link">kvk.nl ↗</a>
-                                    <div class="res-tags"><span class="res-tag res-tag-reg">Company Registry</span></div>
-                                </div>
+                        <!-- ── Poland ── -->
+                        <div>
+                            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#dc2626;margin-bottom:10px;">🇵🇱 Poland</div>
+                            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;">
 
-                                <!-- Belgium BCE/KBO -->
-                                <div class="res-card" style="border-left-color:#fbbf24;">
-                                    <div class="res-title">🇧🇪 Belgium — BCE/KBO (Company Registry)</div>
-                                    <div class="res-desc">Belgian Crossroads Bank for Enterprises. Search Belgian companies, confirm VAT number (BE VAT), and view official publications. Financial filings sometimes include IBAN.</div>
-                                    <a href="https://kbopub.economie.fgov.be/kbopub/zoeknamepage.action" target="_blank" class="res-link">kbopub.economie.fgov.be ↗</a>
-                                    <div class="res-tags"><span class="res-tag res-tag-iban">IBAN in filings</span><span class="res-tag res-tag-vat">VAT / BTW</span><span class="res-tag res-tag-reg">Company Registry</span></div>
-                                </div>
-
-                                <!-- Austria Firmenbuch -->
                                 <div class="res-card" style="border-left-color:#dc2626;">
-                                    <div class="res-title">🇦🇹 Austria — Firmenbuch (Company Register)</div>
-                                    <div class="res-desc">Official Austrian commercial register (Firmenbuch). Search Austrian companies for registration details. VAT via VIES. Annual reports may contain payment information.</div>
-                                    <a href="https://www.justiz.gv.at/web2013/home/firmenbuch/firmenbuch~2c94848542b43780014322c7b6bf0088.de.html" target="_blank" class="res-link">justiz.gv.at – Firmenbuch ↗</a>
-                                    <div class="res-tags"><span class="res-tag res-tag-reg">Company Registry</span></div>
+                                    <div class="res-title">⭐ Biała Lista — VAT Payer &amp; Bank Account Lookup</div>
+                                    <div class="res-desc"><strong>Most useful PL resource.</strong> Official White List of VAT payers. Shows registered bank accounts (IBAN) for Polish companies. Enter NIP (tax ID) or company name to search.</div>
+                                    <a href="https://www.podatki.gov.pl/wykaz-podatnikow-vat-wyszukiwarka" target="_blank" class="res-link">podatki.gov.pl – Biała Lista ↗</a>
+                                    <div class="res-tags"><span class="res-tag res-tag-iban">Bank Account / IBAN</span><span class="res-tag res-tag-vat">VAT Check</span></div>
                                 </div>
 
-                                <!-- Italy Registro Imprese -->
-                                <div class="res-card" style="border-left-color:#16a34a;">
-                                    <div class="res-title">🇮🇹 Italy — Registro Imprese</div>
-                                    <div class="res-desc">Italian business register (Registro delle Imprese). Basic company search is free. VAT via VIES. For detailed records including bank details, a small fee may apply for full documents.</div>
-                                    <a href="https://www.registroimprese.it/" target="_blank" class="res-link">registroimprese.it ↗</a>
-                                    <div class="res-tags"><span class="res-tag res-tag-reg">Company Registry</span></div>
-                                </div>
-
-                                <!-- Sweden Bolagsverket -->
-                                <div class="res-card" style="border-left-color:#1d4ed8;">
-                                    <div class="res-title">🇸🇪 Sweden — Bolagsverket (Companies Registration)</div>
-                                    <div class="res-desc">Swedish Companies Registration Office. Verify Swedish companies and search public filings. Annual reports filed here may contain bank details. VAT via VIES.</div>
-                                    <a href="https://www.bolagsverket.se/" target="_blank" class="res-link">bolagsverket.se ↗</a>
-                                    <div class="res-tags"><span class="res-tag res-tag-reg">Company Registry</span></div>
-                                </div>
-
-                                <!-- Romania -->
                                 <div class="res-card" style="border-left-color:#dc2626;">
-                                    <div class="res-title">🇷🇴 Romania — ONRC (Company Registry)</div>
-                                    <div class="res-desc">Romanian National Office for the Trade Register. Search Romanian companies (CUI/CIF number). VAT via VIES. Some financial filings include bank details.</div>
-                                    <a href="https://www.onrc.ro/" target="_blank" class="res-link">onrc.ro ↗</a>
+                                    <div class="res-title">📋 CEIDG — Business Activity Register</div>
+                                    <div class="res-desc">Central Register and Information on Business Activity (CEIDG). Search individual entrepreneurs and sole proprietorships registered in Poland. Complements the Biała Lista for smaller vendors.</div>
+                                    <a href="https://aplikacja.ceidg.gov.pl/CEIDG/CEIDG.Public.UI/Search.aspx" target="_blank" class="res-link">aplikacja.ceidg.gov.pl ↗</a>
                                     <div class="res-tags"><span class="res-tag res-tag-reg">Company Registry</span></div>
                                 </div>
 
                             </div>
                         </div>
 
-                        <!-- India GSTIN -->
+                        <!-- ── Spain ── -->
                         <div>
-                            <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:10px;">🌏 Asia / Other Regions</div>
+                            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#dc2626;margin-bottom:10px;">🇪🇸 Spain</div>
+                            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;">
+
+                                <div class="res-card" style="border-left-color:#c2410c;">
+                                    <div class="res-title">🔍 NIF/CIF Validator — Spain VAT Check</div>
+                                    <div class="res-desc">Free tool to validate Spanish NIF/CIF/NIE numbers. Checks format and confirms valid structure for Spanish tax identification numbers. Useful for quick format validation before entering in SAP.</div>
+                                    <a href="http://www.aplicacionesinformaticas.com/programas/gratis/nif.php" target="_blank" class="res-link">aplicacionesinformaticas.com – NIF Validator ↗</a>
+                                    <div class="res-tags"><span class="res-tag res-tag-vat">NIF / CIF Validation</span></div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <!-- ── France ── -->
+                        <div>
+                            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#1e40af;margin-bottom:10px;">🇫🇷 France</div>
+                            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;">
+
+                                <div class="res-card" style="border-left-color:#1d4ed8;">
+                                    <div class="res-title">📋 Manageo — French Company &amp; VAT Search</div>
+                                    <div class="res-desc">Search French companies by SIRET/SIREN or company name. View company details, legal status, and financial data. Useful for verifying French vendor information and VAT numbers.</div>
+                                    <a href="https://www.manageo.fr/" target="_blank" class="res-link">manageo.fr ↗</a>
+                                    <div class="res-tags"><span class="res-tag res-tag-vat">SIRET / VAT</span><span class="res-tag res-tag-reg">Company Info</span></div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <!-- ── Switzerland ── -->
+                        <div>
+                            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#dc2626;margin-bottom:10px;">🇨🇭 Switzerland</div>
+                            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;">
+
+                                <div class="res-card" style="border-left-color:#dc2626;">
+                                    <div class="res-title">🔍 UID Register — Swiss VAT (MWST) Search</div>
+                                    <div class="res-desc">Official Swiss UID number register. Search by company name or CHE number to verify Swiss VAT registration (MWST-Nummer). English interface available. Free access.</div>
+                                    <a href="https://www.uid.admin.ch/Search.aspx?lang=en" target="_blank" class="res-link">uid.admin.ch/Search ↗</a>
+                                    <div class="res-tags"><span class="res-tag res-tag-vat">VAT / MWST / UID</span></div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <!-- ── Hungary ── -->
+                        <div>
+                            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#b45309;margin-bottom:10px;">🇭🇺 Hungary</div>
+                            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;">
+
+                                <div class="res-card" style="border-left-color:#b45309;">
+                                    <div class="res-title">🏛️ e-Cégjegyzék — Company Registry</div>
+                                    <div class="res-desc">Hungarian official company register. Search by company name or registration number. Older annual reports filed here sometimes contain IBAN / bank account details. Free basic access.</div>
+                                    <a href="https://www.e-cegjegyzek.hu/?cegkereses" target="_blank" class="res-link">e-cegjegyzek.hu ↗</a>
+                                    <div class="res-tags"><span class="res-tag res-tag-reg">Company Registry</span><span class="res-tag res-tag-iban">IBAN in filings</span></div>
+                                </div>
+
+                                <div class="res-card" style="border-left-color:#b45309;">
+                                    <div class="res-title">📋 NAV — Hungarian VAT Payer Database</div>
+                                    <div class="res-desc">National Tax and Customs Administration VAT payer lookup. Verify if a Hungarian company is a registered VAT payer. Enter Hungarian tax number (adószám) to check status.</div>
+                                    <a href="https://nav.gov.hu/adatbazisok/adatbleker/afaalanyok/afaalanyok_egyszeru" target="_blank" class="res-link">nav.gov.hu – ÁFA Alany Kereső ↗</a>
+                                    <div class="res-tags"><span class="res-tag res-tag-vat">VAT Check</span></div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <!-- ── Czech Republic ── -->
+                        <div>
+                            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#1d4ed8;margin-bottom:10px;">🇨🇿 Czech Republic</div>
+                            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;">
+
+                                <div class="res-card" style="border-left-color:#1d4ed8;">
+                                    <div class="res-title">📋 DPH — Czech VAT Payer Register</div>
+                                    <div class="res-desc">Official Czech financial administration portal for VAT (DPH = Daň z přidané hodnoty). Verify if a Czech company is a registered VAT payer. Enter the DIČ (Czech VAT number) to check.</div>
+                                    <a href="https://adisspr.mfcr.cz/dpr/adis/irs/irep_dph/dphInputForm.faces" target="_blank" class="res-link">adisspr.mfcr.cz – DPH Lookup ↗</a>
+                                    <div class="res-tags"><span class="res-tag res-tag-vat">VAT / DPH Check</span></div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <!-- ── Germany note ── -->
+                        <div>
+                            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#374151;margin-bottom:10px;">🇩🇪 Germany — Special Note</div>
+                            <div style="background:#fef3c7;border:1px solid #fbbf24;border-radius:10px;padding:1rem 1.25rem;font-size:13px;color:#92400e;">
+                                <strong>⚠️ Germany (DE) does not expose company details through VIES.</strong><br>
+                                By law, Germany only confirms VAT number valid/invalid — no company name or address is returned. This is intentional under German privacy law (Datenschutz).<br><br>
+                                <strong>What to do for DE vendors:</strong>
+                                <ul style="margin:8px 0 0 16px;line-height:1.8;">
+                                    <li>Use <strong>VIES</strong> to confirm the DE VAT number is valid (format: DE + 9 digits)</li>
+                                    <li>Use <strong><a href="https://www.handelsregister.de/" target="_blank" style="color:#92400e;">Handelsregister</a></strong> to confirm company name and address</li>
+                                    <li>Check <strong><a href="https://www.bundesanzeiger.de/" target="_blank" style="color:#92400e;">Bundesanzeiger</a></strong> for annual reports — may contain IBAN in financial statements</li>
+                                    <li>Ask the vendor directly for a VAT certificate (<em>Umsatzsteuer-Identifikationsnummer Bescheinigung</em>)</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- ── India / Other ── -->
+                        <div>
+                            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#f97316;margin-bottom:10px;">🌏 India / Other</div>
                             <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;">
 
                                 <div class="res-card" style="border-left-color:#f97316;">
-                                    <div class="res-title">🇮🇳 India — GSTIN Verifier</div>
-                                    <div class="res-desc">Verify Indian GSTIN (Goods and Services Tax Identification Number). Official GST portal shows business name, state, type, and registration status. Free.</div>
+                                    <div class="res-title">🇮🇳 GST Portal — GSTIN Verifier</div>
+                                    <div class="res-desc">Official Indian GST portal. Verify GSTIN (Goods and Services Tax Identification Number) for Indian vendors. Returns business name, state, type, and registration status. Free.</div>
                                     <a href="https://www.gst.gov.in/commonhome" target="_blank" class="res-link">gst.gov.in ↗</a>
                                     <div class="res-tags"><span class="res-tag res-tag-vat">GSTIN</span></div>
                                 </div>
 
-                                <div class="res-card" style="border-left-color:#f97316;">
-                                    <div class="res-title">🇮🇳 India — Quick GSTIN Lookup</div>
-                                    <div class="res-desc">Alternative GSTIN search tool — faster interface for quick lookups. Shows company name, PAN, type, and registration date.</div>
-                                    <a href="https://www.knowyourgst.com/gst-number-search/" target="_blank" class="res-link">knowyourgst.com ↗</a>
-                                    <div class="res-tags"><span class="res-tag res-tag-vat">GSTIN</span></div>
-                                </div>
-
                             </div>
                         </div>
 
-                        <!-- Country summary table -->
+                        <!-- ── Quick Reference Table ── -->
                         <div>
-                            <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:10px;">📊 Country Summary — What You Can Find for Free</div>
+                            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text-primary);margin-bottom:10px;">📊 Quick Reference — What Each Tool Shows</div>
                             <div style="overflow-x:auto;">
-                                <table style="width:100%;font-size:12px;border-collapse:collapse;">
+                                <table style="width:100%;font-size:12px;border-collapse:collapse;min-width:600px;">
                                     <thead>
                                         <tr style="background:var(--bg-hover);">
+                                            <th style="padding:8px 12px;text-align:left;border-bottom:2px solid var(--border);">Tool / Website</th>
                                             <th style="padding:8px 12px;text-align:left;border-bottom:2px solid var(--border);">Country</th>
-                                            <th style="padding:8px 12px;text-align:center;border-bottom:2px solid var(--border);">VAT Check</th>
-                                            <th style="padding:8px 12px;text-align:center;border-bottom:2px solid var(--border);">IBAN Findable</th>
-                                            <th style="padding:8px 12px;text-align:center;border-bottom:2px solid var(--border);">VIES Works</th>
-                                            <th style="padding:8px 12px;text-align:left;border-bottom:2px solid var(--border);">Best Source</th>
+                                            <th style="padding:8px 12px;text-align:center;border-bottom:2px solid var(--border);">VAT ✓</th>
+                                            <th style="padding:8px 12px;text-align:center;border-bottom:2px solid var(--border);">IBAN</th>
+                                            <th style="padding:8px 12px;text-align:left;border-bottom:2px solid var(--border);">Notes</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr><td style="padding:6px 12px;">🇵🇱 Poland</td><td style="text-align:center;">✅</td><td style="text-align:center;color:#16a34a;font-weight:700;">⭐ Yes (White List)</td><td style="text-align:center;">✅</td><td style="padding:6px 12px;">Biała Lista — shows bank accounts directly</td></tr>
-                                        <tr style="background:var(--bg-hover);"><td style="padding:6px 12px;">🇨🇿 Czech Rep.</td><td style="text-align:center;">✅</td><td style="text-align:center;color:#16a34a;font-weight:700;">⭐ Often (ARES)</td><td style="text-align:center;">✅</td><td style="padding:6px 12px;">ARES — sometimes shows IBAN in registration</td></tr>
-                                        <tr><td style="padding:6px 12px;">🇩🇰 Denmark</td><td style="text-align:center;">✅</td><td style="text-align:center;color:#ca8a04;">🔸 In filings</td><td style="text-align:center;">✅</td><td style="padding:6px 12px;">CVR / datacvr.virk.dk — annual reports</td></tr>
-                                        <tr style="background:var(--bg-hover);"><td style="padding:6px 12px;">🇨🇭 Switzerland</td><td style="text-align:center;">✅ (UID)</td><td style="text-align:center;color:#ca8a04;">🔸 In filings</td><td style="text-align:center;">✅</td><td style="padding:6px 12px;">Zefix — annual reports sometimes have IBAN</td></tr>
-                                        <tr><td style="padding:6px 12px;">🇭🇺 Hungary</td><td style="text-align:center;">✅</td><td style="text-align:center;color:#ca8a04;">🔸 In filings</td><td style="text-align:center;">✅</td><td style="padding:6px 12px;">e-Cégjegyzék — older filings</td></tr>
-                                        <tr style="background:var(--bg-hover);"><td style="padding:6px 12px;">🇧🇪 Belgium</td><td style="text-align:center;">✅</td><td style="text-align:center;color:#ca8a04;">🔸 In filings</td><td style="text-align:center;">✅</td><td style="padding:6px 12px;">BCE/KBO — financial disclosures</td></tr>
-                                        <tr><td style="padding:6px 12px;">🇬🇧 UK</td><td style="text-align:center;">✅ (HMRC)</td><td style="text-align:center;color:#ca8a04;">🔸 In accounts</td><td style="text-align:center;">❌ (post-Brexit)</td><td style="padding:6px 12px;">Companies House — filed accounts</td></tr>
-                                        <tr style="background:var(--bg-hover);"><td style="padding:6px 12px;">🇩🇪 Germany</td><td style="text-align:center;">⚠️ Limited</td><td style="text-align:center;color:#ca8a04;">🔸 Bundesanzeiger</td><td style="text-align:center;">⚠️ No name</td><td style="padding:6px 12px;">BZSt (VAT valid/invalid only) · Bundesanzeiger (financials)</td></tr>
-                                        <tr><td style="padding:6px 12px;">🇫🇷 France</td><td style="text-align:center;">✅</td><td style="text-align:center;color:#ef4444;">❌ Not public</td><td style="text-align:center;">✅</td><td style="padding:6px 12px;">SIRENE/Annuaire — company info, no IBAN</td></tr>
-                                        <tr style="background:var(--bg-hover);"><td style="padding:6px 12px;">🇪🇸 Spain</td><td style="text-align:center;">✅</td><td style="text-align:center;color:#ef4444;">❌ Not public</td><td style="text-align:center;">✅</td><td style="padding:6px 12px;">Agencia Tributaria + VIES</td></tr>
-                                        <tr><td style="padding:6px 12px;">🇳🇱 Netherlands</td><td style="text-align:center;">✅</td><td style="text-align:center;color:#ef4444;">❌ Not public</td><td style="text-align:center;">✅</td><td style="padding:6px 12px;">KVK — company info only</td></tr>
-                                        <tr style="background:var(--bg-hover);"><td style="padding:6px 12px;">🇮🇹 Italy</td><td style="text-align:center;">✅</td><td style="text-align:center;color:#ef4444;">❌ Paid</td><td style="text-align:center;">✅</td><td style="padding:6px 12px;">Registro Imprese — free basic, paid full</td></tr>
-                                        <tr><td style="padding:6px 12px;">🇮🇳 India</td><td style="text-align:center;">✅ (GSTIN)</td><td style="text-align:center;color:#ef4444;">❌</td><td style="text-align:center;">N/A</td><td style="padding:6px 12px;">gst.gov.in — GSTIN verification</td></tr>
+                                        <tr><td style="padding:6px 12px;font-weight:600;">DPS (Resideo)</td><td>All</td><td style="text-align:center;">—</td><td style="text-align:center;">—</td><td style="padding:6px 12px;color:var(--text-secondary);">Denied party screening — internal login required</td></tr>
+                                        <tr style="background:var(--bg-hover);"><td style="padding:6px 12px;font-weight:600;">VIES</td><td>🇪🇺 EU (excl. GB)</td><td style="text-align:center;">✅</td><td style="text-align:center;">❌</td><td style="padding:6px 12px;color:var(--text-secondary);">DE: valid/invalid only. GB: not covered post-Brexit</td></tr>
+                                        <tr><td style="padding:6px 12px;font-weight:600;">IBAN Calculator</td><td>All IBAN</td><td style="text-align:center;">—</td><td style="text-align:center;">✅</td><td style="padding:6px 12px;color:var(--text-secondary);">Calculate IBAN from bank code + account; validate existing</td></tr>
+                                        <tr style="background:var(--bg-hover);"><td style="padding:6px 12px;font-weight:600;">Companies House</td><td>🇬🇧 UK</td><td style="text-align:center;">—</td><td style="text-align:center;">🔸</td><td style="padding:6px 12px;color:var(--text-secondary);">Annual accounts sometimes include bank info</td></tr>
+                                        <tr><td style="padding:6px 12px;font-weight:600;">HMRC VAT Check</td><td>🇬🇧 UK</td><td style="text-align:center;">✅</td><td style="text-align:center;">❌</td><td style="padding:6px 12px;color:var(--text-secondary);">Returns name + address for GB VAT numbers</td></tr>
+                                        <tr style="background:var(--bg-hover);"><td style="padding:6px 12px;font-weight:600;">Biała Lista ⭐</td><td>🇵🇱 Poland</td><td style="text-align:center;">✅</td><td style="text-align:center;color:#16a34a;font-weight:700;">✅ Yes!</td><td style="padding:6px 12px;color:var(--text-secondary);">Best free IBAN source — shows registered bank accounts</td></tr>
+                                        <tr><td style="padding:6px 12px;font-weight:600;">CEIDG</td><td>🇵🇱 Poland</td><td style="text-align:center;">—</td><td style="text-align:center;">—</td><td style="padding:6px 12px;color:var(--text-secondary);">Individual entrepreneurs only; confirms business exists</td></tr>
+                                        <tr style="background:var(--bg-hover);"><td style="padding:6px 12px;font-weight:600;">NIF Validator</td><td>🇪🇸 Spain</td><td style="text-align:center;">✅</td><td style="text-align:center;">❌</td><td style="padding:6px 12px;color:var(--text-secondary);">Format validation for NIF/CIF/NIE numbers</td></tr>
+                                        <tr><td style="padding:6px 12px;font-weight:600;">Manageo</td><td>🇫🇷 France</td><td style="text-align:center;">✅</td><td style="text-align:center;">—</td><td style="padding:6px 12px;color:var(--text-secondary);">SIRET/SIREN lookup; company profile + financial data</td></tr>
+                                        <tr style="background:var(--bg-hover);"><td style="padding:6px 12px;font-weight:600;">UID Register</td><td>🇨🇭 Switzerland</td><td style="text-align:center;">✅</td><td style="text-align:center;">❌</td><td style="padding:6px 12px;color:var(--text-secondary);">CHE / MWST verification; English interface</td></tr>
+                                        <tr><td style="padding:6px 12px;font-weight:600;">e-Cégjegyzék</td><td>🇭🇺 Hungary</td><td style="text-align:center;">—</td><td style="text-align:center;">🔸</td><td style="padding:6px 12px;color:var(--text-secondary);">Company registry; IBAN sometimes in annual reports</td></tr>
+                                        <tr style="background:var(--bg-hover);"><td style="padding:6px 12px;font-weight:600;">NAV (ÁFA)</td><td>🇭🇺 Hungary</td><td style="text-align:center;">✅</td><td style="text-align:center;">❌</td><td style="padding:6px 12px;color:var(--text-secondary);">VAT payer status; Hungarian interface</td></tr>
+                                        <tr><td style="padding:6px 12px;font-weight:600;">DPH (adisspr)</td><td>🇨🇿 Czech Rep.</td><td style="text-align:center;">✅</td><td style="text-align:center;">❌</td><td style="padding:6px 12px;color:var(--text-secondary);">Official CZ VAT register; enter DIČ number</td></tr>
+                                        <tr style="background:var(--bg-hover);"><td style="padding:6px 12px;font-weight:600;">GST Portal</td><td>🇮🇳 India</td><td style="text-align:center;">✅</td><td style="text-align:center;">❌</td><td style="padding:6px 12px;color:var(--text-secondary);">GSTIN verification — returns name + state</td></tr>
                                     </tbody>
                                 </table>
                             </div>
-                            <div style="margin-top:8px;padding:8px 12px;background:#fef3c7;border-radius:6px;font-size:12px;color:#92400e;">
-                                ⭐ = IBAN/bank account directly visible on official website &nbsp;|&nbsp; 🔸 = may appear in annual report filings &nbsp;|&nbsp; ❌ = not publicly available online for free
+                            <div style="margin-top:8px;padding:8px 12px;background:#f0fdf4;border-radius:6px;font-size:12px;color:#166534;border:1px solid #86efac;">
+                                ⭐ = IBAN / bank account directly visible &nbsp;|&nbsp; 🔸 = may appear in filed annual reports &nbsp;|&nbsp; ❌ = not publicly available
                             </div>
                         </div>
 
