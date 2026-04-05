@@ -645,6 +645,7 @@
                 <button class="dash-tab-btn" id="dashTab3Btn" onclick="switchDashTab(3)">📜 Audit Log</button>
                 <button class="dash-tab-btn" id="dashTab4Btn" onclick="switchDashTab(4)">💳 Payment Method</button>
                 <button class="dash-tab-btn" id="dashTab5Btn" onclick="switchDashTab(5)">🌐 Resources</button>
+                <button class="dash-tab-btn" id="dashTab6Btn" onclick="switchDashTab(6)">✉️ Email Templates</button>
             </div>
 
             <div class="dash-tab-content active" id="dashTab1Content">
@@ -692,10 +693,20 @@
                         <button class="btn btn-primary" onclick="openImportModal()">📧 Import from Email</button>
                         <button class="btn btn-primary" onclick="openValidationToolsModal()">🔧 Validation Tools</button>
                     </div>
-                    <div class="filter-group" style="margin-top:0.5rem;">
-                        <button class="btn btn-success" onclick="exportAllData()" title="Export all data as JSON">📤 Export JSON</button>
-                        <button class="btn btn-secondary" onclick="importDataFile()" title="Import JSON from colleague">📥 Import JSON</button>
-                        <button class="btn btn-secondary" onclick="exportData()" title="Export as CSV for Excel">📊 Export CSV</button>
+                    <div class="filter-group" style="margin-top:0.5rem;flex-wrap:wrap;gap:6px;">
+                        <!-- Region quick-filters -->
+                        <div style="display:flex;gap:4px;align-items:center;">
+                            <span style="font-size:11px;color:var(--text-tertiary);font-weight:600;">Region:</span>
+                            <button id="rfAll"  onclick="setRegionFilter('')"   style="padding:3px 10px;border-radius:20px;border:1px solid var(--primary);background:var(--primary);color:white;font-size:11px;cursor:pointer;font-weight:600;">All</button>
+                            <button id="rfAm"   onclick="setRegionFilter('1')"  style="padding:3px 10px;border-radius:20px;border:1px solid #d1d5db;background:white;color:#374151;font-size:11px;cursor:pointer;">🌎 Americas</button>
+                            <button id="rfEMEA" onclick="setRegionFilter('2')"  style="padding:3px 10px;border-radius:20px;border:1px solid #d1d5db;background:white;color:#374151;font-size:11px;cursor:pointer;">🇪🇺 EMEA</button>
+                            <button id="rfAPAC" onclick="setRegionFilter('3')"  style="padding:3px 10px;border-radius:20px;border:1px solid #d1d5db;background:white;color:#374151;font-size:11px;cursor:pointer;">🌏 APAC</button>
+                        </div>
+                        <div style="display:flex;gap:6px;margin-left:auto;">
+                            <button class="btn btn-success" onclick="exportAllData()" title="Export all data as JSON">📤 Export JSON</button>
+                            <button class="btn btn-secondary" onclick="importDataFile()" title="Import SAP CSV report">📥 Import CSV</button>
+                            <button class="btn btn-secondary" onclick="exportData()" title="Export current view as CSV">📊 Export CSV</button>
+                        </div>
                     </div>
                 </div>
 
@@ -1636,6 +1647,158 @@ Example formats accepted:
         </div>
     </div>
 
+
+            </div>
+
+            <!-- ═══════════════════════════════ TAB 6 — Email Templates ═══ -->
+            <div class="dash-tab-content" id="dashTab6Content" style="display:none;">
+                <div class="data-section" style="padding:0;">
+                    <div class="section-header" style="padding:1rem 1.25rem;">
+                        <span class="section-title">✉️ Email Templates</span>
+                        <span style="font-size:12px;color:var(--text-tertiary);">Pre-built Outlook templates for vendor master requests — auto-fills vendor, CC, and signature</span>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:260px 1fr;gap:0;min-height:520px;">
+
+                        <!-- ── Left: Template Library ────────────────────── -->
+                        <div style="border-right:1px solid var(--border);padding:1rem;background:var(--bg-hover);">
+                            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text-tertiary);margin-bottom:10px;">Template Library</div>
+
+                            <!-- Category: Audit Team -->
+                            <div style="margin-bottom:16px;">
+                                <div style="font-size:12px;font-weight:700;color:var(--primary);margin-bottom:6px;display:flex;align-items:center;gap:5px;">
+                                    📨 Audit Team
+                                </div>
+                                <div style="display:flex;flex-direction:column;gap:3px;">
+                                    <button id="tplBtn_extend" onclick="selectEmailTemplate('extend')"
+                                            style="text-align:left;padding:8px 10px;border-radius:6px;border:1px solid var(--primary);background:var(--primary);color:white;font-size:12px;cursor:pointer;font-weight:600;line-height:1.3;">
+                                        🔓 Extend Vendor<br><span style="font-weight:400;font-size:11px;opacity:.85;">FBL1N activity → unblock</span>
+                                    </button>
+                                    <button id="tplBtn_create" onclick="selectEmailTemplate('create')"
+                                            style="text-align:left;padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:white;color:var(--text-primary);font-size:12px;cursor:pointer;font-weight:600;line-height:1.3;">
+                                        ✅ Create Vendor<br><span style="font-weight:400;font-size:11px;color:var(--text-tertiary);">IBAN found on VAT website</span>
+                                    </button>
+                                    <div style="padding:8px 10px;border-radius:6px;border:1px dashed var(--border);font-size:12px;color:var(--text-tertiary);line-height:1.3;cursor:default;">
+                                        🔒 Missing Info Request<br><span style="font-size:11px;">Coming soon</span>
+                                    </div>
+                                    <div style="padding:8px 10px;border-radius:6px;border:1px dashed var(--border);font-size:12px;color:var(--text-tertiary);line-height:1.3;cursor:default;">
+                                        🔒 Other Block Reason<br><span style="font-size:11px;">Coming soon</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Category: Requestor Comms -->
+                            <div style="margin-bottom:16px;">
+                                <div style="font-size:12px;font-weight:700;color:var(--text-tertiary);margin-bottom:6px;display:flex;align-items:center;gap:5px;">
+                                    📤 Requestor Comms
+                                </div>
+                                <div style="display:flex;flex-direction:column;gap:3px;">
+                                    <div style="padding:8px 10px;border-radius:6px;border:1px dashed var(--border);font-size:12px;color:var(--text-tertiary);line-height:1.3;">
+                                        🔒 Request Received<br><span style="font-size:11px;">Coming soon</span>
+                                    </div>
+                                    <div style="padding:8px 10px;border-radius:6px;border:1px dashed var(--border);font-size:12px;color:var(--text-tertiary);line-height:1.3;">
+                                        🔒 Documents Missing<br><span style="font-size:11px;">Coming soon</span>
+                                    </div>
+                                    <div style="padding:8px 10px;border-radius:6px;border:1px dashed var(--border);font-size:12px;color:var(--text-tertiary);line-height:1.3;">
+                                        🔒 Request Completed<br><span style="font-size:11px;">Coming soon</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Category: Validation -->
+                            <div style="margin-bottom:16px;">
+                                <div style="font-size:12px;font-weight:700;color:var(--text-tertiary);margin-bottom:6px;">
+                                    ✅ Validation Confirmations
+                                </div>
+                                <div style="padding:8px 10px;border-radius:6px;border:1px dashed var(--border);font-size:12px;color:var(--text-tertiary);">
+                                    🔒 More templates coming soon
+                                </div>
+                            </div>
+
+                            <!-- Category: APAC -->
+                            <div>
+                                <div style="font-size:12px;font-weight:700;color:var(--text-tertiary);margin-bottom:6px;">
+                                    🌏 APAC / HK / CN
+                                </div>
+                                <div style="padding:8px 10px;border-radius:6px;border:1px dashed var(--border);font-size:12px;color:var(--text-tertiary);">
+                                    🔒 Intermediary Bank Request<br><span style="font-size:11px;">Coming soon</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ── Right: Email Composer ──────────────────────── -->
+                        <div style="padding:1.25rem;display:flex;flex-direction:column;gap:14px;">
+
+                            <!-- FROM + AVSF row -->
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                                <div>
+                                    <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:5px;">📬 From Mailbox</label>
+                                    <select id="tab6FromSelect" class="form-select" style="font-size:13px;" onchange="tab6BuildPreview()">
+                                        <option value="USMXVendorMaintenance@resideo.com">🌎 USMXVendorMaintenance@resideo.com</option>
+                                        <option value="VendorMaintenance_EMEA@resideo.com">🇪🇺 VendorMaintenance_EMEA@resideo.com</option>
+                                        <option value="ApacVendorMaintenance@resideo.com">🌏 ApacVendorMaintenance@resideo.com</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:5px;">📋 Select AVSF / Vendor</label>
+                                    <select id="tab6AVSFSelect" class="form-select" style="font-size:13px;" onchange="tab6BuildPreview()">
+                                        <option value="">-- Select a request --</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Live Preview -->
+                            <div style="flex:1;">
+                                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                                    <label style="font-size:12px;font-weight:600;color:var(--text-secondary);">📝 Email Preview</label>
+                                    <span id="tab6SubjectBadge" style="font-size:11px;color:var(--text-tertiary);font-family:monospace;"></span>
+                                </div>
+                                <div id="tab6PreviewBox"
+                                     style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:16px;font-size:12.5px;font-family:'DM Sans',sans-serif;white-space:pre-wrap;color:#111827;min-height:280px;max-height:380px;overflow-y:auto;line-height:1.75;box-shadow:inset 0 1px 3px rgba(0,0,0,.04);">
+Select a request from the left to preview the email...
+                                </div>
+                            </div>
+
+                            <!-- Field overrides (collapsible) -->
+                            <div style="background:var(--bg-hover);border-radius:8px;padding:10px 12px;">
+                                <div style="font-size:11px;font-weight:600;color:var(--text-tertiary);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">✏️ Override Fields (optional)</div>
+                                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+                                    <div>
+                                        <label style="font-size:11px;color:var(--text-tertiary);">Vendor #</label>
+                                        <input type="text" id="tab6VendorNum" class="form-input" style="font-size:12px;padding:5px 8px;" placeholder="auto" oninput="tab6BuildPreview()">
+                                    </div>
+                                    <div>
+                                        <label style="font-size:11px;color:var(--text-tertiary);">Vendor Name</label>
+                                        <input type="text" id="tab6VendorName" class="form-input" style="font-size:12px;padding:5px 8px;" placeholder="auto" oninput="tab6BuildPreview()">
+                                    </div>
+                                    <div>
+                                        <label style="font-size:11px;color:var(--text-tertiary);">Company Code</label>
+                                        <input type="text" id="tab6CC" class="form-input" style="font-size:12px;padding:5px 8px;" placeholder="auto" oninput="tab6BuildPreview()">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Action buttons -->
+                            <div style="display:flex;gap:8px;">
+                                <button onclick="tab6OpenOutlook()" class="btn btn-primary" style="flex:2;font-size:13px;font-weight:600;">
+                                    📧 Open in Outlook
+                                </button>
+                                <button onclick="tab6CopyClipboard()" class="btn btn-secondary" style="flex:1;font-size:13px;">
+                                    📋 Copy Text
+                                </button>
+                                <button onclick="tab6CopySubject()" class="btn btn-secondary" style="flex:1;font-size:13px;" title="Copy only the Subject line">
+                                    🔖 Copy Subject
+                                </button>
+                            </div>
+
+                            <div style="padding:10px 12px;background:#f0fdf4;border-radius:8px;border:1px solid #86efac;font-size:11.5px;color:#166534;">
+                                💡 <strong>Tip:</strong> Select a request, click <em>Open in Outlook</em> — subject, TO, CC, and body will be pre-filled automatically. Your email client must be configured as the default mail handler.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
     <!-- Validation Tools Modal -->
     <div class="modal" id="validationToolsModal">
         <div class="modal-content" style="max-width: 740px;">
@@ -1675,9 +1838,9 @@ Example formats accepted:
                         style="flex: 1; padding: 10px; border: none; background: #f3f4f6; color: #6b7280; font-weight: 600; cursor: pointer; border-radius: 6px 6px 0 0; font-size: 13px; margin-left: 4px;">
                     📋 VAT Validator
                 </button>
-                <button id="emailTab" onclick="switchValidationTab('email')"
-                        style="flex: 1; padding: 10px; border: none; background: #f3f4f6; color: #6b7280; font-weight: 600; cursor: pointer; border-radius: 6px 6px 0 0; font-size: 13px; margin-left: 4px;">
-                    ✉️ Email Template
+                <button onclick="closeValidationToolsModal();switchDashTab(6);"
+                        style="flex: 1; padding: 10px; border: none; background: #f3f4f6; color: #6b7280; font-weight: 600; cursor: pointer; border-radius: 6px 6px 0 0; font-size: 13px; margin-left: 4px;" title="Go to Email Templates tab">
+                    ✉️ Email Templates ↗
                 </button>
             </div>
 
@@ -1792,7 +1955,7 @@ Example formats accepted:
                 </div>
             </div>
 
-            <!-- Email Template Tab Content -->
+            <!-- Email Template moved to Tab 6 in main nav -->
             <div id="emailTabContent" style="display: none;">
                 <div style="background: #fdf4ff; padding: 20px; border-radius: 8px; border: 2px solid #a855f7;">
 
@@ -1974,7 +2137,7 @@ Example formats accepted:
 
         // ── Dashboard Tab Switching ───────────────────────────────
         function switchDashTab(tab) {
-            [1,2,3,4,5].forEach(t => {
+            [1,2,3,4,5,6].forEach(t => {
                 const c = document.getElementById(`dashTab${t}Content`);
                 const b = document.getElementById(`dashTab${t}Btn`);
                 if (c) { c.classList.toggle('active', t === tab); c.style.display = t === tab ? 'block' : 'none'; }
@@ -1983,6 +2146,7 @@ Example formats accepted:
             if (tab === 2) renderPlantTable();
             if (tab === 3) renderAuditTable();
             if (tab === 4) pmPopulateCountries();
+            if (tab === 6) tab6PopulateSelect();
         }
 
         // ── Audit Log ─────────────────────────────────────────────
@@ -2763,30 +2927,52 @@ ${from}`;
 
             let body = '';
             if (_emailTemplate === 'extend') {
-                body = `Hi Audit team,
-
-We received the request to extend vendor ${vendNum} ${vendName} to company code ${cc}.
-
-Due to recent activity on FBL1N we are requesting to unblock this vendor. Can you please help us with this request?
-
-If anything else is needed, please let us know.
-
-Best regards,
-${fullName}
-Vendor Master Team | Resideo
+                body = `Hi Audit team,
+
+
+
+We received the request to extend vendor ${vendNum} ${vendName} to company code ${cc}.
+
+
+
+Due to recent activity on FBL1N we are requesting to unblock this vendor. Can you please help us with this request?
+
+
+
+If anything else is needed, please let us know.
+
+
+
+Best regards,
+
+${fullName}
+
+Vendor Master Team | Resideo
+
 ${from}`;
             } else {
-                body = `Hi Audit team,
-
-We received the request to create vendor ${vendNum} ${vendName} to company code ${cc}.
-
-Since this vendor has the account on the VAT website, can you please unblock this?
-
-If anything else is needed, please let us know.
-
-Best regards,
-${fullName}
-Vendor Master Team | Resideo
+                body = `Hi Audit team,
+
+
+
+We received the request to create vendor ${vendNum} ${vendName} to company code ${cc}.
+
+
+
+Since this vendor has the account on the VAT website, can you please unblock this?
+
+
+
+If anything else is needed, please let us know.
+
+
+
+Best regards,
+
+${fullName}
+
+Vendor Master Team | Resideo
+
 ${from}`;
             }
 
@@ -2817,6 +3003,159 @@ ${from}`;
                 document.execCommand('copy');
                 document.body.removeChild(ta);
                 alert('Copied to clipboard!');
+            });
+        }
+
+
+        // ── Region Filter ─────────────────────────────────────────────────
+        let _regionFilter = '';
+        function setRegionFilter(prefix) {
+            _regionFilter = prefix;
+            ['All','Am','EMEA','APAC'].forEach((id, i) => {
+                const btn = document.getElementById('rf' + id);
+                const active = (prefix === '' && i===0) || (prefix === '1' && i===1) ||
+                               (prefix === '2' && i===2) || (prefix === '3' && i===3);
+                if (btn) {
+                    btn.style.background = active ? 'var(--primary)' : 'white';
+                    btn.style.color = active ? 'white' : '#374151';
+                    btn.style.borderColor = active ? 'var(--primary)' : '#d1d5db';
+                    btn.style.fontWeight = active ? '600' : '400';
+                }
+            });
+            renderTable();
+        }
+
+        // ── Tab 6 Email Template Functions ────────────────────────────────
+        let _tab6Template = 'extend';
+
+        function tab6PopulateSelect() {
+            const sel = document.getElementById('tab6AVSFSelect');
+            if (!sel) return;
+            const cur = sel.value;
+            sel.innerHTML = '<option value="">-- Select a request --</option>';
+            (avsfs || []).forEach((avsf, idx) => {
+                const opt = document.createElement('option');
+                opt.value = idx;
+                const vn = avsf.vendorNumber ? ' · ' + avsf.vendorNumber : '';
+                opt.textContent = `${formatRequestNumber(avsf.requestNo)} - ${avsf.vendorName}${vn}`;
+                sel.appendChild(opt);
+            });
+            if (cur) sel.value = cur;
+        }
+
+        function selectEmailTemplate(type) {
+            _tab6Template = type;
+            ['extend','create'].forEach(t => {
+                const btn = document.getElementById('tplBtn_' + t);
+                if (!btn) return;
+                const active = t === type;
+                btn.style.background = active ? 'var(--primary)' : 'white';
+                btn.style.color = active ? 'white' : 'var(--text-primary)';
+                btn.style.borderColor = active ? 'var(--primary)' : 'var(--border)';
+            });
+            tab6BuildPreview();
+        }
+
+        function tab6GetFields() {
+            const idx = (document.getElementById('tab6AVSFSelect') || {}).value;
+            const avsf = (idx !== '' && idx !== undefined) ? avsfs[parseInt(idx)] : null;
+            const from = (document.getElementById('tab6FromSelect') || {}).value || 'USMXVendorMaintenance@resideo.com';
+            const u = getCurrentUser();
+            const initials = u === 'Brandon' ? 'BR' : u === 'Yannick' ? 'YR' : 'RM';
+            const fullName = u === 'Brandon' ? 'Brandon Ramos' : u === 'Yannick' ? 'Yannick Rojas' : 'Rosana Munoz';
+            const vendNum  = document.getElementById('tab6VendorNum')?.value  || (avsf?.vendorNumber  || '');
+            const vendName = document.getElementById('tab6VendorName')?.value || (avsf?.vendorName   || '');
+            const cc       = document.getElementById('tab6CC')?.value         || (avsf?.companyCode  || '');
+            return { from, initials, fullName, vendNum, vendName, cc, avsf };
+        }
+
+        function tab6BuildBody(f) {
+            if (_tab6Template === 'extend') {
+                return `Hi Audit team,
+
+We received the request to extend vendor ${f.vendNum} ${f.vendName} to company code ${f.cc}.
+
+Due to recent activity on FBL1N we are requesting to unblock this vendor. Can you please help us with this request?
+
+If anything else is needed, please let us know.
+
+Best regards,
+${f.fullName}
+Vendor Master Team | Resideo
+${f.from}`;
+            } else {
+                return `Hi Audit team,
+
+We received the request to create vendor ${f.vendNum} ${f.vendName} to company code ${f.cc}.
+
+Since this vendor has the account on the VAT website, can you please unblock this?
+
+If anything else is needed, please let us know.
+
+Best regards,
+${f.fullName}
+Vendor Master Team | Resideo
+${f.from}`;
+            }
+        }
+
+        function tab6BuildPreview() {
+            const previewEl = document.getElementById('tab6PreviewBox');
+            const badgeEl   = document.getElementById('tab6SubjectBadge');
+            if (!previewEl) return;
+
+            const f = tab6GetFields();
+            if (!f.vendName && !f.avsf) {
+                previewEl.textContent = 'Select a request from the left to preview the email...';
+                if (badgeEl) badgeEl.textContent = '';
+                return;
+            }
+
+            const subject = `${f.initials} - Vendor ${f.vendNum} ${f.vendName} CC ${f.cc}`;
+            const body = tab6BuildBody(f);
+
+            if (badgeEl) badgeEl.textContent = 'Subject: ' + subject;
+
+            previewEl.textContent =
+                'To:      VendorMaintenanceAudit@resideo.com\n' +
+                'CC:      ' + f.from + '\n' +
+                'Subject: ' + subject + '\n' +
+                '─'.repeat(48) + '\n' +
+                body;
+        }
+
+        function tab6OpenOutlook() {
+            const f = tab6GetFields();
+            if (!f.vendName) { alert('Please select an AVSF request first.'); return; }
+            const subject = `${f.initials} - Vendor ${f.vendNum} ${f.vendName} CC ${f.cc}`;
+            const body    = tab6BuildBody(f).replace(/\n/g, '\r\n');
+            const mailto  = 'mailto:VendorMaintenanceAudit@resideo.com' +
+                '?cc=' + encodeURIComponent(f.from) +
+                '&subject=' + encodeURIComponent(subject) +
+                '&body=' + encodeURIComponent(body);
+            window.open(mailto, '_blank');
+        }
+
+        function tab6CopyClipboard() {
+            const previewEl = document.getElementById('tab6PreviewBox');
+            if (!previewEl || previewEl.textContent.startsWith('Select')) { alert('Select a request first.'); return; }
+            navigator.clipboard.writeText(previewEl.textContent).then(() => {
+                const btn = event.target; const orig = btn.textContent;
+                btn.textContent = '✅ Copied!'; setTimeout(() => btn.textContent = orig, 2000);
+            }).catch(() => {
+                const ta = document.createElement('textarea');
+                ta.value = previewEl.textContent; document.body.appendChild(ta);
+                ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+            });
+        }
+
+        function tab6CopySubject() {
+            const f = tab6GetFields();
+            if (!f.vendName) { alert('Select a request first.'); return; }
+            const subject = `${f.initials} - Vendor ${f.vendNum} ${f.vendName} CC ${f.cc}`;
+            navigator.clipboard.writeText(subject).then(() => {
+                const btn = event.target; const orig = btn.textContent;
+                btn.textContent = '✅ Copied!'; setTimeout(() => btn.textContent = orig, 2000);
             });
         }
 
@@ -2875,7 +3214,19 @@ ${from}`;
                     <td>${avsf.vendorNumber || '-'}</td>
                     <td>${avsf.companyCode}</td>
                     <td>${avsf.country || '-'}</td>
-                    <td><span class="status-badge status-${avsf.status.toLowerCase().replace('_', '-')}">${getStatusLabel(avsf.status)}</span></td>
+                    <td>
+                        <span class="status-badge status-${avsf.status.toLowerCase().replace('_', '-')}">${getStatusLabel(avsf.status)}</span>
+                        ${(()=>{
+                            if (avsf.status === 'PROCESSING' && avsf.entryDate) {
+                                const days = Math.floor((Date.now() - new Date(avsf.entryDate).getTime()) / 86400000);
+                                if (days >= 3) {
+                                    const c = days >= 7 ? '#dc2626' : '#d97706';
+                                    return `<span title="${days} days open" style="display:inline-block;margin-left:4px;padding:1px 6px;border-radius:10px;font-size:10px;font-weight:700;background:${c}20;color:${c};border:1px solid ${c}40;">${days}d</span>`;
+                                }
+                            }
+                            return '';
+                        })()}
+                    </td>
                     <td>
                         <span onclick="openRequirementsModal('${avsf.requestNo}')"
                               style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;background:${reqStatus.color};color:white;white-space:nowrap;">
@@ -3182,6 +3533,11 @@ ${from}`;
             const statusFilter = document.getElementById('statusFilter').value;
 
             let filtered = avsfs;
+
+            // Region filter
+            if (typeof _regionFilter !== 'undefined' && _regionFilter) {
+                filtered = filtered.filter(a => (a.companyCode || '').charAt(0) === _regionFilter);
+            }
 
             if (searchTerm) {
                 filtered = filtered.filter(a => 
