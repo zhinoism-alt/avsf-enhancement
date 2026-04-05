@@ -366,6 +366,8 @@
         .status-processing { background: #dbeafe; color: #1e40af; }
         .status-idoc-error { background: #fecaca; color: #7f1d1d; }
         .status-buyer-response { background: #e0e7ff; color: #3730a3; }
+        .status-on-hold { background: #fed7aa; color: #7c2d12; }
+        .status-cancelled { background: #e5e7eb; color: #374151; }
 
         .sidebar {
             display: flex;
@@ -688,6 +690,8 @@
                             <option value="PROCESSING">Processing</option>
                             <option value="PENDING_BUYER">Pending Buyer Response</option>
                             <option value="IDOC_ERROR">IDOC Error</option>
+                            <option value="ON_HOLD">On Hold</option>
+                            <option value="CANCELLED">Cancelled</option>
                         </select>
                         <button class="btn btn-primary" onclick="openAddModal()">+ Add AVSF</button>
                         <button class="btn btn-primary" onclick="openImportModal()">📧 Import from Email</button>
@@ -1532,6 +1536,8 @@
                                 <option value="REJECTED">Rejected</option>
                                 <option value="PENDING_BUYER">Pending Buyer Response</option>
                                 <option value="IDOC_ERROR">IDOC Error</option>
+                                <option value="ON_HOLD">On Hold</option>
+                                <option value="CANCELLED">Cancelled</option>
                             </select>
                         </div>
                     </div>
@@ -1547,9 +1553,16 @@
                             <input type="text" class="form-input" id="requestorName">
                         </div>
                         <div class="form-group">
+                            <label class="form-label">Requestor Email <span style="font-size:10px;font-weight:400;color:var(--text-tertiary);">for future email templates</span></label>
+                            <input type="email" class="form-input" id="requestorEmail" placeholder="requestor@resideo.com">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
                             <label class="form-label">Approver Name</label>
                             <input type="text" class="form-input" id="approverName">
                         </div>
+                        <div class="form-group"></div>
                     </div>
 
                     <div class="form-row">
@@ -3252,11 +3265,13 @@ ${f.from}`;
         // Get status label
         function getStatusLabel(status) {
             const labels = {
-                'COMPLETED': 'Completed',
-                'REJECTED': 'Rejected',
-                'PROCESSING': 'Processing',
-                'PENDING_BUYER': 'Pending Buyer',
-                'IDOC_ERROR': 'IDOC Error'
+                'COMPLETED':    'Completed',
+                'REJECTED':     'Rejected',
+                'PROCESSING':   'Processing',
+                'PENDING_BUYER':'Pending Buyer',
+                'IDOC_ERROR':   'IDOC Error',
+                'ON_HOLD':      'On Hold',
+                'CANCELLED':    'Cancelled'
             };
             return labels[status] || status;
         }
@@ -3289,11 +3304,13 @@ ${f.from}`;
         // Status distribution chart
         function updateStatusChart() {
             const statusCounts = {
-                'COMPLETED': avsfs.filter(a => a.status === 'COMPLETED').length,
-                'REJECTED': avsfs.filter(a => a.status === 'REJECTED').length,
-                'PROCESSING': avsfs.filter(a => a.status === 'PROCESSING').length,
-                'PENDING_BUYER': avsfs.filter(a => a.status === 'PENDING_BUYER').length,
-                'IDOC_ERROR': avsfs.filter(a => a.status === 'IDOC_ERROR').length
+                'COMPLETED':    avsfs.filter(a => a.status === 'COMPLETED').length,
+                'REJECTED':     avsfs.filter(a => a.status === 'REJECTED').length,
+                'PROCESSING':   avsfs.filter(a => a.status === 'PROCESSING').length,
+                'PENDING_BUYER':avsfs.filter(a => a.status === 'PENDING_BUYER').length,
+                'IDOC_ERROR':   avsfs.filter(a => a.status === 'IDOC_ERROR').length,
+                'ON_HOLD':      avsfs.filter(a => a.status === 'ON_HOLD').length,
+                'CANCELLED':    avsfs.filter(a => a.status === 'CANCELLED').length
             };
 
             const hasData = Object.values(statusCounts).some(v => v > 0);
@@ -3312,7 +3329,7 @@ ${f.from}`;
             statusChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Completed', 'Rejected', 'Processing', 'Pending Buyer', 'IDOC Error'],
+                    labels: ['Completed', 'Rejected', 'Processing', 'Pending Buyer', 'IDOC Error', 'On Hold', 'Cancelled'],
                     datasets: [{
                         data: Object.values(statusCounts),
                         backgroundColor: [
@@ -3320,7 +3337,9 @@ ${f.from}`;
                             '#ef4444',
                             '#3b82f6',
                             '#f59e0b',
-                            '#dc2626'
+                            '#dc2626',
+                            '#f97316',
+                            '#9ca3af'
                         ]
                     }]
                 },
@@ -3453,6 +3472,7 @@ ${f.from}`;
             document.getElementById('country').value = avsf.country || '';
             document.getElementById('status').value = avsf.status;
             document.getElementById('requestorName').value = avsf.requestorName || '';
+            document.getElementById('requestorEmail').value = avsf.requestorEmail || '';
             document.getElementById('approverName').value = avsf.approverName || '';
             document.getElementById('entryDate').value = avsf.entryDate || '';
             document.getElementById('completionDate').value = avsf.completionDate || '';
@@ -3489,7 +3509,8 @@ ${f.from}`;
                 companyCode: document.getElementById('companyCode').value,
                 country: document.getElementById('country').value,
                 status: document.getElementById('status').value,
-                requestorName: document.getElementById('requestorName').value,
+                requestorName:  document.getElementById('requestorName').value,
+                requestorEmail: document.getElementById('requestorEmail').value,
                 approverName: document.getElementById('approverName').value,
                 entryDate: document.getElementById('entryDate').value,
                 completionDate: document.getElementById('completionDate').value,
@@ -3656,12 +3677,13 @@ ${f.from}`;
 
         function mapSAPStatus(raw) {
             const s = String(raw || '').toUpperCase().trim();
-            if (s === 'COMPLETED')  return 'COMPLETED';
-            if (s === 'REJECTED')   return 'REJECTED';
-            if (s === 'CANCELLED')  return 'REJECTED';
+            if (s === 'COMPLETED')               return 'COMPLETED';
+            if (s === 'REJECTED')                return 'REJECTED';
+            if (s === 'CANCELLED')               return 'CANCELLED';
             if (s === 'IDOC ERROR' || s === 'IDOC_ERROR') return 'IDOC_ERROR';
             if (s === 'PENDING_BUYER' || s.includes('PEND')) return 'PENDING_BUYER';
-            // APPR_AWAIT, SAVED, or anything else = PROCESSING
+            if (s === 'SAVED')                   return 'ON_HOLD';
+            // APPR_AWAIT or anything else = PROCESSING
             return 'PROCESSING';
         }
 
@@ -3697,7 +3719,7 @@ ${f.from}`;
             const requestNo = rawReqNo.replace(/^0+/, '') || rawReqNo;
 
             const rawVendNo = getStr('vendor number','vendor no','vendor #','account','lifnr');
-            // Keep vendor number as-is (SAP format with leading zeros)
+            // Strip leading zeros like request number (0002032751 → 2032751)
 
             const rawStatus = getStr('request status','status','state');
             const status    = mapSAPStatus(rawStatus);
@@ -3714,7 +3736,7 @@ ${f.from}`;
                 requestNo,
                 requestType:    getStr('request type','type'),
                 accountGroup:   getStr('account group','acctgrp','acc group'),
-                vendorNumber:   rawVendNo,
+                vendorNumber:   rawVendNo.replace(/^0+/, '') || rawVendNo,
                 vendorName:     getStr('vendor name','name','name 1','name1','supplier name','supplier','kreditoren name'),
                 companyCode:    getStr('company code','cocode','co. code','co.code','cc','bukrs'),
                 country:        getStr('country','country key','land1','land'),
@@ -3722,6 +3744,7 @@ ${f.from}`;
                 entryDate:      getDate('requested date','entry date','date received','created on','creation date','request date','erstellungsdatum'),
                 completionDate: getDate('completion date','completed date','last approved date','fertigstellungsdatum'),
                 requestorName:  getStr('requestor name','requestor','requested by','requester'),
+                requestorEmail: getStr('email','requestor email','requester email','e-mail','mail'),
                 approverName:   getStr('current approver name','approver name','approver','approved by'),
                 paymentTerms:   getStr('payment terms','zahlungsbedingungen'),
                 notes,
@@ -3748,7 +3771,7 @@ ${f.from}`;
                     autoGenCount++;
                 }
                 // Status should already be normalized by mapSAPRow, but double-check
-                if (!['PROCESSING','COMPLETED','REJECTED','PENDING_BUYER','IDOC_ERROR'].includes(r.status)) {
+                if (!['PROCESSING','COMPLETED','REJECTED','PENDING_BUYER','IDOC_ERROR','ON_HOLD','CANCELLED'].includes(r.status)) {
                     r.status = 'PROCESSING';
                 }
             });
