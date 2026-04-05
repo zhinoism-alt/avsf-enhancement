@@ -1860,22 +1860,8 @@ Select a request from the left to preview the email...
             <div class="modal-body">
             <div style="margin-bottom: 20px;">
                 <p style="color: #6b7280; font-size: 14px;">
-                    Validate IBAN and VAT numbers for audit documentation, or generate Outlook email templates.
+                    Validate IBAN and VAT numbers for audit documentation.
                 </p>
-            </div>
-
-            <!-- Vendor Selection for Context -->
-            <div style="background: #f9fafb; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
-                <label style="font-size: 13px; font-weight: 600; color: #374151; display: block; margin-bottom: 8px;">
-                    Select AVSF (Optional - for PDF reference)
-                </label>
-                <select id="validationAVSFSelect" class="form-select" onchange="updateVendorNameForValidation()">
-                    <option value="">-- Or enter vendor name manually below --</option>
-                </select>
-                <div style="margin-top: 10px;">
-                    <input type="text" id="manualVendorName" class="form-input" placeholder="Or enter vendor name manually" 
-                           style="font-size: 13px;">
-                </div>
             </div>
 
             <!-- Tab Navigation -->
@@ -1887,10 +1873,6 @@ Select a request from the left to preview the email...
                 <button id="vatTab" onclick="switchValidationTab('vat')"
                         style="flex: 1; padding: 10px; border: none; background: #f3f4f6; color: #6b7280; font-weight: 600; cursor: pointer; border-radius: 6px 6px 0 0; font-size: 13px; margin-left: 4px;">
                     📋 VAT Validator
-                </button>
-                <button onclick="closeValidationToolsModal();switchDashTab(6);"
-                        style="flex: 1; padding: 10px; border: none; background: #f3f4f6; color: #6b7280; font-weight: 600; cursor: pointer; border-radius: 6px 6px 0 0; font-size: 13px; margin-left: 4px;" title="Go to Email Templates tab">
-                    ✉️ Email Templates ↗
                 </button>
             </div>
 
@@ -3590,11 +3572,21 @@ AMERBankingValidation@resideo.com`;
             return requestNo.replace(/^0+/, '') || '0';
         }
 
-        // Format date
+        // Format date – DD/MM/YYYY (e.g. 09/03/2026 = March 9)
         function formatDate(dateString) {
             if (!dateString) return '-';
-            const date = new Date(dateString);
-            return date.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
+            // Dates stored as YYYY-MM-DD — split directly to avoid timezone shifts
+            const parts = String(dateString).split('T')[0].split('-');
+            if (parts.length === 3 && parts[0].length === 4) {
+                const [yyyy, mm, dd] = parts;
+                return `${dd}/${mm}/${yyyy}`;
+            }
+            // Fallback for any unexpected format
+            const d = new Date(dateString);
+            if (isNaN(d)) return dateString;
+            return String(d.getDate()).padStart(2,'0') + '/' +
+                   String(d.getMonth()+1).padStart(2,'0') + '/' +
+                   d.getFullYear();
         }
 
         // Update charts
