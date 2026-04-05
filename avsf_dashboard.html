@@ -411,12 +411,13 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(4px);
+            background: rgba(0, 0, 0, 0.55);
+            backdrop-filter: blur(3px);
             z-index: 1000;
-            align-items: center;
+            align-items: flex-start;
             justify-content: center;
-            padding: 2rem;
+            padding: 1.5rem 1rem;
+            overflow-y: auto;
         }
 
         .modal.active {
@@ -431,13 +432,19 @@
 
         .modal-content {
             background: var(--bg-card);
-            border-radius: 16px;
-            width: 90%;
-            max-width: 900px;
-            max-height: 90vh;
+            border-radius: 14px;
+            width: 100%;
+            max-width: 780px;
+            box-shadow: var(--shadow-lg), 0 0 0 1px rgba(0,0,0,.06);
+            animation: slideUp 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            margin: auto;
+        }
+        .modal-body {
             overflow-y: auto;
-            box-shadow: var(--shadow-lg);
-            animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            max-height: calc(100vh - 180px);
+            padding: 1.25rem 1.5rem;
         }
 
         @keyframes slideUp {
@@ -452,15 +459,16 @@
         }
 
         .modal-header {
-            padding: 2rem;
+            padding: 1rem 1.5rem;
             border-bottom: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-shrink: 0;
         }
 
         .modal-title {
-            font-size: 1.5rem;
+            font-size: 1.15rem;
             font-weight: 700;
             color: var(--text-primary);
         }
@@ -490,14 +498,16 @@
         }
 
         .form-group {
-            margin-bottom: 1.25rem;
+            margin-bottom: 0.75rem;
         }
 
         .form-label {
             display: block;
-            margin-bottom: 0.5rem;
-            font-size: 0.875rem;
+            margin-bottom: 4px;
+            font-size: 11px;
             font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .3px;
             color: var(--text-primary);
         }
 
@@ -767,7 +777,7 @@
                 <div class="chart-card">
                     <div class="chart-title">Status Distribution</div>
                     <div class="chart-container">
-                        <canvas id="statusChart"></canvas>
+                        <canvas id="statusChart" style="height:190px;width:100%;"></canvas>
                         <div id="statusChartEmpty" style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;color:#9ca3af;font-size:13px;text-align:center;">No data yet<br>Add your first AVSF</div>
                     </div>
                 </div>
@@ -1586,7 +1596,7 @@
                     </div>
                 </div>
 
-                <div style="display:flex;gap:10px;margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border);">
+                <div style="display:flex;gap:10px;padding:1rem 1.5rem;border-top:1px solid var(--border);flex-shrink:0;background:var(--bg-card);border-radius:0 0 14px 14px;">
                     <button type="submit" class="btn btn-primary" style="flex:1;">Save AVSF</button>
                     <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
                 </div>
@@ -1706,19 +1716,22 @@ Example formats accepted:
 
                             <!-- Category: Requestor Comms -->
                             <div style="margin-bottom:16px;">
-                                <div style="font-size:12px;font-weight:700;color:var(--text-tertiary);margin-bottom:6px;display:flex;align-items:center;gap:5px;">
+                                <div style="font-size:12px;font-weight:700;color:var(--primary);margin-bottom:6px;display:flex;align-items:center;gap:5px;">
                                     📤 Requestor Comms
                                 </div>
                                 <div style="display:flex;flex-direction:column;gap:3px;">
-                                    <div style="padding:8px 10px;border-radius:6px;border:1px dashed var(--border);font-size:12px;color:var(--text-tertiary);line-height:1.3;">
-                                        🔒 Request Received<br><span style="font-size:11px;">Coming soon</span>
-                                    </div>
-                                    <div style="padding:8px 10px;border-radius:6px;border:1px dashed var(--border);font-size:12px;color:var(--text-tertiary);line-height:1.3;">
-                                        🔒 Documents Missing<br><span style="font-size:11px;">Coming soon</span>
-                                    </div>
-                                    <div style="padding:8px 10px;border-radius:6px;border:1px dashed var(--border);font-size:12px;color:var(--text-tertiary);line-height:1.3;">
-                                        🔒 Request Completed<br><span style="font-size:11px;">Coming soon</span>
-                                    </div>
+                                    <button id="tplBtn_docs_missing" onclick="selectEmailTemplate('docs_missing')"
+                                            style="text-align:left;padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:white;color:var(--text-primary);font-size:12px;cursor:pointer;font-weight:600;line-height:1.3;">
+                                        📋 Documents Missing<br><span style="font-weight:400;font-size:11px;color:var(--text-tertiary);">Request missing docs from requester</span>
+                                    </button>
+                                    <button id="tplBtn_req_completed" onclick="selectEmailTemplate('req_completed')"
+                                            style="text-align:left;padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:white;color:var(--text-primary);font-size:12px;cursor:pointer;font-weight:600;line-height:1.3;">
+                                        ✅ Request Completed<br><span style="font-weight:400;font-size:11px;color:var(--text-tertiary);">Notify requester of completion</span>
+                                    </button>
+                                    <button id="tplBtn_req_received" onclick="selectEmailTemplate('req_received')"
+                                            style="text-align:left;padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:white;color:var(--text-primary);font-size:12px;cursor:pointer;font-weight:600;line-height:1.3;">
+                                        📬 Request Received<br><span style="font-weight:400;font-size:11px;color:var(--text-tertiary);">Acknowledge receipt of request</span>
+                                    </button>
                                 </div>
                             </div>
 
@@ -3040,7 +3053,7 @@ ${from}`;
                     btn.style.fontWeight = active ? '600' : '400';
                 }
             });
-            renderTable();
+            applyFilters();
         }
 
         // ── Tab 6 Email Template Functions ────────────────────────────────
@@ -3063,13 +3076,14 @@ ${from}`;
 
         function selectEmailTemplate(type) {
             _tab6Template = type;
-            ['extend','create'].forEach(t => {
+            ['extend','create','docs_missing','req_completed','req_received'].forEach(t => {
                 const btn = document.getElementById('tplBtn_' + t);
                 if (!btn) return;
                 const active = t === type;
                 btn.style.background = active ? 'var(--primary)' : 'white';
                 btn.style.color = active ? 'white' : 'var(--text-primary)';
                 btn.style.borderColor = active ? 'var(--primary)' : 'var(--border)';
+                btn.style.fontWeight = active ? '600' : '500';
             });
             tab6BuildPreview();
         }
@@ -3087,7 +3101,26 @@ ${from}`;
             return { from, initials, fullName, vendNum, vendName, cc, avsf };
         }
 
+        const TAB6_TEMPLATE_META = {
+            extend:        { to: 'VendorMaintenanceAudit@resideo.com', label: 'Audit Team — Extend/FBL1N' },
+            create:        { to: 'VendorMaintenanceAudit@resideo.com', label: 'Audit Team — Create/IBAN' },
+            docs_missing:  { to: 'requestor', label: 'Requestor — Docs Missing' },
+            req_completed: { to: 'requestor', label: 'Requestor — Completed' },
+            req_received:  { to: 'requestor', label: 'Requestor — Received' },
+        };
+
+        function tab6GetTO(f) {
+            const meta = TAB6_TEMPLATE_META[_tab6Template] || {};
+            if (meta.to === 'requestor') {
+                return f.avsf?.requestorEmail || '[requestor email]';
+            }
+            return 'VendorMaintenanceAudit@resideo.com';
+        }
+
         function tab6BuildBody(f) {
+            const reqName = f.avsf?.requestorName || 'Team';
+            const firstName = reqName.split(' ')[0];
+
             if (_tab6Template === 'extend') {
                 return `Hi Audit team,
 
@@ -3101,7 +3134,8 @@ Best regards,
 ${f.fullName}
 Vendor Master Team | Resideo
 ${f.from}`;
-            } else {
+            }
+            if (_tab6Template === 'create') {
                 return `Hi Audit team,
 
 We received the request to create vendor ${f.vendNum} ${f.vendName} to company code ${f.cc}.
@@ -3115,6 +3149,55 @@ ${f.fullName}
 Vendor Master Team | Resideo
 ${f.from}`;
             }
+            if (_tab6Template === 'docs_missing') {
+                return `Hi ${firstName},
+
+Thank you for submitting your vendor request for ${f.vendNum} ${f.vendName} (Company Code ${f.cc}).
+
+We are currently reviewing your request and noticed that the following documents are still needed to proceed:
+
+  • [ ] DPS — Denied Party Screening result
+  • [ ] VAT Certificate / Tax document
+  • [ ] [Add specific missing document here]
+
+Could you please provide the above at your earliest convenience so we can move forward with processing?
+
+If you have any questions, feel free to reach out.
+
+Best regards,
+${f.fullName}
+Vendor Master Team | Resideo
+${f.from}`;
+            }
+            if (_tab6Template === 'req_completed') {
+                return `Hi ${firstName},
+
+We are happy to let you know that vendor request ${f.vendNum} ${f.vendName} for Company Code ${f.cc} has been successfully completed in SAP.
+
+The vendor is now active and ready to use. Please allow a few moments for the system to fully reflect the update.
+
+If you need anything else, do not hesitate to contact us.
+
+Best regards,
+${f.fullName}
+Vendor Master Team | Resideo
+${f.from}`;
+            }
+            if (_tab6Template === 'req_received') {
+                return `Hi ${firstName},
+
+This is to confirm that we have received your vendor request for ${f.vendNum} ${f.vendName} (Company Code ${f.cc}).
+
+We will review and process it as soon as possible. You will receive a follow-up email once the request has been completed.
+
+If you have any urgent concerns, please do not hesitate to reach out.
+
+Best regards,
+${f.fullName}
+Vendor Master Team | Resideo
+${f.from}`;
+            }
+            return '';
         }
 
         function tab6BuildPreview() {
@@ -3134,11 +3217,13 @@ ${f.from}`;
 
             if (badgeEl) badgeEl.textContent = 'Subject: ' + subject;
 
+            const toAddr = tab6GetTO(f);
+            const meta = TAB6_TEMPLATE_META[_tab6Template] || {};
             previewEl.textContent =
-                'To:      VendorMaintenanceAudit@resideo.com\n' +
+                'To:      ' + toAddr + '\n' +
                 'CC:      ' + f.from + '\n' +
                 'Subject: ' + subject + '\n' +
-                '─'.repeat(48) + '\n' +
+                '─'.repeat(52) + '\n' +
                 body;
         }
 
@@ -3147,7 +3232,8 @@ ${f.from}`;
             if (!f.vendName) { alert('Please select an AVSF request first.'); return; }
             const subject = `${f.initials} - Vendor ${f.vendNum} ${f.vendName} CC ${f.cc}`;
             const body    = tab6BuildBody(f).replace(/\n/g, '\r\n');
-            const mailto  = 'mailto:VendorMaintenanceAudit@resideo.com' +
+            const toAddr  = tab6GetTO(f);
+            const mailto  = 'mailto:' + encodeURIComponent(toAddr) +
                 '?cc=' + encodeURIComponent(f.from) +
                 '&subject=' + encodeURIComponent(subject) +
                 '&body=' + encodeURIComponent(body);
@@ -3295,7 +3381,13 @@ ${f.from}`;
                     </td>
                     <td>${formatDate(avsf.entryDate)}</td>
                     <td>${formatDate(avsf.completionDate)}</td>
-                    <td style="font-size:12px;color:var(--text-secondary);">${avsf.completedBy || (avsf.status==='COMPLETED' ? '—' : '<span style=\'color:#9ca3af;font-size:11px;\'>VM Team</span>')}</td>
+                    <td style="font-size:12px;">${(()=>{
+                        const KNOWN=['Brandon Ramos','Rosana Munoz','Yannick Rojas'];
+                        const cb=avsf.completedBy||'';
+                        if(KNOWN.includes(cb)) return `<span style="color:var(--primary);font-weight:600;">${cb}</span>`;
+                        if(avsf.status==='COMPLETED') return '<span style="color:#9ca3af;">—</span>';
+                        return '<span style="color:#d97706;font-size:11px;font-weight:600;">⏳ Pending</span>';
+                    })()}</td>
                     <td style="font-size:12px;">${avsf.requestorName || '-'}</td>
                     <td>
                         <div class="action-buttons" style="display:flex;gap:6px;justify-content:center;">
@@ -3372,58 +3464,64 @@ ${f.from}`;
                 statusChart.destroy();
             }
 
+            // Only show statuses that have > 0 records
+            const COLORS = {
+                'COMPLETED':    '#10b981',
+                'REJECTED':     '#ef4444',
+                'PROCESSING':   '#3b82f6',
+                'PENDING_BUYER':'#f59e0b',
+                'IDOC_ERROR':   '#7c3aed',
+                'ON_HOLD':      '#f97316',
+                'CANCELLED':    '#6b7280'
+            };
+            const LABELS = {
+                'COMPLETED':'Completed','REJECTED':'Rejected','PROCESSING':'Processing',
+                'PENDING_BUYER':'Pending Buyer','IDOC_ERROR':'IDOC Error',
+                'ON_HOLD':'On Hold','CANCELLED':'Cancelled'
+            };
+            const activeKeys   = Object.keys(statusCounts).filter(k => statusCounts[k] > 0);
+            const activeLabels = activeKeys.map(k => LABELS[k]);
+            const activeData   = activeKeys.map(k => statusCounts[k]);
+            const activeColors = activeKeys.map(k => COLORS[k]);
+            const total = activeData.reduce((a,b)=>a+b,0);
+
             statusChart = new Chart(ctx, {
-                type: 'doughnut',
+                type: 'bar',
                 data: {
-                    labels: ['Completed', 'Rejected', 'Processing', 'Pending Buyer', 'IDOC Error', 'On Hold', 'Cancelled'],
+                    labels: activeLabels,
                     datasets: [{
-                        data: Object.values(statusCounts),
-                        backgroundColor: [
-                            '#10b981',
-                            '#ef4444',
-                            '#3b82f6',
-                            '#f59e0b',
-                            '#dc2626',
-                            '#f97316',
-                            '#9ca3af'
-                        ]
+                        data: activeData,
+                        backgroundColor: activeColors.map(c => c + 'cc'),
+                        borderColor: activeColors,
+                        borderWidth: 2,
+                        borderRadius: 6,
+                        borderSkipped: false
                     }]
                 },
                 options: {
+                    indexAxis: 'y',
                     responsive: true,
-                    maintainAspectRatio: true,
+                    maintainAspectRatio: false,
                     plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                boxWidth: 12,
-                                font: { size: 11 },
-                                generateLabels: function(chart) {
-                                    const data = chart.data;
-                                    const total = data.datasets[0].data.reduce((a,b)=>a+b,0);
-                                    return data.labels.map((label, i) => {
-                                        const val = data.datasets[0].data[i];
-                                        const pct = total > 0 ? Math.round(val/total*100) : 0;
-                                        return {
-                                            text: val > 0 ? `${label}: ${val} (${pct}%)` : label,
-                                            fillStyle: data.datasets[0].backgroundColor[i],
-                                            strokeStyle: '#fff',
-                                            lineWidth: 1,
-                                            hidden: val === 0,
-                                            index: i
-                                        };
-                                    });
-                                }
-                            }
-                        },
+                        legend: { display: false },
                         tooltip: {
                             callbacks: {
                                 label: function(ctx) {
-                                    const total = ctx.dataset.data.reduce((a,b)=>a+b,0);
-                                    const pct = total > 0 ? Math.round(ctx.parsed/total*100) : 0;
-                                    return ` ${ctx.label}: ${ctx.parsed} (${pct}%)`;
+                                    const pct = total > 0 ? Math.round(ctx.parsed.x/total*100) : 0;
+                                    return ` ${ctx.parsed.x} records (${pct}%)`;
                                 }
                             }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1, font: { size: 11 } },
+                            grid: { color: '#f3f4f6' }
+                        },
+                        y: {
+                            ticks: { font: { size: 11 }, color: '#374151' },
+                            grid: { display: false }
                         }
                     }
                 }
