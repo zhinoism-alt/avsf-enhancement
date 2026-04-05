@@ -161,8 +161,8 @@
         /* Main Content Grid */
         .main-content {
             display: grid;
-            grid-template-columns: 1fr 350px;
-            gap: 2rem;
+            grid-template-columns: 1fr 240px;
+            gap: 1.25rem;
             margin-bottom: 2rem;
         }
 
@@ -782,13 +782,7 @@
                     </div>
                 </div>
 
-                <div class="chart-card">
-                    <div class="chart-title">Daily Activity (Last 7 Days)</div>
-                    <div class="chart-container">
-                        <canvas id="activityChart"></canvas>
-                        <div id="activityChartEmpty" style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;color:#9ca3af;font-size:13px;text-align:center;">No activity in last 7 days</div>
-                    </div>
-                </div>
+
             </div>
         </div>
             </div><!-- /dashTab1Content -->
@@ -3832,16 +3826,49 @@ ${f.from}`;
             return '';
         }
 
+        // mapSAPStatus kept for legacy CSV (no approver context)
         function mapSAPStatus(raw) {
             const s = String(raw || '').toUpperCase().trim();
-            if (s === 'COMPLETED')               return 'COMPLETED';
-            if (s === 'REJECTED')                return 'REJECTED';
-            if (s === 'CANCELLED')               return 'CANCELLED';
-            if (s === 'IDOC ERROR' || s === 'IDOC_ERROR') return 'IDOC_ERROR';
-            if (s === 'PENDING_BUYER' || s.includes('PEND')) return 'PENDING_BUYER';
-            if (s === 'SAVED')                   return 'ON_HOLD';
-            // APPR_AWAIT or anything else = PROCESSING
-            return 'PROCESSING';
+            if (s === 'COMPLETED')   return 'COMPLETED';
+            if (s === 'REJECTED')    return 'REJECTED';
+            if (s === 'CANCELLED')   return 'CANCELLED';
+            if (s === 'IDOC ERROR' || s === 'IDOC_ERROR') return 'PROCESSING'; // IDOC = still needs work
+            if (s === 'SAVED')       return 'ON_HOLD';
+            return 'PROCESSING'; // APPR_AWAIT, PENDING_BUYER, or anything else
+        }
+
+        // Full approver-aware status + completedBy derivation used by mapSAPRow
+        function deriveStatusAndCompletedBy(sapStatusRaw, approverRaw) {
+            const s  = String(sapStatusRaw  || '').toUpperCase().trim();
+            const ap = String(approverRaw   || '').toUpperCase().trim();
+
+            // Names we recognise as our own team (normalised)
+            const TEAM_MAP = {
+                'ROSANA MUNOZ':  'Rosana Munoz',
+                'BRANDON RAMOS': 'Brandon Ramos',
+                'YANNICK ROJAS': 'Yannick Rojas'
+            };
+            const isOurTeam  = Object.keys(TEAM_MAP).includes(ap);
+            const isVMTeam   = ap === 'VM TEAM' || ap.includes('VM TEAM');
+            const hasApprover = ap.length > 0;
+
+            // Hard overrides — status always wins
+            if (s === 'REJECTED')  return { status: 'REJECTED',   completedBy: '' };
+            if (s === 'CANCELLED') return { status: 'CANCELLED',  completedBy: '' };
+            // IDOC = still in our queue to fix
+            if (s === 'IDOC ERROR' || s === 'IDOC_ERROR')
+                                   return { status: 'PROCESSING', completedBy: '' };
+
+            if (s === 'COMPLETED') {
+                if (isOurTeam)  return { status: 'COMPLETED',  completedBy: TEAM_MAP[ap] };
+                if (isVMTeam)   return { status: 'PROCESSING', completedBy: '' };
+                                return { status: 'ON_HOLD',    completedBy: '' };
+            }
+
+            // APPR_AWAIT / SAVED / anything else
+            if (isOurTeam || isVMTeam) return { status: 'PROCESSING', completedBy: '' };
+            if (hasApprover)           return { status: 'ON_HOLD',    completedBy: '' };
+            return                            { status: 'PROCESSING', completedBy: '' };
         }
 
         function mapSAPRow(row) {
@@ -3878,8 +3905,9 @@ ${f.from}`;
             const rawVendNo = getStr('vendor number','vendor no','vendor #','account','lifnr');
             // Strip leading zeros like request number (0002032751 → 2032751)
 
-            const rawStatus = getStr('request status','status','state');
-            const status    = mapSAPStatus(rawStatus);
+            const rawStatus  = getStr('request status','status','state');
+            const rawApprover = getStr('current approver name','approver name','approver','approved by');
+            const { status, completedBy: importedCompletedBy } = deriveStatusAndCompletedBy(rawStatus, rawApprover);
 
             // Multiple Company Code note
             const multiCC   = getStr('multiple company code');
@@ -3902,7 +3930,8 @@ ${f.from}`;
                 completionDate: getDate('completion date','completed date','last approved date','fertigstellungsdatum'),
                 requestorName:  getStr('requestor name','requestor','requested by','requester'),
                 requestorEmail: getStr('email','requestor email','requester email','e-mail','mail'),
-                approverName:   getStr('current approver name','approver name','approver','approved by'),
+                approverName:   rawApprover,
+                completedBy:    importedCompletedBy,
                 paymentTerms:   getStr('payment terms','zahlungsbedingungen'),
                 notes,
             };
@@ -3971,7 +4000,8 @@ ${f.from}`;
                         const existing = docSnap.data();
                         // Preserve existing requirements and completed-by info
                         record.requirements  = existing.requirements  || {};
-                        if (!record.completedBy && existing.completedBy) record.completedBy = existing.completedBy;
+                        // Only preserve existing completedBy if import didn't set one
+                if (!record.completedBy && existing.completedBy) record.completedBy = existing.completedBy;
                         await docRef.set(record, { merge: true });
                         updatedCount++;
                     }
