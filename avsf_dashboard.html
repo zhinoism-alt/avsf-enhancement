@@ -4719,22 +4719,26 @@ AMERBankingValidation@resideo.com`;
                        String(d.getUTCDate()).padStart(2, '0');
             }
             // Slash-separated: smart MM/DD vs DD/MM detection
+            // SAP Mexico exports DD/MM/YYYY (European format) — default to DD/MM when ambiguous
             const m1 = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
             if (m1) {
                 const p1 = parseInt(m1[1], 10), p2 = parseInt(m1[2], 10);
-                if (p1 > 12) return `${m1[3]}-${m1[2].padStart(2,'0')}-${m1[1].padStart(2,'0')}`; // DD/MM
-                if (p2 > 12) return `${m1[3]}-${m1[1].padStart(2,'0')}-${m1[2].padStart(2,'0')}`; // MM/DD
-                return `${m1[3]}-${m1[1].padStart(2,'0')}-${m1[2].padStart(2,'0')}`; // ambiguous → MM/DD
+                if (p1 > 12) return `${m1[3]}-${m1[2].padStart(2,'0')}-${m1[1].padStart(2,'0')}`; // clearly DD/MM
+                if (p2 > 12) return `${m1[3]}-${m1[1].padStart(2,'0')}-${m1[2].padStart(2,'0')}`; // clearly MM/DD
+                // Ambiguous (both ≤ 12) → treat as DD/MM (Mexican SAP European format)
+                return `${m1[3]}-${m1[2].padStart(2,'0')}-${m1[1].padStart(2,'0')}`;
             }
             // DD.MM.YYYY (European SAP)
             const m2 = s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})/);
             if (m2) return `${m2[3]}-${m2[2].padStart(2,'0')}-${m2[1].padStart(2,'0')}`;
-            // Dash-separated with smart detection
+            // Dash-separated DD-MM-YYYY
             const m3 = s.match(/^(\d{1,2})-(\d{1,2})-(\d{4})/);
             if (m3) {
-                const p1 = parseInt(m3[1], 10);
+                const p1 = parseInt(m3[1], 10), p2 = parseInt(m3[2], 10);
                 if (p1 > 12) return `${m3[3]}-${m3[2].padStart(2,'0')}-${m3[1].padStart(2,'0')}`;
-                return `${m3[3]}-${m3[1].padStart(2,'0')}-${m3[2].padStart(2,'0')}`;
+                if (p2 > 12) return `${m3[3]}-${m3[1].padStart(2,'0')}-${m3[2].padStart(2,'0')}`;
+                // Ambiguous → DD/MM (SAP default)
+                return `${m3[3]}-${m3[2].padStart(2,'0')}-${m3[1].padStart(2,'0')}`;
             }
             // Last resort — local date components
             const d = new Date(s);
@@ -4846,8 +4850,12 @@ AMERBankingValidation@resideo.com`;
                 companyCode:    getStr('company code','cocode','co. code','co.code','cc','bukrs'),
                 country:        getStr('country','country key','land1','land'),
                 status,
-                entryDate:      getDate('requested date','entry date','date received','created on','creation date','request date','erstellungsdatum'),
-                completionDate: getDate('completion date','completed date','last approved date','fertigstellungsdatum'),
+                entryDate:      getDate('requested date','entry date','date received','created on','creation date','request date','erstellungsdatum',
+                                        'request creation date','date of request','fecha solicitud','fecha creación'),
+                completionDate: getDate('completion date','completed date','last approved date','fertigstellungsdatum',
+                                        'date completed','approved on','approval date','last approval date','last approved on',
+                                        'closing date','date of completion','fecha completado','fecha aprobación',
+                                        'approval completion date','final approval date','last update date'),
                 requestorName:  getStr('requestor name','requestor','requested by','requester'),
                 requestorEmail: getStr('email','requestor email','requester email','e-mail','mail'),
                 approverName:   rawApprover,
@@ -4887,6 +4895,10 @@ AMERBankingValidation@resideo.com`;
                 // Status should already be normalized by mapSAPRow, but double-check
                 if (!['PROCESSING','COMPLETED','REJECTED','PENDING_BUYER','IDOC_ERROR','ON_HOLD','CANCELLED'].includes(r.status)) {
                     r.status = 'PROCESSING';
+                }
+                // If COMPLETED but no completion date parsed → use entry date as best approximation
+                if (r.status === 'COMPLETED' && !r.completionDate && r.entryDate) {
+                    r.completionDate = r.entryDate;
                 }
                 // Auto-check all requirements for COMPLETED or REJECTED records
                 if ((r.status === 'COMPLETED' || r.status === 'REJECTED') && r.companyCode) {
