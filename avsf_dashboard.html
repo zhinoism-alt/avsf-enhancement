@@ -4700,12 +4700,13 @@ AMERBankingValidation@resideo.com`;
         // ── SAP Excel / CSV Row Mapper ──────────────────────────────────────
         function sapDateToISO(val) {
             if (!val) return '';
-            // JS Date object — use LOCAL date parts (not toISOString which shifts to UTC)
+            // JS Date object — XLSX.js creates dates at UTC midnight, so use UTC parts
+            // NOT local getDate() which would shift e.g. April 2 UTC → April 1 in UTC-6 (Mexico)
             if (val instanceof Date) {
                 if (isNaN(val.getTime())) return '';
-                return val.getFullYear() + '-' +
-                       String(val.getMonth() + 1).padStart(2, '0') + '-' +
-                       String(val.getDate()).padStart(2, '0');
+                return val.getUTCFullYear() + '-' +
+                       String(val.getUTCMonth() + 1).padStart(2, '0') + '-' +
+                       String(val.getUTCDate()).padStart(2, '0');
             }
             const s = String(val).trim();
             if (!s || s === 'Invalid Date') return '';
@@ -4762,36 +4763,48 @@ AMERBankingValidation@resideo.com`;
         }
 
         // Full approver-aware status + completedBy derivation used by mapSAPRow
+        // Rules (per VM team):
+        //   COMPLETED + our team member → COMPLETED, completedBy = approver name
+        //   COMPLETED + anyone else    → COMPLETED, completedBy = approver name (VM did it)
+        //   REJECTED                   → REJECTED,  approverName = rejector (shown in red)
+        //   CANCELLED                  → CANCELLED
+        //   IDOC ERROR / IDOC_ERROR    → PROCESSING (still needs fix)
+        //   APPR_AWAIT + VM TEAM / our team → PROCESSING (we're working it)
+        //   APPR_AWAIT + anyone else   → ON_HOLD (waiting to reach us)
         function deriveStatusAndCompletedBy(sapStatusRaw, approverRaw) {
             const s  = String(sapStatusRaw  || '').toUpperCase().trim();
             const ap = String(approverRaw   || '').toUpperCase().trim();
 
-            // Names we recognise as our own team (normalised)
+            // Canonical display names for our VM team members
             const TEAM_MAP = {
                 'ROSANA MUNOZ':  'Rosana Munoz',
                 'BRANDON RAMOS': 'Brandon Ramos',
                 'YANNICK ROJAS': 'Yannick Rojas'
             };
-            const isOurTeam  = Object.keys(TEAM_MAP).includes(ap);
-            const isVMTeam   = ap === 'VM TEAM' || ap.includes('VM TEAM');
-            const hasApprover = ap.length > 0;
+            const isOurTeam = Object.keys(TEAM_MAP).includes(ap);
+            const isVMTeam  = ap === 'VM TEAM' || ap.startsWith('VM TEAM');
 
-            // Hard overrides — status always wins
-            if (s === 'REJECTED')  return { status: 'REJECTED',   completedBy: '' };
-            if (s === 'CANCELLED') return { status: 'CANCELLED',  completedBy: '' };
-            // IDOC = still in our queue to fix
+            // COMPLETED — always COMPLETED; completedBy = canonical team name or raw approver
+            if (s === 'COMPLETED') {
+                const completedBy = isOurTeam ? TEAM_MAP[ap] : (approverRaw.trim() || '');
+                return { status: 'COMPLETED', completedBy };
+            }
+
+            // REJECTED — keep rejector name in approverName (handled by caller)
+            if (s === 'REJECTED')  return { status: 'REJECTED',  completedBy: '' };
+
+            // Terminal statuses
+            if (s === 'CANCELLED') return { status: 'CANCELLED', completedBy: '' };
+
+            // IDOC error = still in processing queue
             if (s === 'IDOC ERROR' || s === 'IDOC_ERROR')
                                    return { status: 'PROCESSING', completedBy: '' };
 
-            if (s === 'COMPLETED') {
-                if (isOurTeam)  return { status: 'COMPLETED',  completedBy: TEAM_MAP[ap] };
-                if (isVMTeam)   return { status: 'PROCESSING', completedBy: '' };
-                                return { status: 'ON_HOLD',    completedBy: '' };
-            }
-
-            // APPR_AWAIT / SAVED / anything else
+            // APPR_AWAIT (or anything else):
+            // If current approver is VM TEAM or one of our team = it's in our hands = PROCESSING
+            // If current approver is someone outside our team = not yet reached us = ON_HOLD
             if (isOurTeam || isVMTeam) return { status: 'PROCESSING', completedBy: '' };
-            if (hasApprover)           return { status: 'ON_HOLD',    completedBy: '' };
+            if (ap.length > 0)         return { status: 'ON_HOLD',    completedBy: '' };
             return                            { status: 'PROCESSING', completedBy: '' };
         }
 
@@ -4933,16 +4946,23 @@ AMERBankingValidation@resideo.com`;
                     const docRef = db.collection('avsfs').doc(record.requestNo);
                     const docSnap = await docRef.get();
                     if (!docSnap.exists) {
-                        record.requirements = {};
+                        // New record — keep the auto-filled requirements (don't clear them)
                         record.createdAt = firebase.firestore.FieldValue.serverTimestamp();
                         await docRef.set(record);
                         newCount++;
                     } else {
                         const existing = docSnap.data();
-                        // Preserve existing requirements and completed-by info
-                        record.requirements  = existing.requirements  || {};
-                        // Only preserve existing completedBy if import didn't set one
-                if (!record.completedBy && existing.completedBy) record.completedBy = existing.completedBy;
+                        // Preserve existing requirements ONLY if they have real checkmarks;
+                        // otherwise use the auto-filled ones from import
+                        const existingReqs = existing.requirements || {};
+                        const hasExistingChecks = Object.values(existingReqs).some(v => v === true);
+                        if (hasExistingChecks) {
+                            record.requirements = existingReqs;
+                        }
+                        // completedBy: import value takes priority; fall back to existing if new import has none
+                        if (!record.completedBy && existing.completedBy) {
+                            record.completedBy = existing.completedBy;
+                        }
                         await docRef.set(record, { merge: true });
                         updatedCount++;
                     }
