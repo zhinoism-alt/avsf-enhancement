@@ -2125,11 +2125,11 @@ Select a request from the left to preview the email...
                             <option value="Rosana Munoz">Rosana Munoz</option>
                             <option value="Yannick Rojas">Yannick Rojas</option>
                         </select>
-                        <select id="kpiPeriodFilter" class="filter-select" style="font-size:12px;" onchange="renderKPI()">
-                            <option value="">All Time</option>
-                            <option value="30">Last 30 days</option>
-                            <option value="90">Last 90 days</option>
-                            <option value="180">Last 180 days</option>
+                        <select id="kpiYearFilter" class="filter-select" style="font-size:12px;" onchange="kpiPopulateMonths();renderKPI()">
+                            <option value="">All Years</option>
+                        </select>
+                        <select id="kpiMonthFilter" class="filter-select" style="font-size:12px;" onchange="renderKPI()">
+                            <option value="">All Months</option>
                         </select>
                     </div>
                 </div>
@@ -2224,17 +2224,24 @@ Select a request from the left to preview the email...
             </div><!-- /dash-tab-content-area -->
 
     <!-- Calendar Event Modal -->
-    <div class="modal" id="calEventModal">
-        <div class="modal-content" style="max-width:460px;">
+    <div class="modal" id="calEventModal" onclick="if(event.target===this)calCloseEventModal()">
+        <div class="modal-content" style="max-width:480px;">
             <div class="modal-header">
                 <h2 class="modal-title" id="calEventModalTitle">Add Event</h2>
                 <button class="close-btn" onclick="calCloseEventModal()">&times;</button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="calEventId">
-                <div class="form-group">
-                    <label class="form-label">Date</label>
-                    <input type="date" class="form-input" id="calEventDate" style="width:100%;">
+                <!-- Date row — shows End Date only for vacations -->
+                <div class="form-row">
+                    <div class="form-group" style="flex:1;">
+                        <label class="form-label">Start Date</label>
+                        <input type="date" class="form-input" id="calEventDate" style="width:100%;">
+                    </div>
+                    <div class="form-group" id="calEndDateWrap" style="flex:1;display:none;">
+                        <label class="form-label">End Date <span style="font-weight:400;color:var(--text-muted);">(inclusive)</span></label>
+                        <input type="date" class="form-input" id="calEventEndDate" style="width:100%;">
+                    </div>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Title</label>
@@ -2243,7 +2250,7 @@ Select a request from the left to preview the email...
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Type</label>
-                        <select class="form-select" id="calEventType" style="width:100%;">
+                        <select class="form-select" id="calEventType" style="width:100%;" onchange="calToggleEndDate()">
                             <option value="vacation">🟣 Vacation</option>
                             <option value="meeting">🔵 Meeting</option>
                             <option value="activity">🟢 Activity</option>
@@ -4037,14 +4044,21 @@ AMERBankingValidation@resideo.com`;
                     _retryTimer = setTimeout(connect, 10000);
                 }
 
-                // Keepalive: if no snapshot in 3 min, reconnect proactively
+                // Keepalive: check every 60s
+                // – if never got a snapshot and 15s passed → retry (catches stuck "Connecting…")
+                // – if had a snapshot but silent for 3 min → retry (catches silent death)
+                const _connectTime = Date.now();
                 _kaTimer = setInterval(() => {
-                    if (_lastSnap && Date.now() - _lastSnap > 180000) {
-                        console.warn('[Firebase] No update in 3 min — reconnecting');
-                        _retryCount = 0;
-                        connect();
+                    const now = Date.now();
+                    if (!_lastSnap && now - _connectTime > 15000) {
+                        console.warn('[Firebase] No first snapshot after 15s — reconnecting');
+                        _retryCount = 0; connect(); return;
                     }
-                }, 60000);
+                    if (_lastSnap && now - _lastSnap > 180000) {
+                        console.warn('[Firebase] No update in 3 min — reconnecting');
+                        _retryCount = 0; connect();
+                    }
+                }, 10000);
             }
 
             window._fbReconnect = () => { _retryCount = 0; connect(); };
@@ -4845,7 +4859,15 @@ AMERBankingValidation@resideo.com`;
 
         // ── Shared import logic (used by both CSV and XLSX paths) ────────
         async function processImportedRows(rawRows, fileType) {
-            const mapped = rawRows.map(mapSAPRow).filter(r => r.requestNo || r.vendorName);
+            // Skip "SAVED" draft records — they haven't been submitted to VM team yet
+            const filteredRaw = rawRows.filter(row => {
+                const keys = {};
+                Object.entries(row).forEach(([k,v]) => { keys[k.toLowerCase().trim()] = v; });
+                const rawSt = String(keys['request status'] || keys['status'] || keys['state'] || '').toUpperCase().trim();
+                return rawSt !== 'SAVED';
+            });
+            const skippedSaved = rawRows.length - filteredRaw.length;
+            const mapped = filteredRaw.map(mapSAPRow).filter(r => r && (r.requestNo || r.vendorName));
             if (!mapped.length) {
                 const sample = Object.keys(rawRows[0] || {}).slice(0, 6).join(', ');
                 alert('❌ Could not map ' + fileType + ' columns to AVSF fields.\n\n' +
@@ -4885,6 +4907,7 @@ AMERBankingValidation@resideo.com`;
             const proceed = window.confirm(
                 `📊 ${fileType} Import Preview\n\n` +
                 `Records found: ${mapped.length}\n` +
+                (skippedSaved ? `⚠️ Skipped (SAVED/Draft): ${skippedSaved} — not yet submitted to VM team\n` : '') +
                 (autoGenCount ? `Auto-generated IDs: ${autoGenCount}\n` : '') +
                 `\nStatus breakdown:\n${breakdown}\n\n` +
                 `Import ${mapped.length} records into AVSF Dashboard?\n` +
@@ -6182,6 +6205,8 @@ AMERBankingValidation@resideo.com`;
             updateMetrics();
             applyFilters();
             updateCharts();
+            // Keep KPI year dropdown fresh whenever data changes
+            kpiPopulateYears();
         }
 
         // Initialize API keys (localStorage only — not shared data)
@@ -6249,16 +6274,39 @@ AMERBankingValidation@resideo.com`;
         // ══════════════════════════════════════════════════════════════════
         let _kpiDist = null, _kpiTrend = null;
 
+        // Populate year dropdown for KPI from actual data
+        function kpiPopulateYears() {
+            const sel = document.getElementById('kpiYearFilter');
+            if (!sel) return;
+            const years = [...new Set(avsfs.filter(a=>a.completionDate).map(a=>a.completionDate.slice(0,4)))].sort().reverse();
+            const cur = sel.value;
+            sel.innerHTML = '<option value="">All Years</option>' +
+                years.map(y=>`<option value="${y}"${y===cur?'selected':''}>${y}</option>`).join('');
+        }
+        function kpiPopulateMonths() {
+            const sel = document.getElementById('kpiMonthFilter');
+            const yr  = (document.getElementById('kpiYearFilter')||{}).value || '';
+            if (!sel) return;
+            const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+            const nums = yr
+                ? [...new Set(avsfs.filter(a=>a.completionDate&&a.completionDate.startsWith(yr)).map(a=>a.completionDate.slice(5,7)))].sort()
+                : ['01','02','03','04','05','06','07','08','09','10','11','12'];
+            sel.innerHTML = '<option value="">All Months</option>' +
+                nums.map(m=>`<option value="${m}">${MONTHS[parseInt(m)-1]}</option>`).join('');
+        }
+
         function renderKPI() {
+            kpiPopulateYears();
             const personF = (document.getElementById('kpiPersonFilter')||{}).value || '';
-            const periodF = parseInt((document.getElementById('kpiPeriodFilter')||{}).value || '0');
+            const yearF   = (document.getElementById('kpiYearFilter')||{}).value  || '';
+            const monthF  = (document.getElementById('kpiMonthFilter')||{}).value || '';
             const TARGET  = 2;
-            const cutoff  = periodF ? new Date(Date.now() - periodF * 86400000) : null;
 
             const completed = avsfs.filter(a =>
                 a.status === 'COMPLETED' && a.entryDate && a.completionDate &&
                 (!personF || (a.completedBy||'') === personF) &&
-                (!cutoff  || new Date(a.completionDate) >= cutoff)
+                (!yearF   || a.completionDate.startsWith(yearF)) &&
+                (!monthF  || a.completionDate.slice(5,7) === monthF)
             );
             const rows = completed.map(a => ({ ...a, bd: businessDaysBetween(a.entryDate, a.completionDate) }))
                                   .filter(a => a.bd !== null);
@@ -6294,13 +6342,36 @@ AMERBankingValidation@resideo.com`;
             const distCtx = document.getElementById('kpiDistChart');
             if (distCtx) {
                 if (_kpiDist) { _kpiDist.destroy(); _kpiDist = null; }
+                // Custom plugin: draws count numbers above each bar
+                const barLabelPlugin = {
+                    id:'barLabels',
+                    afterDatasetsDraw(chart) {
+                        const ctx2 = chart.ctx;
+                        chart.data.datasets.forEach((ds,di)=>{
+                            const meta = chart.getDatasetMeta(di);
+                            meta.data.forEach((bar,i)=>{
+                                const val = ds.data[i];
+                                if (!val) return;
+                                ctx2.save();
+                                ctx2.font = 'bold 12px DM Sans, sans-serif';
+                                ctx2.fillStyle = '#374151';
+                                ctx2.textAlign = 'center';
+                                ctx2.textBaseline = 'bottom';
+                                ctx2.fillText(val, bar.x, bar.y - 3);
+                                ctx2.restore();
+                            });
+                        });
+                    }
+                };
                 _kpiDist = new Chart(distCtx, {
                     type:'bar',
                     data:{ labels, datasets:[{ data:counts, backgroundColor:bgClr, borderRadius:6, borderSkipped:false }] },
                     options:{ responsive:true, maintainAspectRatio:false,
                         plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>`${c.raw} requests`}} },
-                        scales:{ x:{grid:{display:false}}, y:{beginAtZero:true,grid:{color:'rgba(0,0,0,.05)'},ticks:{stepSize:1}} }
-                    }
+                        scales:{ x:{grid:{display:false}}, y:{beginAtZero:true,grid:{color:'rgba(0,0,0,.05)'},ticks:{stepSize:1}} },
+                        layout:{ padding:{ top:20 } }
+                    },
+                    plugins:[barLabelPlugin]
                 });
             }
 
@@ -6371,6 +6442,13 @@ AMERBankingValidation@resideo.com`;
         const calISO = (y,m,d) => `${y}-${PAD2(m+1)}-${PAD2(d)}`;
         const todayISO = () => { const t=new Date(); return calISO(t.getFullYear(),t.getMonth(),t.getDate()); };
 
+        // Show/hide End Date field based on event type
+        function calToggleEndDate() {
+            const type = (document.getElementById('calEventType')||{}).value;
+            const wrap = document.getElementById('calEndDateWrap');
+            if (wrap) wrap.style.display = type === 'vacation' ? '' : 'none';
+        }
+
         function calInit() {
             if (_calInited) return;
             _calInited = true;
@@ -6378,20 +6456,39 @@ AMERBankingValidation@resideo.com`;
                 _calEvents = snap.docs.map(d => ({ id:d.id, ...d.data() }));
                 const t8 = document.getElementById('dashTab8Content');
                 if (t8 && t8.style.display !== 'none') { calRender(); calRenderUpcoming(); }
-            }, e => console.warn('[Calendar]', e));
+            }, e => console.warn('[Calendar] Firestore error — check security rules for calendarEvents:', e.code));
         }
 
         function calHolidays(y, m) {
-            const names = { '01-01':'New Year\'s Day','05-01':'Labor Day','09-16':'Independence Day','12-25':'Christmas' };
+            const names = { '01-01':"New Year's Day",'05-01':'Labor Day','09-16':'Independence Day','12-25':'Christmas' };
             const prefix = `${y}-${PAD2(m+1)}`;
             return getMexicanHolidays(y).filter(h => h.startsWith(prefix)).map(h => ({
                 id:'__h__'+h, date:h, type:'holiday', user:'all',
                 title: names[h.slice(5)] || (() => {
-                    const d=new Date(h+'T12:00:00'), mo=d.getMonth(), dow=d.getDay();
+                    const d2=new Date(h+'T12:00:00'), mo=d2.getMonth(), dow=d2.getDay();
                     if(dow===1){ if(mo===1)return'Constitution Day'; if(mo===2)return'Benito Juárez Day'; if(mo===10)return'Revolution Day'; }
                     return 'Mexican Holiday';
                 })()
             }));
+        }
+
+        // Expand multi-day vacation events into per-day entries for the grid
+        function calExpandedEvents(isoList) {
+            const result = [];
+            _calEvents.forEach(ev => {
+                if (ev.type === 'vacation' && ev.endDate && ev.endDate > ev.date) {
+                    // Expand over date range
+                    const s = new Date(ev.date + 'T12:00:00');
+                    const e = new Date(ev.endDate + 'T12:00:00');
+                    for (let d = new Date(s); d <= e; d.setDate(d.getDate()+1)) {
+                        const iso = calISO(d.getFullYear(), d.getMonth(), d.getDate());
+                        if (isoList.includes(iso)) result.push({ ...ev, _displayDate: iso });
+                    }
+                } else {
+                    result.push({ ...ev, _displayDate: ev.date });
+                }
+            });
+            return result;
         }
 
         function calRender() {
@@ -6400,35 +6497,50 @@ AMERBankingValidation@resideo.com`;
             const grid = document.getElementById('calGrid');
             if (!grid) return;
 
-            const first  = new Date(_calY,_calM,1).getDay();   // 0=Sun
+            const first  = new Date(_calY,_calM,1).getDay();
             const days   = new Date(_calY,_calM+1,0).getDate();
             const prevD  = new Date(_calY,_calM,0).getDate();
-            const offset = (first+6)%7; // convert to Mon-start
+            const offset = (first+6)%7; // Mon-start
             const today  = todayISO();
-            const allEvt = [..._calEvents, ...calHolidays(_calY,_calM)];
             const cells  = Math.ceil((offset+days)/7)*7;
-            let html = '';
 
+            // Build list of all ISO dates visible in this grid
+            const isoGrid = [];
             for (let i=0; i<cells; i++) {
-                let d, iso, cls='cal-day';
                 if (i < offset) {
-                    d = prevD-offset+i+1;
                     const pm=_calM===0?11:_calM-1, py=_calM===0?_calY-1:_calY;
-                    iso=calISO(py,pm,d); cls+=' cal-other';
+                    isoGrid.push(calISO(py,pm,prevD-offset+i+1));
                 } else if (i >= offset+days) {
-                    d = i-offset-days+1;
                     const nm=_calM===11?0:_calM+1, ny=_calM===11?_calY+1:_calY;
-                    iso=calISO(ny,nm,d); cls+=' cal-other';
+                    isoGrid.push(calISO(ny,nm,i-offset-days+1));
                 } else {
-                    d=i-offset+1; iso=calISO(_calY,_calM,d);
+                    isoGrid.push(calISO(_calY,_calM,i-offset+1));
+                }
+            }
+
+            const expanded = calExpandedEvents(isoGrid);
+            const holidays = calHolidays(_calY,_calM);
+            const allEvt   = [...expanded, ...holidays];
+
+            let html = '';
+            for (let i=0; i<cells; i++) {
+                const iso = isoGrid[i];
+                let d, cls='cal-day';
+                if (i < offset || i >= offset+days) {
+                    d = i < offset ? prevD-offset+i+1 : i-offset-days+1;
+                    cls += ' cal-other';
+                } else {
+                    d = i-offset+1;
                     if(i%7>=5) cls+=' cal-weekend';
                     if(iso===today) cls+=' cal-today';
                 }
-                const evts = allEvt.filter(e=>e.date===iso);
+                const evts = allEvt.filter(e=>(e._displayDate||e.date)===iso);
                 html += `<div class="${cls}" onclick="calOpenAdd('${iso}')">`;
                 html += `<span class="cal-day-num">${d}</span>`;
                 evts.slice(0,3).forEach(ev => {
-                    html += `<div class="cal-chip ${ev.type}" onclick="event.stopPropagation();calOpenEdit('${ev.id}')" title="${ev.title}">${ev.title.length>20?ev.title.slice(0,18)+'…':ev.title}</div>`;
+                    const isHol = ev.id.startsWith('__h__');
+                    const label = ev.title.length>18 ? ev.title.slice(0,16)+'…' : ev.title;
+                    html += `<div class="cal-chip ${ev.type}" onclick="event.stopPropagation();${isHol?'':('calOpenEdit(\''+ev.id+'\')')}" title="${ev.title}${ev.user&&ev.user!=='all'?' · '+ev.user:''}">${label}</div>`;
                 });
                 if(evts.length>3) html += `<div style="font-size:9px;color:var(--text-muted);">+${evts.length-3} more</div>`;
                 html += '</div>';
@@ -6440,14 +6552,18 @@ AMERBankingValidation@resideo.com`;
             const el = document.getElementById('calUpcoming');
             if (!el) return;
             const t = todayISO();
-            const up = _calEvents.filter(e=>e.date>=t).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,8);
+            // For multi-day vacations, use start date for sorting; show once
+            const up = _calEvents.filter(e=>e.date>=t||e.endDate>=t).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,10);
             if (!up.length) { el.innerHTML='<p style="font-size:12px;color:var(--text-muted);">No upcoming events</p>'; return; }
             el.innerHTML = up.map(e => {
                 const dateStr = new Date(e.date+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+                const endStr  = e.endDate && e.endDate !== e.date
+                    ? ' – ' + new Date(e.endDate+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})
+                    : '';
                 const who = e.user==='all'?'All Team':e.user;
                 return `<div class="cal-upcoming-row">
                     <span class="cal-dot" style="background:${CAL_COLORS[e.type]||'#9ca3af'};"></span>
-                    <span style="font-weight:700;min-width:95px;font-size:11.5px;">${dateStr}</span>
+                    <span style="font-weight:700;min-width:120px;font-size:11.5px;">${dateStr}${endStr}</span>
                     <span style="flex:1;color:var(--text-secondary);">${e.title}</span>
                     <span style="font-size:11px;color:var(--text-muted);">${who}</span>
                     <button onclick="calOpenEdit('${e.id}')" style="border:none;background:none;cursor:pointer;color:var(--text-muted);font-size:13px;padding:0 4px;">✎</button>
@@ -6462,8 +6578,10 @@ AMERBankingValidation@resideo.com`;
         function calOpenAdd(dateISO) {
             document.getElementById('calEventId').value='';
             document.getElementById('calEventDate').value=dateISO||'';
+            document.getElementById('calEventEndDate').value=dateISO||'';
             document.getElementById('calEventTitle').value='';
             document.getElementById('calEventType').value='meeting';
+            calToggleEndDate();
             const u=getCurrentUser();
             document.getElementById('calEventUser').value=u==='Brandon'?'Brandon':u==='Yannick'?'Yannick':'Rosana';
             document.getElementById('calEventDesc').value='';
@@ -6471,14 +6589,19 @@ AMERBankingValidation@resideo.com`;
             document.getElementById('calEventModalTitle').textContent='Add Event';
             document.getElementById('calEventModal').classList.add('active');
         }
+        // Alias used by "Add Event" button in header
+        function calOpenAddEvent() { calOpenAdd(todayISO()); }
+
         function calOpenEdit(id) {
-            if(id.startsWith('__h__')) return; // holidays are read-only
+            if (!id || id.startsWith('__h__')) return; // holidays are read-only
             const ev=_calEvents.find(e=>e.id===id);
             if(!ev) return;
             document.getElementById('calEventId').value=ev.id;
             document.getElementById('calEventDate').value=ev.date;
+            document.getElementById('calEventEndDate').value=ev.endDate||ev.date;
             document.getElementById('calEventTitle').value=ev.title;
             document.getElementById('calEventType').value=ev.type;
+            calToggleEndDate();
             document.getElementById('calEventUser').value=ev.user||'all';
             document.getElementById('calEventDesc').value=ev.description||'';
             document.getElementById('calDeleteBtn').style.display='';
@@ -6486,32 +6609,49 @@ AMERBankingValidation@resideo.com`;
             document.getElementById('calEventModal').classList.add('active');
         }
         async function calSaveEvent() {
-            const id    = document.getElementById('calEventId').value;
-            const date  = document.getElementById('calEventDate').value;
-            const title = document.getElementById('calEventTitle').value.trim();
-            if (!date||!title) { alert('Please enter date and title.'); return; }
+            const id      = document.getElementById('calEventId').value;
+            const date    = document.getElementById('calEventDate').value;
+            const title   = document.getElementById('calEventTitle').value.trim();
+            const type    = document.getElementById('calEventType').value;
+            const endDateRaw = document.getElementById('calEventEndDate').value;
+            if (!date||!title) { alert('Please enter a date and title.'); return; }
             const data = {
-                date, title,
-                type: document.getElementById('calEventType').value,
+                date, title, type,
                 user: document.getElementById('calEventUser').value,
                 description: document.getElementById('calEventDesc').value.trim(),
                 updatedAt: new Date().toISOString()
             };
-            if (id) {
-                await db.collection('calendarEvents').doc(id).set(data);
+            // Only store endDate for vacations (and only if after start)
+            if (type === 'vacation' && endDateRaw && endDateRaw >= date) {
+                data.endDate = endDateRaw;
             } else {
-                data.createdBy=getCurrentUser(); data.createdAt=new Date().toISOString();
-                await db.collection('calendarEvents').add(data);
+                data.endDate = date;
             }
-            calCloseModal();
+            try {
+                if (id) {
+                    await db.collection('calendarEvents').doc(id).set(data);
+                } else {
+                    data.createdBy = getCurrentUser();
+                    data.createdAt = new Date().toISOString();
+                    await db.collection('calendarEvents').add(data);
+                }
+                calCloseEventModal();
+            } catch(e) { alert('Save failed: ' + e.message); }
         }
         async function calDeleteEvent() {
             const id = document.getElementById('calEventId').value;
             if (!id||!confirm('Delete this event?')) return;
-            await db.collection('calendarEvents').doc(id).delete();
-            calCloseModal();
+            try {
+                await db.collection('calendarEvents').doc(id).delete();
+                calCloseEventModal();
+            } catch(e) { alert('Delete failed: ' + e.message); }
         }
-        function calCloseModal() { document.getElementById('calEventModal').classList.remove('active'); }
+        // Primary close function — all buttons call this
+        function calCloseEventModal() {
+            document.getElementById('calEventModal').classList.remove('active');
+        }
+        // Legacy alias (in case anything still calls old name)
+        function calCloseModal() { calCloseEventModal(); }
 
         // Start real-time Firebase sync
         initializeRealtimeSync();
