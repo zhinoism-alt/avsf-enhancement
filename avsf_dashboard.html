@@ -2364,6 +2364,10 @@ Select a request from the left to preview the email...
                         style="flex: 1; padding: 10px; border: none; background: #f3f4f6; color: #6b7280; font-weight: 600; cursor: pointer; border-radius: 6px 6px 0 0; font-size: 13px; margin-left: 4px;">
                     🏦 Partner Bank Type
                 </button>
+                <button id="bankkeysTab" onclick="switchValidationTab('bankkeys')"
+                        style="flex: 1; padding: 10px; border: none; background: #f3f4f6; color: #6b7280; font-weight: 600; cursor: pointer; border-radius: 6px 6px 0 0; font-size: 13px; margin-left: 4px;">
+                    🔑 Bank Keys
+                </button>
             </div>
 
             <!-- IBAN Tab Content -->
@@ -2539,6 +2543,116 @@ Select a request from the left to preview the email...
                     </div>
 
                     <div id="btResult" style="min-height: 60px;"></div>
+                </div>
+            </div>
+
+            <!-- Bank Keys Tab Content -->
+            <div id="bankkeysTabContent" style="display: none;">
+                <div style="background: #fff7ed; padding: 20px; border-radius: 8px; border: 2px solid #f97316;">
+
+                    <!-- Load state: show uploader until file is loaded -->
+                    <div id="bkLoadArea">
+                        <p style="font-size:13px;color:#c2410c;margin:0 0 14px 0;">
+                            Load <strong>BANK keys.XLSX</strong> once per session to enable instant search by
+                            Country + Bank Key or by SWIFT/BIC code.
+                        </p>
+                        <label id="bkDropZone"
+                               style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+                                      border:2px dashed #fb923c;border-radius:10px;padding:28px 20px;cursor:pointer;
+                                      background:white;transition:background .15s;"
+                               onmouseover="this.style.background='#fff7ed'"
+                               onmouseout="this.style.background='white'">
+                            <span style="font-size:32px;">📂</span>
+                            <span style="font-size:14px;font-weight:700;color:#ea580c;">Click to select BANK keys.XLSX</span>
+                            <span style="font-size:12px;color:#9ca3af;">Supported: .xlsx / .xls</span>
+                            <input type="file" id="bkFileInput" accept=".xlsx,.xls" style="display:none"
+                                   onchange="loadBankKeysFile(this)">
+                        </label>
+                        <div id="bkLoadStatus" style="margin-top:10px;font-size:12px;color:#6b7280;text-align:center;"></div>
+                    </div>
+
+                    <!-- Search state: shown after file is loaded -->
+                    <div id="bkSearchArea" style="display:none;">
+
+                        <!-- Header bar: loaded indicator + re-load button -->
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;
+                                    padding:8px 12px;background:#d1fae5;border-radius:8px;border:1px solid #6ee7b7;">
+                            <span id="bkLoadedLabel" style="font-size:12px;font-weight:700;color:#065f46;">✅ 0 records loaded</span>
+                            <button onclick="document.getElementById('bkFileInput').click()"
+                                    style="font-size:11px;padding:4px 10px;border:1px solid #10b981;border-radius:6px;
+                                           background:white;color:#065f46;cursor:pointer;font-weight:600;">
+                                🔄 Re-load file
+                            </button>
+                        </div>
+
+                        <!-- Search mode toggle -->
+                        <div style="display:flex;gap:6px;margin-bottom:14px;">
+                            <button id="bkModeKey" onclick="setBKMode('key')"
+                                    style="flex:1;padding:8px;border:2px solid #f97316;background:#f97316;color:white;
+                                           border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">
+                                🔑 By Country + Bank Key
+                            </button>
+                            <button id="bkModeSwift" onclick="setBKMode('swift')"
+                                    style="flex:1;padding:8px;border:2px solid #e5e7eb;background:white;color:#6b7280;
+                                           border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">
+                                ⚡ By SWIFT / BIC
+                            </button>
+                        </div>
+
+                        <!-- Mode: Country + Bank Key -->
+                        <div id="bkKeyInputs">
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+                                <div>
+                                    <label style="font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;
+                                                  letter-spacing:.05em;display:block;margin-bottom:4px;">Bank Country</label>
+                                    <select id="bkCountry" onchange="searchBankKeys()"
+                                            style="width:100%;padding:9px 10px;border:2px solid #fed7aa;border-radius:6px;
+                                                   font-size:13px;background:white;box-sizing:border-box;">
+                                        <option value="">— Select country —</option>
+                                        <option value="AU">AU – Australia</option>
+                                        <option value="BE">BE – Belgium</option>
+                                        <option value="CA">CA – Canada</option>
+                                        <option value="CZ">CZ – Czech Republic</option>
+                                        <option value="DE">DE – Germany</option>
+                                        <option value="DK">DK – Denmark</option>
+                                        <option value="ES">ES – Spain</option>
+                                        <option value="FR">FR – France</option>
+                                        <option value="GB">GB – United Kingdom</option>
+                                        <option value="HU">HU – Hungary</option>
+                                        <option value="IE">IE – Ireland</option>
+                                        <option value="IT">IT – Italy</option>
+                                        <option value="MX">MX – Mexico</option>
+                                        <option value="NL">NL – Netherlands</option>
+                                        <option value="PL">PL – Poland</option>
+                                        <option value="SK">SK – Slovakia</option>
+                                        <option value="TR">TR – Turkey</option>
+                                        <option value="US">US – United States</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;
+                                                  letter-spacing:.05em;display:block;margin-bottom:4px;">Bank Key</label>
+                                    <input type="text" id="bkKeyInput" placeholder="e.g. 021, 0012003, DRESDEFF"
+                                           oninput="searchBankKeys()"
+                                           style="width:100%;padding:9px 10px;border:2px solid #fed7aa;border-radius:6px;
+                                                  font-size:13px;font-family:monospace;box-sizing:border-box;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mode: SWIFT -->
+                        <div id="bkSwiftInputs" style="display:none;">
+                            <label style="font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;
+                                          letter-spacing:.05em;display:block;margin-bottom:4px;">SWIFT / BIC Code</label>
+                            <input type="text" id="bkSwiftInput" placeholder="e.g. BNMXMXMM, DEUTDEDB, BARCGB22"
+                                   oninput="searchBankKeys()"
+                                   style="width:100%;padding:9px 10px;border:2px solid #fed7aa;border-radius:6px;
+                                          font-size:13px;font-family:monospace;box-sizing:border-box;margin-bottom:10px;">
+                        </div>
+
+                        <!-- Results -->
+                        <div id="bkResults" style="margin-top:6px;"></div>
+                    </div>
                 </div>
             </div>
 
@@ -3496,6 +3610,211 @@ Select a request from the left to preview the email...
                         </div>
                     </div>`;
             }
+        }
+
+        // ── Bank Keys Lookup ──────────────────────────────────────────────
+        // In-memory store after user loads BANK keys.XLSX
+        let bankKeysDB = null;      // array of {c, k, n, ci, s, r}  (country, key, name, city, swift, region)
+        let bankKeysByCountryKey = null;  // Map: "COUNTRY|KEY" → record (exact lookup)
+        let bankKeysBySwift = null;       // Map: "SWIFT" → [records]  (SWIFT search)
+        let bkMode = 'key';
+
+        function loadBankKeysFile(input) {
+            const file = input.files[0];
+            if (!file) return;
+            if (typeof XLSX === 'undefined') {
+                alert('❌ SheetJS not loaded. Check your internet connection.');
+                return;
+            }
+            const statusEl = document.getElementById('bkLoadStatus');
+            if (statusEl) statusEl.textContent = '⏳ Parsing file — this may take a few seconds…';
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const wb = XLSX.read(e.target.result, { type: 'array', cellDates: false });
+                    const ws = wb.Sheets[wb.SheetNames[0]];
+                    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+                    // Header: [0]Country [1]BankKey [4]Name [5]Region [6]Street [7]City [8]SWIFT [11]Deletion
+                    const data = [];
+                    bankKeysByCountryKey = new Map();
+                    bankKeysBySwift = new Map();
+
+                    for (let i = 1; i < rows.length; i++) {
+                        const r = rows[i];
+                        const country = String(r[0] || '').trim();
+                        const key     = String(r[1] || '').trim();
+                        const name    = String(r[4] || '').trim();
+                        const region  = String(r[5] || '').trim();
+                        const city    = String(r[7] || '').trim();
+                        const swift   = String(r[8] || '').trim().toUpperCase();
+                        const deleted = String(r[11] || '').trim();
+                        if (!country || !key || deleted) continue;
+
+                        const rec = { c: country, k: key, n: name, ci: city, s: swift, r: region };
+                        data.push(rec);
+
+                        // Index by country+key (keep first / best)
+                        const ckKey = country + '|' + key.toUpperCase();
+                        if (!bankKeysByCountryKey.has(ckKey)) {
+                            bankKeysByCountryKey.set(ckKey, rec);
+                        } else {
+                            // Prefer record with SWIFT
+                            const existing = bankKeysByCountryKey.get(ckKey);
+                            if (!existing.s && swift) bankKeysByCountryKey.set(ckKey, rec);
+                        }
+
+                        // Index by SWIFT (prefix 8 chars)
+                        if (swift) {
+                            const sk = swift.substring(0, 8);
+                            if (!bankKeysBySwift.has(sk)) bankKeysBySwift.set(sk, []);
+                            bankKeysBySwift.get(sk).push(rec);
+                        }
+                    }
+
+                    bankKeysDB = data;
+                    const label = document.getElementById('bkLoadedLabel');
+                    if (label) label.textContent = `✅ ${data.length.toLocaleString()} records loaded`;
+                    document.getElementById('bkLoadArea').style.display = 'none';
+                    document.getElementById('bkSearchArea').style.display = 'block';
+                    document.getElementById('bkResults').innerHTML = '';
+                } catch(err) {
+                    if (statusEl) statusEl.textContent = '❌ Failed to parse file: ' + err.message;
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function setBKMode(mode) {
+            bkMode = mode;
+            const keyBtn   = document.getElementById('bkModeKey');
+            const swiftBtn = document.getElementById('bkModeSwift');
+            const keyIn    = document.getElementById('bkKeyInputs');
+            const swiftIn  = document.getElementById('bkSwiftInputs');
+
+            if (mode === 'key') {
+                keyBtn.style.background   = '#f97316'; keyBtn.style.color   = 'white'; keyBtn.style.borderColor   = '#f97316';
+                swiftBtn.style.background = 'white';   swiftBtn.style.color = '#6b7280'; swiftBtn.style.borderColor = '#e5e7eb';
+                keyIn.style.display   = 'block';
+                swiftIn.style.display = 'none';
+            } else {
+                swiftBtn.style.background = '#f97316'; swiftBtn.style.color = 'white'; swiftBtn.style.borderColor = '#f97316';
+                keyBtn.style.background   = 'white';   keyBtn.style.color   = '#6b7280'; keyBtn.style.borderColor   = '#e5e7eb';
+                swiftIn.style.display = 'block';
+                keyIn.style.display   = 'none';
+            }
+            document.getElementById('bkResults').innerHTML = '';
+        }
+
+        function searchBankKeys() {
+            const res = document.getElementById('bkResults');
+            if (!bankKeysDB || !res) return;
+
+            if (bkMode === 'key') {
+                const country = (document.getElementById('bkCountry')?.value || '').trim();
+                const key     = (document.getElementById('bkKeyInput')?.value || '').trim().toUpperCase();
+                if (!country || !key) { res.innerHTML = ''; return; }
+
+                // Exact match first
+                const exact = bankKeysByCountryKey.get(country + '|' + key);
+                if (exact) {
+                    res.innerHTML = bkCard(exact);
+                    return;
+                }
+
+                // Prefix/substring fallback — search within country
+                const matches = bankKeysDB.filter(r =>
+                    r.c === country && r.k.toUpperCase().includes(key)
+                ).slice(0, 50);
+
+                if (!matches.length) {
+                    res.innerHTML = `<div style="background:#fee2e2;padding:12px 16px;border-radius:8px;border-left:4px solid #ef4444;font-size:13px;color:#991b1b;">
+                        No bank found for country <strong>${country}</strong> with key containing <strong>${key}</strong>.
+                    </div>`;
+                } else {
+                    res.innerHTML = bkTable(matches, matches.length >= 50 ? '50+ matches — refine the key' : `${matches.length} match${matches.length===1?'':'es'}`);
+                }
+
+            } else {
+                // SWIFT search
+                const q = (document.getElementById('bkSwiftInput')?.value || '').trim().toUpperCase();
+                if (q.length < 4) { res.innerHTML = ''; return; }
+
+                // Prefix match on 8-char SWIFT
+                const prefix8 = q.substring(0, 8);
+                let matches = [];
+
+                if (q.length >= 8) {
+                    // Try exact 8-char prefix index first
+                    matches = (bankKeysBySwift.get(prefix8) || []).filter(r => r.s.startsWith(q));
+                } else {
+                    // Linear scan for shorter queries
+                    matches = bankKeysDB.filter(r => r.s && r.s.startsWith(q));
+                }
+
+                matches = matches.slice(0, 50);
+
+                if (!matches.length) {
+                    res.innerHTML = `<div style="background:#fee2e2;padding:12px 16px;border-radius:8px;border-left:4px solid #ef4444;font-size:13px;color:#991b1b;">
+                        No bank found with SWIFT starting with <strong>${q}</strong>.
+                    </div>`;
+                } else {
+                    res.innerHTML = bkTable(matches, matches.length >= 50 ? '50+ matches — enter more characters' : `${matches.length} match${matches.length===1?'':'es'}`);
+                }
+            }
+        }
+
+        function bkCard(r) {
+            const swiftBadge = r.s
+                ? `<span style="display:inline-block;padding:2px 8px;border-radius:4px;background:#dbeafe;color:#1e40af;font-family:monospace;font-weight:700;font-size:13px;">${r.s}</span>`
+                : `<span style="display:inline-block;padding:2px 8px;border-radius:4px;background:#f3f4f6;color:#9ca3af;font-size:12px;">No SWIFT</span>`;
+            const location = [r.ci, r.r].filter(Boolean).join(', ');
+            return `
+                <div style="background:#d1fae5;padding:16px 18px;border-radius:8px;border-left:4px solid #10b981;">
+                    <div style="display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap;">
+                        <div style="min-width:52px;height:52px;border-radius:10px;background:#f97316;color:white;font-size:11px;font-weight:800;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;flex-shrink:0;">
+                            <span style="font-size:14px;">${r.c}</span>
+                            <span style="opacity:.85;font-size:9px;letter-spacing:.03em;">COUNTRY</span>
+                        </div>
+                        <div style="flex:1;min-width:0;">
+                            <div style="font-size:16px;font-weight:800;color:#065f46;margin-bottom:3px;">${r.n || '—'}</div>
+                            <div style="font-size:12px;color:#374151;margin-bottom:6px;">
+                                Key: <strong style="font-family:monospace;">${r.k}</strong>
+                                ${location ? `&nbsp;·&nbsp; ${location}` : ''}
+                            </div>
+                            ${swiftBadge}
+                        </div>
+                    </div>
+                </div>`;
+        }
+
+        function bkTable(records, caption) {
+            const rows = records.map(r => {
+                const swift = r.s || '—';
+                const loc   = [r.ci, r.r].filter(Boolean).join(', ') || '—';
+                return `<tr>
+                    <td style="padding:6px 8px;white-space:nowrap;font-weight:600;color:#374151;">${r.c}</td>
+                    <td style="padding:6px 8px;font-family:monospace;font-size:12px;color:#1e40af;">${r.k}</td>
+                    <td style="padding:6px 8px;font-size:12px;">${r.n || '—'}</td>
+                    <td style="padding:6px 8px;font-size:12px;color:#6b7280;">${loc}</td>
+                    <td style="padding:6px 8px;font-family:monospace;font-size:12px;color:${r.s?'#1d4ed8':'#9ca3af'};">${swift}</td>
+                </tr>`;
+            }).join('');
+            return `
+                <div style="font-size:11px;font-weight:700;color:#92400e;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;">${caption}</div>
+                <div style="overflow-x:auto;">
+                <table style="width:100%;border-collapse:collapse;font-size:12px;background:white;border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08);">
+                    <thead><tr style="background:#fff7ed;">
+                        <th style="padding:7px 8px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#9a3412;border-bottom:1px solid #fed7aa;">Country</th>
+                        <th style="padding:7px 8px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#9a3412;border-bottom:1px solid #fed7aa;">Bank Key</th>
+                        <th style="padding:7px 8px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#9a3412;border-bottom:1px solid #fed7aa;">Bank Name</th>
+                        <th style="padding:7px 8px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#9a3412;border-bottom:1px solid #fed7aa;">City / Region</th>
+                        <th style="padding:7px 8px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#9a3412;border-bottom:1px solid #fed7aa;">SWIFT/BIC</th>
+                    </tr></thead>
+                    <tbody>${rows}</tbody>
+                </table>
+                </div>`;
         }
 
         // ── Auto Completed By ─────────────────────────────────────────────
@@ -5859,18 +6178,20 @@ AMERBankingValidation@resideo.com`;
         let _emailTemplate = 'extend';
 
         function switchValidationTab(tab) {
-            const ibanTab = document.getElementById('ibanTab');
-            const vatTab = document.getElementById('vatTab');
-            const emailTab = document.getElementById('emailTab');
-            const banktypeTab = document.getElementById('banktypeTab');
-            const ibanContent = document.getElementById('ibanTabContent');
-            const vatContent = document.getElementById('vatTabContent');
-            const emailContent = document.getElementById('emailTabContent');
-            const banktypeContent = document.getElementById('banktypeTabContent');
+            const ibanTab       = document.getElementById('ibanTab');
+            const vatTab        = document.getElementById('vatTab');
+            const emailTab      = document.getElementById('emailTab');
+            const banktypeTab   = document.getElementById('banktypeTab');
+            const bankkeysTab   = document.getElementById('bankkeysTab');
+            const ibanContent      = document.getElementById('ibanTabContent');
+            const vatContent       = document.getElementById('vatTabContent');
+            const emailContent     = document.getElementById('emailTabContent');
+            const banktypeContent  = document.getElementById('banktypeTabContent');
+            const bankkeysContent  = document.getElementById('bankkeysTabContent');
 
             // Reset all
-            [ibanTab, vatTab, emailTab, banktypeTab].forEach(b => { if (b) { b.style.background = '#f3f4f6'; b.style.color = '#6b7280'; } });
-            [ibanContent, vatContent, emailContent, banktypeContent].forEach(c => { if (c) c.style.display = 'none'; });
+            [ibanTab, vatTab, emailTab, banktypeTab, bankkeysTab].forEach(b => { if (b) { b.style.background = '#f3f4f6'; b.style.color = '#6b7280'; } });
+            [ibanContent, vatContent, emailContent, banktypeContent, bankkeysContent].forEach(c => { if (c) c.style.display = 'none'; });
 
             if (tab === 'iban') {
                 if (ibanTab) { ibanTab.style.background = '#3b82f6'; ibanTab.style.color = 'white'; }
@@ -5885,6 +6206,9 @@ AMERBankingValidation@resideo.com`;
             } else if (tab === 'banktype') {
                 if (banktypeTab) { banktypeTab.style.background = '#7c3aed'; banktypeTab.style.color = 'white'; }
                 if (banktypeContent) banktypeContent.style.display = 'block';
+            } else if (tab === 'bankkeys') {
+                if (bankkeysTab) { bankkeysTab.style.background = '#f97316'; bankkeysTab.style.color = 'white'; }
+                if (bankkeysContent) bankkeysContent.style.display = 'block';
             }
         }
 
