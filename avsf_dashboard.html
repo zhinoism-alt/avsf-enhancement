@@ -2360,6 +2360,10 @@ Select a request from the left to preview the email...
                         style="flex: 1; padding: 10px; border: none; background: #f3f4f6; color: #6b7280; font-weight: 600; cursor: pointer; border-radius: 6px 6px 0 0; font-size: 13px; margin-left: 4px;">
                     📋 VAT Validator
                 </button>
+                <button id="banktypeTab" onclick="switchValidationTab('banktype')"
+                        style="flex: 1; padding: 10px; border: none; background: #f3f4f6; color: #6b7280; font-weight: 600; cursor: pointer; border-radius: 6px 6px 0 0; font-size: 13px; margin-left: 4px;">
+                    🏦 Partner Bank Type
+                </button>
             </div>
 
             <!-- IBAN Tab Content -->
@@ -2470,6 +2474,71 @@ Select a request from the left to preview the email...
                     <button id="vatPdfBtn" onclick="exportVATPDF()" class="btn btn-secondary" style="width: 100%; display: none;">
                         📄 Export VAT Validation as PDF
                     </button>
+                </div>
+            </div>
+
+            <!-- Partner Bank Type Tab Content -->
+            <div id="banktypeTabContent" style="display: none;">
+                <div style="background: #f5f3ff; padding: 20px; border-radius: 8px; border: 2px solid #7c3aed;">
+                    <p style="font-size: 13px; color: #5b21b6; margin: 0 0 16px 0;">
+                        Look up the <strong>Partner Bank Type</strong> code required in SAP vendor banking data,
+                        based on Company Code + Payment Currency from the official partner type reference.
+                    </p>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                        <div>
+                            <label style="font-size: 12px; font-weight: 600; color: #374151; display: block; margin-bottom: 6px;">
+                                Company Code
+                            </label>
+                            <input type="text" id="btCompanyCode" placeholder="e.g. 2249, 1505, 2731"
+                                   maxlength="10"
+                                   oninput="lookupPartnerBankType()"
+                                   style="width: 100%; padding: 10px; border: 2px solid #ddd6fe; border-radius: 6px; font-size: 14px; font-family: monospace; box-sizing: border-box;">
+                        </div>
+                        <div>
+                            <label style="font-size: 12px; font-weight: 600; color: #374151; display: block; margin-bottom: 6px;">
+                                Payment Currency
+                            </label>
+                            <select id="btCurrency" onchange="lookupPartnerBankType()"
+                                    style="width: 100%; padding: 10px; border: 2px solid #ddd6fe; border-radius: 6px; font-size: 14px; background: white; box-sizing: border-box;">
+                                <option value="">— Select currency —</option>
+                                <option value="AED">AED – UAE Dirham</option>
+                                <option value="AUD">AUD – Australian Dollar</option>
+                                <option value="BGN">BGN – Bulgarian Lev</option>
+                                <option value="BHD">BHD – Bahraini Dinar</option>
+                                <option value="CAD">CAD – Canadian Dollar</option>
+                                <option value="CHF">CHF – Swiss Franc</option>
+                                <option value="CNY">CNY – Chinese Yuan</option>
+                                <option value="CZK">CZK – Czech Koruna</option>
+                                <option value="DKK">DKK – Danish Krone</option>
+                                <option value="EGP">EGP – Egyptian Pound</option>
+                                <option value="EUR">EUR – Euro</option>
+                                <option value="GBP">GBP – British Pound</option>
+                                <option value="HKD">HKD – Hong Kong Dollar</option>
+                                <option value="HUF">HUF – Hungarian Forint</option>
+                                <option value="INR">INR – Indian Rupee</option>
+                                <option value="JPY">JPY – Japanese Yen</option>
+                                <option value="KWD">KWD – Kuwaiti Dinar</option>
+                                <option value="MOP">MOP – Macanese Pataca</option>
+                                <option value="MXN">MXN – Mexican Peso</option>
+                                <option value="MYR">MYR – Malaysian Ringgit</option>
+                                <option value="NOK">NOK – Norwegian Krone</option>
+                                <option value="OMR">OMR – Omani Rial</option>
+                                <option value="PHP">PHP – Philippine Peso</option>
+                                <option value="PLN">PLN – Polish Zloty</option>
+                                <option value="QAR">QAR – Qatari Riyal</option>
+                                <option value="RON">RON – Romanian Leu</option>
+                                <option value="SAR">SAR – Saudi Riyal</option>
+                                <option value="SEK">SEK – Swedish Krona</option>
+                                <option value="SGD">SGD – Singapore Dollar</option>
+                                <option value="TRY">TRY – Turkish Lira</option>
+                                <option value="TWD">TWD – Taiwan Dollar</option>
+                                <option value="USD">USD – US Dollar</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="btResult" style="min-height: 60px;"></div>
                 </div>
             </div>
 
@@ -3283,6 +3352,151 @@ Select a request from the left to preview the email...
             res.innerHTML = pmPlaceholder('Unable to determine — please contact your supervisor.');
         }
 
+
+        // ── Partner Bank Type Lookup ──────────────────────────────────────
+        // Source: partner type.XLSX — Currency + Company Code → Partner Bank Type
+        const PARTNER_BANK_TYPE = {
+            'AED+2531':'A007','AED+2607':'A007','AED+2786':'A007','AED+2790':'A007',
+            'AUD+3432':'B005',
+            'BGN+2660':'B001','BGN+2786':'B001',
+            'BHD+2786':'B002',
+            'CAD+1129':'A005','CAD+1265':'A005','CAD+1513':'A005',
+            'CAD+2531':'C001','CAD+2731':'C001','CAD+2786':'C001',
+            'CHF+1129':'A004','CHF+2094':'A004','CHF+2192':'A004','CHF+2253':'A004',
+            'CHF+2421':'A004','CHF+2531':'A004','CHF+2538':'A004','CHF+2566':'A004',
+            'CHF+2567':'A004','CHF+2584':'A004','CHF+2607':'A004','CHF+2616':'A004',
+            'CHF+2720':'A004','CHF+2727':'A004','CHF+2731':'A004','CHF+2786':'C002',
+            'CHF+2817':'A004',
+            'CNY+1265':'B004','CNY+2731':'B004','CNY+3523':'B004','CNY+3605':'B004',
+            'CNY+3614':'B004','CNY+3798':'B004','CNY+3988':'B004',
+            'CZK+1129':'A006','CZK+2253':'A006','CZK+2517':'A006','CZK+2518':'A006',
+            'CZK+2531':'A006','CZK+2538':'A006','CZK+2566':'A006','CZK+2567':'A006',
+            'CZK+2617':'A006','CZK+2621':'A006','CZK+2661':'A006','CZK+2720':'A006',
+            'CZK+2727':'A006','CZK+2731':'A006',
+            'DKK+2194':'D001','DKK+2518':'D001','DKK+2731':'D001',
+            'EGP+2786':'E001',
+            'EUR+1096':'A001','EUR+1129':'A001','EUR+1265':'A001',
+            'EUR+2093':'A001','EUR+2094':'A001','EUR+2103':'A001','EUR+2185':'A001',
+            'EUR+2192':'A001','EUR+2193':'A001','EUR+2194':'A001','EUR+2203':'A001',
+            'EUR+2223':'A001','EUR+2249':'A001','EUR+2253':'A001','EUR+2418':'A001',
+            'EUR+2421':'A001','EUR+2424':'A001','EUR+2426':'A001','EUR+2429':'A001',
+            'EUR+2430':'A001','EUR+2507':'A001','EUR+2517':'A001','EUR+2518':'A001',
+            'EUR+2531':'A001','EUR+2538':'A001','EUR+2546':'A001','EUR+2567':'A001',
+            'EUR+2576':'A001','EUR+2581':'A001','EUR+2584':'A001','EUR+2601':'A001',
+            'EUR+2607':'A001','EUR+2616':'A001','EUR+2617':'A001','EUR+2621':'A001',
+            'EUR+2660':'A001','EUR+2661':'A001','EUR+2720':'A001','EUR+2727':'A001',
+            'EUR+2731':'A001','EUR+2786':'E002','EUR+2790':'A001','EUR+2817':'A001',
+            'EUR+2939':'A001','EUR+2941':'A001','EUR+3482':'A001','EUR+3798':'A001',
+            'GBP+1129':'A003','GBP+1265':'A003','GBP+2093':'A003','GBP+2094':'A003',
+            'GBP+2103':'A003','GBP+2105':'A003','GBP+2185':'A003','GBP+2192':'A003',
+            'GBP+2194':'A003','GBP+2203':'A003','GBP+2223':'A003','GBP+2249':'A003',
+            'GBP+2253':'A003','GBP+2418':'A003','GBP+2421':'A003','GBP+2424':'A003',
+            'GBP+2426':'A003','GBP+2429':'A003','GBP+2517':'A003','GBP+2518':'A003',
+            'GBP+2531':'A003','GBP+2538':'A003','GBP+2546':'A003','GBP+2567':'A003',
+            'GBP+2576':'A003','GBP+2584':'A003','GBP+2601':'A003','GBP+2607':'A003',
+            'GBP+2616':'A003','GBP+2617':'A003','GBP+2621':'A003','GBP+2660':'A003',
+            'GBP+2661':'A003','GBP+2727':'A003','GBP+2731':'A003','GBP+2786':'G001',
+            'GBP+2790':'A003','GBP+2817':'A003','GBP+2939':'A003','GBP+2941':'A003',
+            'GBP+3482':'A003',
+            'HKD+2249':'H002','HKD+2568':'H002','HKD+2621':'H002','HKD+2720':'H002',
+            'HKD+2727':'H002','HKD+2731':'H002','HKD+3988':'H002',
+            'HUF+2223':'H001','HUF+2538':'H001','HUF+2616':'H001','HUF+2720':'H001',
+            'HUF+2731':'H001',
+            'INR+2621':'B007','INR+2786':'I001','INR+3482':'B007',
+            'JPY+2094':'B003','JPY+2223':'B003','JPY+2567':'B003','JPY+2731':'B003',
+            'KWD+2786':'K001',
+            'MOP+3988':'M001',
+            'MXN+1078':'B009','MXN+1095':'B009','MXN+1096':'B009','MXN+1097':'B009',
+            'MXN+1129':'B009','MXN+1255':'B009','MXN+1265':'B009','MXN+1505':'B009',
+            'MXN+1552':'B009','MXN+1729':'B009',
+            'MYR+2223':'MY01',
+            'NOK+2518':'N005','NOK+2621':'N005','NOK+2731':'N005',
+            'OMR+2786':'O001',
+            'PHP+1265':'P002',
+            'PLN+2103':'P001','PLN+2194':'P001','PLN+2430':'P001','PLN+2517':'P001',
+            'PLN+2617':'P001','PLN+2660':'B007','PLN+2731':'P001','PLN+2786':'P001',
+            'QAR+2786':'Q001',
+            'RON+2094':'A009','RON+2203':'A009','RON+2249':'A009','RON+2507':'A009',
+            'RON+2518':'A009','RON+2576':'A009','RON+2584':'A009','RON+2607':'A009',
+            'RON+2616':'A009','RON+2617':'A009','RON+2660':'A009',
+            'SAR+2531':'A008','SAR+2786':'A008',
+            'SEK+1096':'S002','SEK+1265':'S002','SEK+2194':'S002','SEK+2518':'S002',
+            'SEK+2581':'S002','SEK+2621':'S002','SEK+2786':'S002',
+            'SGD+2786':'S003',
+            'TRY+2607':'T001',
+            'TWD+1096':'C001',
+            'USD+1078':'A002','USD+1095':'A002','USD+1096':'A002','USD+1097':'A002',
+            'USD+1129':'A002','USD+1255':'A002','USD+1265':'A002','USD+1505':'A002',
+            'USD+1552':'A002','USD+1729':'A002','USD+2093':'A002','USD+2094':'A002',
+            'USD+2103':'A002','USD+2185':'A002','USD+2192':'A002','USD+2194':'A002',
+            'USD+2203':'A002','USD+2223':'A002','USD+2249':'A002','USD+2253':'A002',
+            'USD+2418':'A002','USD+2421':'A002','USD+2424':'A002','USD+2426':'A002',
+            'USD+2429':'A002','USD+2430':'A002','USD+2507':'A002','USD+2517':'A002',
+            'USD+2518':'A002','USD+2531':'A002','USD+2538':'A002','USD+2546':'A002',
+            'USD+2566':'A002','USD+2567':'A002','USD+2576':'A002','USD+2581':'A002',
+            'USD+2584':'A002','USD+2601':'A002','USD+2607':'A002','USD+2616':'A002',
+            'USD+2617':'A002','USD+2621':'A002','USD+2627':'A002','USD+2660':'A002',
+            'USD+2661':'A002','USD+2720':'A002','USD+2727':'A002','USD+2731':'A002',
+            'USD+2786':'U001','USD+2790':'A002','USD+2817':'A002','USD+2939':'A002',
+            'USD+2941':'A002','USD+3482':'A002','USD+3523':'A002','USD+3605':'A002',
+            'USD+3614':'A002','USD+3798':'A002','USD+3988':'A002','USD+7540':'A002',
+        };
+
+        // Plant-level exceptions (only show when the primary result has edge cases)
+        const PARTNER_BANK_TYPE_NOTES = {
+            'EUR+2424': '⚠️ Plant 4500 uses <strong>A003</strong> instead.',
+            'EUR+2727': '⚠️ Plant 9625 uses <strong>E002</strong> instead.',
+            'EUR+2731': '⚠️ Plant 5900 uses <strong>EUR</strong> instead.',
+            'EUR+2786': '⚠️ CC 2786 is multi-region: default (no plant) = <strong>E002</strong>; plants 4247·4480·4531·4780·4891 = <strong>A001</strong>.',
+            'GBP+2617': '⚠️ Depends on plant: <strong>A003</strong> (plants 4108·4743·6655) vs <strong>G001</strong> (plants 7670·9670).',
+            'GBP+2786': '⚠️ CC 2786 is multi-region: default (no plant) = <strong>G001</strong>; plants 4247·4480·4531·4891 = <strong>A003</strong>.',
+            'USD+2421': '⚠️ Plant 4514 uses <strong>A001</strong> instead.',
+            'USD+2786': '⚠️ CC 2786 is multi-region: default (no plant) = <strong>U001</strong>; plants 4247·4480·4531·4780·4891 = <strong>A002</strong>.',
+        };
+
+        function lookupPartnerBankType() {
+            const cc  = (document.getElementById('btCompanyCode')?.value || '').trim();
+            const cur = (document.getElementById('btCurrency')?.value || '').trim();
+            const res = document.getElementById('btResult');
+            if (!res) return;
+
+            if (!cc || !cur) {
+                res.innerHTML = '<div style="color:#9ca3af;text-align:center;padding:20px;font-size:13px;">Enter a Company Code and select a Currency to look up the Partner Bank Type.</div>';
+                return;
+            }
+
+            const key = `${cur}+${cc}`;
+            const bt  = PARTNER_BANK_TYPE[key];
+            const note = PARTNER_BANK_TYPE_NOTES[key] || '';
+
+            if (bt) {
+                const noteHtml = note
+                    ? `<div style="margin-top:10px;padding:8px 12px;background:#fef3c7;border:1px solid #fbbf24;border-radius:6px;font-size:12px;color:#92400e;">${note}</div>`
+                    : '';
+                res.innerHTML = `
+                    <div style="background:#d1fae5;padding:18px 20px;border-radius:8px;border-left:4px solid #10b981;">
+                        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+                            <div style="min-width:80px;height:64px;border-radius:10px;background:#7c3aed;color:white;font-size:22px;font-weight:800;display:flex;align-items:center;justify-content:center;letter-spacing:1px;">${bt}</div>
+                            <div>
+                                <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#065f46;margin-bottom:2px;">Partner Bank Type</div>
+                                <div style="font-size:18px;font-weight:800;color:#065f46;">${bt}</div>
+                                <div style="font-size:12px;color:#374151;margin-top:2px;">CC <strong>${cc}</strong> · Currency <strong>${cur}</strong></div>
+                            </div>
+                        </div>
+                        ${noteHtml}
+                    </div>`;
+            } else {
+                res.innerHTML = `
+                    <div style="background:#fee2e2;padding:16px 20px;border-radius:8px;border-left:4px solid #ef4444;">
+                        <div style="font-size:14px;font-weight:700;color:#991b1b;margin-bottom:4px;">⚠️ Not Found</div>
+                        <div style="font-size:13px;color:#7f1d1d;">
+                            No Partner Bank Type found for CC <strong>${cc}</strong> + <strong>${cur}</strong>.<br>
+                            This combination may not exist in SAP or the CC may not process ${cur} payments.
+                            Verify in the official partner type reference or contact your supervisor.
+                        </div>
+                    </div>`;
+            }
+        }
 
         // ── Auto Completed By ─────────────────────────────────────────────
         function autoSetCompletedBy() {
@@ -5648,13 +5862,15 @@ AMERBankingValidation@resideo.com`;
             const ibanTab = document.getElementById('ibanTab');
             const vatTab = document.getElementById('vatTab');
             const emailTab = document.getElementById('emailTab');
+            const banktypeTab = document.getElementById('banktypeTab');
             const ibanContent = document.getElementById('ibanTabContent');
             const vatContent = document.getElementById('vatTabContent');
             const emailContent = document.getElementById('emailTabContent');
+            const banktypeContent = document.getElementById('banktypeTabContent');
 
             // Reset all
-            [ibanTab, vatTab, emailTab].forEach(b => { if (b) { b.style.background = '#f3f4f6'; b.style.color = '#6b7280'; } });
-            [ibanContent, vatContent, emailContent].forEach(c => { if (c) c.style.display = 'none'; });
+            [ibanTab, vatTab, emailTab, banktypeTab].forEach(b => { if (b) { b.style.background = '#f3f4f6'; b.style.color = '#6b7280'; } });
+            [ibanContent, vatContent, emailContent, banktypeContent].forEach(c => { if (c) c.style.display = 'none'; });
 
             if (tab === 'iban') {
                 if (ibanTab) { ibanTab.style.background = '#3b82f6'; ibanTab.style.color = 'white'; }
@@ -5666,6 +5882,9 @@ AMERBankingValidation@resideo.com`;
                 if (emailTab) { emailTab.style.background = '#a855f7'; emailTab.style.color = 'white'; }
                 if (emailContent) emailContent.style.display = 'block';
                 populateEmailAVSFSelect();
+            } else if (tab === 'banktype') {
+                if (banktypeTab) { banktypeTab.style.background = '#7c3aed'; banktypeTab.style.color = 'white'; }
+                if (banktypeContent) banktypeContent.style.display = 'block';
             }
         }
 
