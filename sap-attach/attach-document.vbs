@@ -15,6 +15,19 @@ MAX_FAILS_IN_ROW = 3      ' stop after this many failures in a row
 WAIT_SECS = 120           ' how long to wait for slow SAP screens
 ' ====================
 
+' tidy the settings: remove stray quote marks (e.g. from "Copy as path") and trailing backslashes
+VENDOR_FILE = CleanPath(VENDOR_FILE)
+ATTACH_FOLDER = CleanPath(ATTACH_FOLDER)
+ATTACH_NAME = CleanPath(ATTACH_NAME)
+
+Function CleanPath(p)
+  p = Trim(Replace(p, Chr(34), ""))
+  Do While Right(p, 1) = "\"
+    p = Left(p, Len(p) - 1)
+  Loop
+  CleanPath = p
+End Function
+
 Const LIST_SHELL = "wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell"
 
 Dim fso, session, application, connection, SapGuiAuto, logPath, gErr, runLabel
