@@ -237,6 +237,25 @@ Sub ClosePopups()
   Next
 End Sub
 
+' how many copies of this script are running right now (including this one)
+Function InstancesRunning()
+  Dim wmi, procs, p, n
+  n = 0
+  On Error Resume Next
+  Set wmi = GetObject("winmgmts:\\.\root\cimv2")
+  Set procs = wmi.ExecQuery("Select CommandLine from Win32_Process Where Name = 'wscript.exe' Or Name = 'cscript.exe'")
+  If Err.Number = 0 Then
+    For Each p In procs
+      If Not IsNull(p.CommandLine) Then
+        If InStr(LCase(p.CommandLine), LCase(WScript.ScriptName)) > 0 Then n = n + 1
+      End If
+    Next
+  End If
+  Err.Clear
+  On Error GoTo 0
+  InstancesRunning = n
+End Function
+
 Function IsVendorNumber(s)
   Dim re
   Set re = CreateObject("VBScript.RegExp")
@@ -366,6 +385,13 @@ Function DoVendor(lifnr, ByRef msg)
   WScript.Sleep 1500
   ClosePopups
 End Function
+
+' ---- only one copy may run: several copies pressing the same SAP window at once make everything fail ----
+If InstancesRunning() > 1 Then
+  Log "STOPPED: another copy of this script is already running."
+  MsgBox "Another copy of this script is already running." & vbCrLf & "Press Ctrl+Shift+Esc, end every wscript.exe under Details/Processes, then start it again.", 48, "Attach document"
+  WScript.Quit 1
+End If
 
 ' ---- attach to the running SAP session ----
 On Error Resume Next
