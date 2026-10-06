@@ -204,6 +204,25 @@ Function TitleText()
   On Error GoTo 0
 End Function
 
+' native dropdown menus only open in the active window, so bring the toolbox / SAP window to the front
+Sub BringSapToFront()
+  Dim shl, ttl
+  Set shl = CreateObject("WScript.Shell")
+  On Error Resume Next
+  ttl = ""
+  ttl = session.findById("wnd[0]/shellcont").Title
+  Err.Clear
+  If ttl <> "" Then shl.AppActivate ttl
+  Err.Clear
+  ttl = TitleText()
+  If ttl <> "" Then shl.AppActivate ttl
+  Err.Clear
+  session.findById("wnd[0]").setFocus
+  Err.Clear
+  On Error GoTo 0
+  WScript.Sleep 500
+End Sub
+
 Function ScreenNo()
   ScreenNo = ""
   On Error Resume Next
@@ -360,6 +379,7 @@ Function DoVendor(lifnr, ByRef msg)
   ok3 = False
   For i = 1 To 2
     errText = ""
+    picked = False
     ' SAP shows an "Attachment list" popup by itself for some vendors: close it (never confirms anything)
     If Not Find("wnd[1]") Is Nothing Then
       If InStr(LCase(PopupTitle(1)), "attachment list") > 0 Then ClosePopup 1
@@ -380,53 +400,103 @@ Function DoVendor(lifnr, ByRef msg)
       End If
     End If
 
-    ' 2. its "Create..." menu, opened ONCE
     If errText = "" Then
-      Trace "attempt " & i & ": toolbar is open, opening its Create menu"
+      BringSapToFront
+
+      ' 2a. Route A: the "Attachment list" button (a plain button), then the list's own Create menu
+      Trace "attempt " & i & ": toolbar is open, trying the Attachment list button"
       On Error Resume Next
-      session.findById(TOOLBOX).pressContextButton "CREATE_ATTA"
+      session.findById(TOOLBOX).pressButton "VIEW_ATTA"
       If Err.Number <> 0 Then
-        errText = "Create button: " & Err.Description
+        Trace "Attachment list button: " & Err.Description
         Err.Clear
       End If
       On Error GoTo 0
-    End If
-
-    ' 3. wait for SAP to fill the menu, then pick "Create attachment" (polling, never pressing the button again)
-    If errText = "" Then
-      t = Timer
-      picked = False
-      Do While Timer - t < MENU_SECS
-        If Not Find("wnd[1]/usr/ctxtDY_PATH") Is Nothing Then
-          picked = True
-          Exit Do
-        End If
+      Set grid = WaitFor(LIST_SHELL, 40)
+      If Not grid Is Nothing Then
+        Trace "attachment list is open, opening its Create menu"
+        BringSapToFront
         On Error Resume Next
-        session.findById(TOOLBOX).selectContextMenuItem "%GOS_PCATTA_CREA"
+        grid.pressToolbarContextButton "%ATTA_CREATE"
         If Err.Number <> 0 Then
+          Trace "list Create button: " & Err.Description
           Err.Clear
-          session.findById(TOOLBOX).selectContextMenuItemByText "Create attachment"
+        End If
+        On Error GoTo 0
+        t = Timer
+        Do While Timer - t < MENU_SECS
+          If Not Find("wnd[1]/usr/ctxtDY_PATH") Is Nothing Then
+            picked = True
+            Exit Do
+          End If
+          On Error Resume Next
+          grid.selectContextMenuItem "%GOS_PCATTA_CREA"
           If Err.Number <> 0 Then
             Err.Clear
           Else
             picked = True
           End If
+          On Error GoTo 0
+          If picked Then Exit Do
+          WScript.Sleep 2000
+        Loop
+        If picked Then
+          Trace "Create attachment selected from the list after " & Int(Timer - t) & " s"
         Else
-          picked = True
+          Trace "the list's Create menu was not ready after " & Int(Timer - t) & " s"
+          If Find("wnd[1]/usr/ctxtDY_PATH") Is Nothing Then ClosePopup 1
+        End If
+      Else
+        Trace "no attachment list appeared (the vendor may have no attachments yet)"
+      End If
+
+      ' 2b. Route B: the toolbar's own Create menu, opened ONCE
+      If Not picked Then
+        Trace "attempt " & i & ": trying the toolbar's Create menu"
+        BringSapToFront
+        On Error Resume Next
+        session.findById(TOOLBOX).pressContextButton "CREATE_ATTA"
+        If Err.Number <> 0 Then
+          errText = "Create button: " & Err.Description
+          Err.Clear
         End If
         On Error GoTo 0
-        If picked Then Exit Do
-        WScript.Sleep 2000
-      Loop
-      If picked Then
-        Trace "attempt " & i & ": Create attachment selected after " & Int(Timer - t) & " s, waiting for the Import file dialog"
-      Else
-        errText = "the Create menu was not ready after " & Int(Timer - t) & " s"
+        If errText = "" Then
+          t = Timer
+          Do While Timer - t < MENU_SECS
+            If Not Find("wnd[1]/usr/ctxtDY_PATH") Is Nothing Then
+              picked = True
+              Exit Do
+            End If
+            On Error Resume Next
+            session.findById(TOOLBOX).selectContextMenuItem "%GOS_PCATTA_CREA"
+            If Err.Number <> 0 Then
+              Err.Clear
+              session.findById(TOOLBOX).selectContextMenuItemByText "Create attachment"
+              If Err.Number <> 0 Then
+                Err.Clear
+              Else
+                picked = True
+              End If
+            Else
+              picked = True
+            End If
+            On Error GoTo 0
+            If picked Then Exit Do
+            WScript.Sleep 2000
+          Loop
+          If picked Then
+            Trace "Create attachment selected from the toolbar after " & Int(Timer - t) & " s"
+          Else
+            errText = "the Create menu was not ready after " & Int(Timer - t) & " s"
+          End If
+        End If
       End If
     End If
 
-    ' 4. SAP's own Import file dialog
-    If errText = "" Then
+    ' 3. SAP's own Import file dialog
+    If picked Then
+      errText = ""
       t = Timer
       If WaitForImportDialog(DIALOG_SECS) Then
         ok3 = True
