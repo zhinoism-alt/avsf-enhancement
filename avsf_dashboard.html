@@ -795,7 +795,62 @@
         .cal-chip.holiday  { background:#fef3c7; color:#78350f; }
         .cal-upcoming-row { display:flex; align-items:center; gap:10px; padding:8px 12px; border-radius:var(--radius-md); background:var(--bg-card); border:1px solid var(--border-light); font-size:12px; }
         .cal-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
-        </style>
+        
+        /* ── App-style queue / detail panel / import preview ─────────────── */
+        .vt-bar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:0 0 .625rem; }
+        .vt-seg { display:inline-flex; border:1px solid var(--border); border-radius:var(--radius-full); overflow:hidden; background:var(--bg-card); }
+        .vt-seg button { border:0; background:transparent; padding:5px 14px; font-size:12px; font-weight:600; color:var(--text-secondary); cursor:pointer; font-family:inherit; }
+        .vt-seg button.on { background:var(--primary); color:#fff; }
+        .q-tabs { display:flex; gap:6px; flex-wrap:wrap; }
+        .q-tab { border:1px solid var(--border); background:var(--bg-card); color:var(--text-secondary); border-radius:var(--radius-full); padding:5px 12px; font-size:12px; font-weight:600; cursor:pointer; font-family:inherit; display:inline-flex; gap:6px; align-items:center; }
+        .q-tab .n { background:var(--bg-secondary); border-radius:var(--radius-full); padding:0 7px; font-size:11px; }
+        .q-tab.on { border-color:var(--primary); background:var(--primary-50); color:var(--primary-dark); }
+        .q-tab.on .n { background:var(--primary); color:#fff; }
+        #avsfQueue { display:grid; gap:10px; grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr)); max-height:calc(100vh - 360px); min-height:200px; overflow-y:auto; padding:2px; align-content:start; }
+        .q-card { background:var(--bg-card); border:1px solid var(--border); border-left:4px solid var(--border); border-radius:var(--radius-md); padding:12px 14px; cursor:pointer; box-shadow:var(--shadow-xs); transition:box-shadow .15s, transform .15s; }
+        .q-card:hover { box-shadow:var(--shadow-md); transform:translateY(-1px); }
+        .q-card.sla-warn { border-left-color:#f59e0b; } .q-card.sla-late { border-left-color:#dc2626; } .q-card.sla-ok { border-left-color:#10b981; }
+        .q-top { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:4px; }
+        .q-no { font-weight:800; font-size:13px; color:var(--text-primary); }
+        .q-vendor { font-size:14px; font-weight:700; color:var(--text-primary); line-height:1.25; word-break:break-word; }
+        .q-meta { font-size:12px; color:var(--text-tertiary); margin-top:3px; display:flex; flex-wrap:wrap; gap:4px 12px; }
+        .q-chip { display:inline-flex; align-items:center; gap:4px; border-radius:var(--radius-full); padding:1px 8px; font-size:11px; font-weight:700; background:var(--bg-secondary); color:var(--text-secondary); }
+        .q-actions { display:flex; gap:6px; margin-top:10px; flex-wrap:wrap; }
+        .q-actions button { border:1px solid var(--border); background:var(--bg-card); border-radius:var(--radius-sm); padding:4px 10px; font-size:11.5px; font-weight:700; cursor:pointer; font-family:inherit; color:var(--text-secondary); }
+        .q-actions .go { background:var(--primary); border-color:var(--primary); color:#fff; }
+        .q-actions .bad { color:#b91c1c; border-color:#fecaca; }
+        .q-empty { grid-column:1/-1; text-align:center; padding:2.5rem 1rem; color:var(--text-tertiary); font-size:13px; }
+        #detailBackdrop { position:fixed; inset:0; background:rgba(15,10,5,.35); z-index:900; display:none; }
+        #detailBackdrop.on { display:block; }
+        #detailPanel { position:fixed; top:0; right:0; height:100%; width:min(500px,100vw); background:var(--bg-card); z-index:901; box-shadow:var(--shadow-xl); transform:translateX(105%); transition:transform .22s var(--ease-out, ease); display:flex; flex-direction:column; }
+        #detailPanel.on { transform:none; }
+        .dp-head { padding:16px 18px; border-bottom:1px solid var(--border); display:flex; gap:10px; align-items:flex-start; }
+        .dp-body { padding:16px 18px; overflow-y:auto; flex:1; }
+        .dp-foot { padding:12px 18px; border-top:1px solid var(--border); display:flex; gap:8px; flex-wrap:wrap; background:var(--bg-hover); }
+        .dp-sec { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--text-tertiary); margin:18px 0 8px; }
+        .dp-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px 14px; font-size:13px; }
+        .dp-grid span { display:block; font-size:11px; color:var(--text-muted); }
+        .tl { list-style:none; margin:0; padding:0 0 0 4px; }
+        .tl li { position:relative; padding:0 0 14px 22px; font-size:13px; border-left:2px solid var(--border); margin-left:5px; }
+        .tl li:last-child { border-left-color:transparent; padding-bottom:0; }
+        .tl li::before { content:''; position:absolute; left:-7px; top:2px; width:12px; height:12px; border-radius:50%; background:var(--border); border:2px solid var(--bg-card); }
+        .tl li.done::before { background:#10b981; } .tl li.now::before { background:#f59e0b; } .tl li.bad::before { background:#dc2626; }
+        .tl small { display:block; color:var(--text-tertiary); font-size:11.5px; }
+        .dp-tools { display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:8px; }
+        .dp-tools button, .dp-foot button { border:1px solid var(--border); background:var(--bg-card); border-radius:var(--radius-sm); padding:7px 10px; font-size:12px; font-weight:700; cursor:pointer; font-family:inherit; color:var(--text-primary); }
+        .dp-foot .go { background:var(--primary); color:#fff; border-color:var(--primary); }
+        .dp-foot .bad { color:#b91c1c; border-color:#fecaca; }
+        .dp-req { display:flex; gap:10px; align-items:flex-start; padding:8px 12px; border:1.5px solid var(--border); border-radius:8px; margin-bottom:5px; cursor:pointer; font-size:13px; }
+        .dp-req.ok { border-color:#86efac; background:#f0fdf4; }
+        #appToast { position:fixed; left:50%; bottom:22px; transform:translateX(-50%); z-index:2000; display:none; background:#18171a; color:#fff; padding:10px 16px; border-radius:var(--radius-md); font-size:13px; box-shadow:var(--shadow-lg); align-items:center; gap:14px; max-width:92vw; }
+        #appToast button { background:transparent; border:0; color:#5eead4; font-weight:800; cursor:pointer; font-family:inherit; font-size:13px; }
+        .ip-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:10px; margin-bottom:14px; }
+        .ip-stat { border:1px solid var(--border); border-radius:var(--radius-md); padding:10px 12px; text-align:center; }
+        .ip-stat b { display:block; font-size:22px; }
+        .ip-table { width:100%; border-collapse:collapse; font-size:12px; }
+        .ip-table th, .ip-table td { padding:5px 8px; border-bottom:1px solid var(--border-light); text-align:left; }
+        @media (max-width:640px) { #avsfQueue { max-height:none; } }
+    </style>
 </head>
 <body>
     <header>
@@ -990,7 +1045,16 @@
                     </div>
                 </div>
 
-                <div style="overflow-x: auto; overflow-y: auto; max-height: calc(100vh - 310px); border: 1px solid var(--border); border-radius: 8px;">
+                <div class="vt-bar">
+                    <div class="vt-seg" role="group" aria-label="View mode">
+                        <button id="vtQueue" onclick="setViewMode('queue')">Queue</button>
+                        <button id="vtTable" onclick="setViewMode('table')">Table</button>
+                    </div>
+                    <div id="queueTabs" class="q-tabs"></div>
+                </div>
+                <div id="avsfQueue"></div>
+
+                <div id="avsfTableWrap" style="overflow-x: auto; overflow-y: auto; max-height: calc(100vh - 310px); border: 1px solid var(--border); border-radius: 8px;">
                     <table id="avsfTable">
                         <colgroup>
                             <col style="width:100px">
@@ -2770,7 +2834,11 @@ Select a request from the left to preview the email...
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script>
+        <div id="detailBackdrop" onclick="closeDetail()"></div>
+    <aside id="detailPanel" aria-label="AVSF detail" aria-hidden="true"></aside>
+    <div id="appToast" role="status"></div>
+
+<script>
         // Firebase config
         const firebaseConfig = {
             apiKey: "AIzaSyCv8ZoIR0O9LE2Vj0lXkVgXnsQnvWMhRH8",
@@ -4763,6 +4831,14 @@ AMERBankingValidation@resideo.com`;
 
         // Render table
         function renderTable(data = avsfs) {
+            _lastRendered = data;
+            renderTableView(data);
+            renderQueue(data);
+            applyViewMode();
+            if (_detailNo) renderDetail();
+        }
+
+        function renderTableView(data = avsfs) {
             const tbody = document.getElementById('tableBody');
             const emptyState = document.getElementById('emptyState');
             const table = document.getElementById('avsfTable');
@@ -4828,6 +4904,342 @@ AMERBankingValidation@resideo.com`;
                 </tr>
             `;
             }).join('');
+        }
+
+        // ══ App-style Queue view, detail slide-over, import preview ══════════
+        function esc(v) {
+            return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+        function flagOf(c) {
+            c = String(c || '').toUpperCase();
+            return /^[A-Z]{2}$/.test(c) ? String.fromCodePoint(...[...c].map(x => 127397 + x.charCodeAt(0))) : '';
+        }
+        const OPEN_STATUSES = new Set(['PROCESSING', 'ON_HOLD', 'PENDING_BUYER', 'IDOC_ERROR']);
+        let _viewMode = 'queue';
+        try { _viewMode = localStorage.getItem('avsfViewMode') || 'queue'; } catch (e) {}
+        let _queueTab = 'processing', _lastRendered = [], _detailNo = null, _toastTimer = null;
+
+        const QUEUE_TABS = [
+            { id: 'processing', label: 'Processing',      match: a => a.status === 'PROCESSING' },
+            { id: 'onhold',     label: 'On hold',         match: a => a.status === 'ON_HOLD' },
+            { id: 'buyer',      label: 'Pending buyer',   match: a => a.status === 'PENDING_BUYER' },
+            { id: 'idoc',       label: 'IDOC error',      match: a => a.status === 'IDOC_ERROR' },
+            { id: 'today',      label: 'Completed today', match: a => a.status === 'COMPLETED' && String(a.completionDate || '').split('T')[0] === todayUTC() },
+            { id: 'all',        label: 'All',             match: () => true }
+        ];
+
+        function todayUTC() { return new Date().toISOString().split('T')[0]; }
+        function ageDays(a) {
+            const d = String(a.entryDate || '').split('T')[0];
+            if (!d) return null;
+            return Math.max(0, Math.floor((Date.now() - new Date(d + 'T00:00:00Z').getTime()) / 86400000));
+        }
+        function slaClass(a) {
+            if (a.status === 'COMPLETED') return 'sla-ok';
+            if (!OPEN_STATUSES.has(a.status)) return '';
+            const d = ageDays(a);
+            return d >= 7 ? 'sla-late' : d >= 3 ? 'sla-warn' : '';
+        }
+        function reqProgress(a) {
+            const list = getRequirementsList(a.companyCode || '', a.country || '', a.requestType || '');
+            const ck = a.requirements || {};
+            return { list, ck, done: list.filter(r => ck[r.id]).length, total: list.length };
+        }
+
+        function setViewMode(m) {
+            _viewMode = m;
+            try { localStorage.setItem('avsfViewMode', m); } catch (e) {}
+            renderTable(_lastRendered);
+        }
+        function applyViewMode() {
+            const q = _viewMode === 'queue';
+            const wrap = document.getElementById('avsfTableWrap');
+            if (wrap) wrap.style.display = q ? 'none' : '';
+            document.getElementById('avsfQueue').style.display = q ? '' : 'none';
+            document.getElementById('queueTabs').style.display = q ? '' : 'none';
+            if (q) document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('vtQueue').classList.toggle('on', q);
+            document.getElementById('vtTable').classList.toggle('on', !q);
+        }
+        function setQueueTab(id) { _queueTab = id; renderQueue(_lastRendered); }
+
+        function renderQueue(data) {
+            const box = document.getElementById('avsfQueue');
+            const tabsEl = document.getElementById('queueTabs');
+            if (!box || !tabsEl) return;
+            tabsEl.innerHTML = QUEUE_TABS.map(t =>
+                `<button class="q-tab ${t.id === _queueTab ? 'on' : ''}" onclick="setQueueTab('${t.id}')">${t.label}<span class="n">${data.filter(t.match).length}</span></button>`).join('');
+            const tab = QUEUE_TABS.find(t => t.id === _queueTab) || QUEUE_TABS[0];
+            let list = data.filter(tab.match);
+            if (['processing', 'onhold', 'buyer', 'idoc'].includes(tab.id)) {
+                list = [...list].sort((a, b) => String(a.entryDate || '9999') < String(b.entryDate || '9999') ? -1 : 1);
+            }
+            const shown = list.slice(0, 200);
+            if (!shown.length) { box.innerHTML = '<div class="q-empty">Nothing in this tab. 🎉</div>'; return; }
+            box.innerHTML = shown.map(a => {
+                const rp = reqProgress(a), age = ageDays(a), open = OPEN_STATUSES.has(a.status);
+                const rcol = rp.total === 0 ? '#9ca3af' : rp.done === rp.total ? '#10b981' : rp.done ? '#f59e0b' : '#9ca3af';
+                const btns = a.status === 'COMPLETED'
+                    ? '<button data-act="PROCESSING">Reopen</button>'
+                    : a.status === 'CANCELLED' || a.status === 'REJECTED' ? '<button data-act="PROCESSING">Reopen</button>'
+                    : `<button class="go" data-act="COMPLETED">✓ Complete</button>` +
+                      (a.status === 'ON_HOLD' ? '<button data-act="PROCESSING">Resume</button>' : '<button data-act="ON_HOLD">Hold</button>') +
+                      '<button class="bad" data-act="REJECTED">Reject</button>';
+                return `<div class="q-card ${slaClass(a)}" data-no="${esc(a.requestNo)}">
+                    <div class="q-top"><span class="q-no">#${esc(formatRequestNumber(a.requestNo))} <span class="q-chip">${esc(a.requestType || '—')}</span></span>
+                        <span class="status-badge status-${esc(String(a.status).toLowerCase().replace(/_/g, '-'))}">${esc(getStatusLabel(a.status))}</span></div>
+                    <div class="q-vendor">${esc(a.vendorName)}</div>
+                    <div class="q-meta"><span>${flagOf(a.country)} CC ${esc(a.companyCode || '—')}</span>${a.vendorNumber ? `<span>Vendor ${esc(a.vendorNumber)}</span>` : ''}${a.requestorName ? `<span>👤 ${esc(a.requestorName)}</span>` : ''}</div>
+                    <div class="q-meta">
+                        ${open && age != null ? `<span class="q-chip" style="background:${age >= 7 ? '#fee2e2' : age >= 3 ? '#fef3c7' : 'var(--bg-secondary)'};">⏱ ${age}d open</span>` : `<span>${esc(formatDate(a.completionDate || a.entryDate))}</span>`}
+                        <span class="q-chip" style="background:${rcol};color:#fff;">☑ ${rp.total ? rp.done + '/' + rp.total : 'N/A'}</span>
+                    </div>
+                    <div class="q-actions">${btns}</div></div>`;
+            }).join('') + (list.length > 200 ? `<div class="q-empty">Showing first 200 of ${list.length}. Use the filters to narrow down.</div>` : '');
+        }
+
+        document.getElementById('avsfQueue').addEventListener('click', e => {
+            const card = e.target.closest('.q-card');
+            if (!card) return;
+            const btn = e.target.closest('button[data-act]');
+            if (btn) quickSetStatus(card.dataset.no, btn.dataset.act);
+            else openDetail(card.dataset.no);
+        });
+
+        function appToast(msg, undoFn, ms) {
+            const t = document.getElementById('appToast');
+            t.innerHTML = `<span>${esc(msg)}</span>` + (undoFn ? '<button id="appToastUndo">Undo</button>' : '');
+            t.style.display = 'flex';
+            if (undoFn) document.getElementById('appToastUndo').onclick = async () => { t.style.display = 'none'; await undoFn(); };
+            clearTimeout(_toastTimer);
+            _toastTimer = setTimeout(() => { t.style.display = 'none'; }, ms || 7000);
+        }
+
+        async function quickSetStatus(no, status) {
+            const a = avsfs.find(x => x.requestNo === no);
+            if (!a || a.status === status) return;
+            if (status === 'COMPLETED') {
+                const rp = reqProgress(a);
+                if (rp.total && rp.done < rp.total &&
+                    !confirm(`Checklist incomplete (${rp.done}/${rp.total}). Complete anyway?`)) return;
+            }
+            if (status === 'REJECTED' && !confirm(`Reject #${formatRequestNumber(no)} - ${a.vendorName}?`)) return;
+            const prev = { status: a.status, completionDate: a.completionDate || '', completedBy: a.completedBy || '', approverName: a.approverName || '' };
+            const me = getEmailFullName();
+            const upd = { status, completionDate: '', completedBy: '' };
+            if (status === 'COMPLETED') { upd.completionDate = todayUTC(); upd.completedBy = me; }
+            if (status === 'REJECTED')  { upd.completionDate = todayUTC(); upd.approverName = me; }
+            try {
+                await db.collection('avsfs').doc(no).update(upd);
+                logAudit('Status → ' + getStatusLabel(status), no, a.vendorName, `Quick action by ${getCurrentUser()}`);
+                appToast(`#${formatRequestNumber(no)} → ${getStatusLabel(status)}`, async () => {
+                    await db.collection('avsfs').doc(no).update(prev);
+                    logAudit('Undo status', no, a.vendorName, `Restored ${getStatusLabel(prev.status)}`);
+                });
+            } catch (err) { console.error(err); alert('Could not update: ' + err.message); }
+        }
+
+        // ── Detail slide-over ────────────────────────────────────────────
+        function openDetail(no) {
+            _detailNo = no;
+            renderDetail();
+            document.getElementById('detailBackdrop').classList.add('on');
+            const p = document.getElementById('detailPanel');
+            p.classList.add('on'); p.setAttribute('aria-hidden', 'false');
+        }
+        function closeDetail() {
+            _detailNo = null;
+            document.getElementById('detailBackdrop').classList.remove('on');
+            const p = document.getElementById('detailPanel');
+            p.classList.remove('on'); p.setAttribute('aria-hidden', 'true');
+        }
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && _detailNo && !document.querySelector('.modal.active')) closeDetail();
+        });
+
+        function renderDetail() {
+            const a = avsfs.find(x => x.requestNo === _detailNo);
+            const p = document.getElementById('detailPanel');
+            if (!a) { closeDetail(); return; }
+            const rp = reqProgress(a), age = ageDays(a), open = OPEN_STATUSES.has(a.status);
+            const cc = (typeof CC_DATA !== 'undefined' ? CC_DATA : []).find(c => c.cc === a.companyCode);
+            const steps = [{ cls: 'done', t: 'Received', s: formatDate(a.entryDate) + (a.requestorName ? ' · ' + a.requestorName : '') }];
+            if (open) {
+                steps.push({ cls: 'now', t: getStatusLabel(a.status), s: (a.approverName ? 'With ' + a.approverName : 'In VM queue') + (age != null ? ` · ${age}d open` : '') });
+                steps.push({ cls: '', t: 'Completion', s: 'Pending' });
+            } else {
+                const tat = a.entryDate && a.completionDate ? Math.max(0, Math.round((new Date(String(a.completionDate).split('T')[0]) - new Date(String(a.entryDate).split('T')[0])) / 86400000)) : null;
+                const bad = a.status === 'REJECTED' || a.status === 'CANCELLED';
+                steps.push({ cls: bad ? 'bad' : 'done', t: getStatusLabel(a.status), s: formatDate(a.completionDate) + (a.completedBy ? ' · ' + a.completedBy : a.approverName && bad ? ' · ' + a.approverName : '') + (tat != null ? ` · ${tat}d turnaround` : '') });
+            }
+            const allDone = rp.total > 0 && rp.done === rp.total;
+            const acts = a.status === 'COMPLETED' || a.status === 'REJECTED' || a.status === 'CANCELLED'
+                ? '<button data-act="PROCESSING">Reopen</button>'
+                : `<button class="go" data-act="COMPLETED">${allDone ? '✓ Complete (checklist done)' : '✓ Complete'}</button>` +
+                  (a.status === 'ON_HOLD' ? '<button data-act="PROCESSING">Resume</button>' : '<button data-act="ON_HOLD">Hold</button>') +
+                  (a.status !== 'PENDING_BUYER' ? '<button data-act="PENDING_BUYER">Pending buyer</button>' : '') +
+                  '<button class="bad" data-act="REJECTED">Reject</button>';
+            p.innerHTML = `
+                <div class="dp-head">
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-size:12px;color:var(--text-tertiary);font-weight:700;">#${esc(formatRequestNumber(a.requestNo))} · ${esc(a.requestType || '—')}</div>
+                        <div style="font-size:17px;font-weight:800;line-height:1.25;word-break:break-word;">${esc(a.vendorName)}</div>
+                        <div style="margin-top:6px;"><span class="status-badge status-${esc(String(a.status).toLowerCase().replace(/_/g, '-'))}">${esc(getStatusLabel(a.status))}</span></div>
+                    </div>
+                    <button data-close style="border:0;background:transparent;font-size:22px;cursor:pointer;line-height:1;" aria-label="Close">×</button>
+                </div>
+                <div class="dp-body">
+                    <div class="dp-grid">
+                        <div><span>Company code</span>${flagOf(a.country)} ${esc(a.companyCode || '—')}${cc ? ' · ' + esc(cc.name) : ''}</div>
+                        <div><span>Country</span>${esc(a.country || '—')}</div>
+                        <div><span>Vendor #</span>${esc(a.vendorNumber || '—')}</div>
+                        <div><span>Account group</span>${esc(a.accountGroup || '—')}</div>
+                        <div><span>Requestor</span>${esc(a.requestorName || '—')}</div>
+                        <div><span>Payment terms</span>${esc(a.paymentTerms || '—')}</div>
+                    </div>
+                    <div class="dp-sec">Timeline</div>
+                    <ul class="tl">${steps.map(s => `<li class="${s.cls}"><b>${esc(s.t)}</b><small>${esc(s.s)}</small></li>`).join('')}</ul>
+                    <div class="dp-sec">Checklist ${rp.total ? `(${rp.done}/${rp.total})` : ''}</div>
+                    ${rp.total ? rp.list.map(r => `<label class="dp-req ${rp.ck[r.id] ? 'ok' : ''}"><input type="checkbox" data-req="${esc(r.id)}" ${rp.ck[r.id] ? 'checked' : ''} style="margin-top:2px;accent-color:var(--primary);"><span>${r.label || esc(r.id)}</span></label>`).join('')
+                        : '<div style="font-size:13px;color:var(--text-tertiary);">No specific requirements for this company code.</div>'}
+                    <div class="dp-sec">Validation tools</div>
+                    <div class="dp-tools">
+                        <button data-tool="iban">🏦 IBAN</button><button data-tool="vat">🧾 VAT</button>
+                        <button data-tool="banktype">🏷 Bank type</button><button data-tool="bankkeys">🔑 Bank keys</button>
+                        <button data-tool="email">✉️ Email</button>
+                    </div>
+                    ${a.notes ? `<div class="dp-sec">Notes</div><div style="font-size:13px;white-space:pre-wrap;">${esc(a.notes)}</div>` : ''}
+                </div>
+                <div class="dp-foot">${acts}<button data-edit style="margin-left:auto;">✏️ Edit</button></div>`;
+        }
+
+        document.getElementById('detailPanel').addEventListener('click', e => {
+            const t = e.target;
+            if (t.closest('[data-close]')) return closeDetail();
+            const act = t.closest('button[data-act]');
+            if (act) return quickSetStatus(_detailNo, act.dataset.act);
+            const tool = t.closest('button[data-tool]');
+            if (tool) return openToolFor(_detailNo, tool.dataset.tool);
+            if (t.closest('[data-edit]')) return editAvsf(_detailNo);
+        });
+        document.getElementById('detailPanel').addEventListener('change', async e => {
+            const id = e.target.dataset && e.target.dataset.req;
+            if (!id) return;
+            const a = avsfs.find(x => x.requestNo === _detailNo);
+            if (!a) return;
+            const reqs = { ...(a.requirements || {}), [id]: e.target.checked };
+            try { await db.collection('avsfs').doc(a.requestNo).update({ requirements: reqs }); }
+            catch (err) { console.error(err); alert('Could not save checklist: ' + err.message); }
+        });
+
+        function openToolFor(no, tab) {
+            const a = avsfs.find(x => x.requestNo === no);
+            if (!a) return;
+            openValidationToolsModal();
+            const sel = document.getElementById('validationAVSFSelect');
+            if (sel) { sel.value = String(avsfs.indexOf(a)); try { updateVendorNameForValidation(); } catch (e) {} }
+            document.getElementById('manualVendorName').value = a.vendorName || '';
+            const country = String(a.country || '').toUpperCase();
+            const vatPrefix = country === 'GR' ? 'EL' : country;
+            if (tab === 'iban' && country) document.getElementById('ibanInputMain').value = country;
+            if (tab === 'vat' && country) document.getElementById('vatInputMain').value = vatPrefix;
+            if (tab === 'banktype') {
+                document.getElementById('btCompanyCode').value = a.companyCode || '';
+                const ccRow = (typeof CC_DATA !== 'undefined' ? CC_DATA : []).find(c => c.cc === a.companyCode);
+                const cur = (CC_PM_CONFIG[a.companyCode] || {}).domesticCurrency || (ccRow && ccRow.currency) || '';
+                const cs = document.getElementById('btCurrency');
+                if (cur && cs.querySelector(`option[value="${cur}"]`)) cs.value = cur;
+                lookupPartnerBankType();
+            }
+            if (tab === 'bankkeys') {
+                const bc = document.getElementById('bkCountry');
+                if (country && bc && bc.querySelector(`option[value="${country}"]`)) bc.value = country;
+            }
+            switchValidationTab(tab);
+            if (tab === 'email' && typeof populateEmailAVSFSelect === 'function') populateEmailAVSFSelect();
+        }
+
+        // ── Import preview ───────────────────────────────────────────────
+        function showImportPreview(mapped, meta) {
+            return new Promise(resolve => {
+                const exist = new Map(avsfs.map(a => [a.requestNo, a]));
+                const knownCC = new Set((typeof CC_DATA !== 'undefined' ? CC_DATA : []).map(c => c.cc));
+                const FIELDS = [['status', 'Status'], ['completedBy', 'Completed by'], ['companyCode', 'CC'], ['completionDate', 'Completed'], ['approverName', 'Approver'], ['vendorName', 'Vendor'], ['country', 'Country']];
+                const rows = mapped.map(r => {
+                    const ex = exist.get(r.requestNo);
+                    if (ex && !r.companyCode && ex.companyCode) r.companyCode = ex.companyCode;
+                    return { r, ex, edited: false };
+                });
+                const classify = () => rows.forEach(o => {
+                    if (!o.ex) { o.kind = 'new'; o.diffs = []; return; }
+                    o.diffs = FIELDS.filter(([k]) => !(k === 'completedBy' && !o.r.completedBy) && String(o.ex[k] || '') !== String(o.r[k] || ''));
+                    o.kind = o.diffs.length ? 'changed' : 'same';
+                });
+                const badCC = o => !/^\d{4}$/.test(String(o.r.companyCode || ''));
+                let modal = document.getElementById('importPreviewModal');
+                if (!modal) { modal = document.createElement('div'); modal.id = 'importPreviewModal'; modal.className = 'modal'; document.body.appendChild(modal); }
+
+                const render = () => {
+                    classify();
+                    const cnt = k => rows.filter(o => o.kind === k).length;
+                    const missing = rows.map((o, i) => ({ o, i })).filter(x => badCC(x.o));
+                    const unknown = rows.filter(o => !badCC(o) && !knownCC.has(o.r.companyCode)).length;
+                    const toShow = rows.filter(o => o.kind !== 'same').slice(0, 60);
+                    const st = {}; rows.forEach(o => { st[o.r.status] = (st[o.r.status] || 0) + 1; });
+                    modal.innerHTML = `<div class="modal-content" style="max-width:880px;">
+                        <div style="padding:16px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;">
+                            <h2 style="font-size:17px;font-weight:800;flex:1;margin:0;">📊 ${esc(meta.fileType)} import preview</h2>
+                            <button id="ipX" style="border:0;background:transparent;font-size:22px;cursor:pointer;">×</button></div>
+                        <div class="modal-body">
+                            <div class="ip-grid">
+                                <div class="ip-stat"><b style="color:#059669;">${cnt('new')}</b>New</div>
+                                <div class="ip-stat"><b style="color:#d97706;">${cnt('changed')}</b>Changed</div>
+                                <div class="ip-stat"><b style="color:#6b7280;">${cnt('same')}</b>Unchanged (skipped)</div>
+                                <div class="ip-stat"><b id="ipMissing" style="color:${missing.length ? '#dc2626' : '#059669'};">${missing.length}</b>Missing CC</div>
+                            </div>
+                            <div style="font-size:12px;color:var(--text-tertiary);margin-bottom:10px;">
+                                ${Object.entries(st).map(([k, n]) => `${esc(getStatusLabel(k))}: ${n}`).join(' · ')}
+                                ${meta.skippedSaved ? ` · Skipped drafts (SAVED): ${meta.skippedSaved}` : ''}${meta.autoGenCount ? ` · Auto IDs: ${meta.autoGenCount}` : ''}
+                                ${unknown ? ` · <span style="color:#d97706;">${unknown} with a CC not in the CC table</span>` : ''}</div>
+                            ${missing.length ? `<div style="border:1px solid #fecaca;background:#fef2f2;border-radius:8px;padding:10px 12px;margin-bottom:14px;">
+                                <div style="font-weight:700;font-size:13px;color:#991b1b;margin-bottom:6px;">Company code could not be read from the file for ${missing.length} request(s). Enter it now or import as is.</div>
+                                ${missing.slice(0, 30).map(x => `<div style="display:flex;gap:8px;align-items:center;margin:4px 0;font-size:12px;">
+                                    <span style="flex:1;min-width:0;">#${esc(formatRequestNumber(x.o.r.requestNo))} · ${esc(x.o.r.vendorName)} ${esc(x.o.r.country || '')}</span>
+                                    <input data-i="${x.i}" maxlength="4" inputmode="numeric" placeholder="CC" value="${esc(x.o.r.companyCode || '')}" style="width:70px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;"></div>`).join('')}
+                                ${missing.length > 30 ? `<div style="font-size:11px;color:#991b1b;">…and ${missing.length - 30} more.</div>` : ''}</div>` : ''}
+                            ${toShow.length ? `<table class="ip-table"><thead><tr><th></th><th>Request</th><th>Vendor</th><th>CC</th><th>What changes</th></tr></thead><tbody>
+                                ${toShow.map(o => `<tr><td>${o.kind === 'new' ? '🆕' : '✏️'}</td><td>#${esc(formatRequestNumber(o.r.requestNo))}</td><td>${esc(o.r.vendorName)}</td><td>${esc(o.r.companyCode || '—')}</td>
+                                    <td style="font-size:11.5px;">${o.kind === 'new' ? esc(getStatusLabel(o.r.status)) : o.diffs.map(([k, l]) => `${l}: <s>${esc(o.ex[k] || '—')}</s> → <b>${esc(o.r[k] || '—')}</b>`).join('<br>')}</td></tr>`).join('')}
+                                </tbody></table>${rows.filter(o => o.kind !== 'same').length > 60 ? '<div style="font-size:11px;color:var(--text-tertiary);margin-top:6px;">Showing first 60 changes.</div>' : ''}`
+                                : '<div style="text-align:center;padding:1.5rem;color:var(--text-tertiary);">Nothing to import — every request is already up to date.</div>'}
+                        </div>
+                        <div style="padding:12px 22px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;">
+                            <button class="btn btn-secondary" id="ipCancel">Cancel</button>
+                            <button class="btn btn-primary" id="ipGo" ${cnt('new') + cnt('changed') ? '' : 'disabled'}>Import ${cnt('new') + cnt('changed')} request(s)</button></div></div>`;
+                    modal.classList.add('active');
+                    const done = v => { modal.classList.remove('active'); modal.innerHTML = ''; resolve(v); };
+                    modal.querySelector('#ipX').onclick = modal.querySelector('#ipCancel').onclick = () => done(null);
+                    modal.querySelector('#ipGo').onclick = () => {
+                        classify();
+                        rows.forEach(o => {
+                            if (o.edited && ['COMPLETED', 'REJECTED'].includes(o.r.status) && o.r.companyCode) {
+                                o.r.requirements = {};
+                                getRequirementsList(o.r.companyCode, o.r.country || '', o.r.requestType || '').forEach(q => { o.r.requirements[q.id] = true; });
+                            }
+                        });
+                        done(rows.filter(o => o.kind !== 'same').map(o => o.r));
+                    };
+                    modal.querySelectorAll('input[data-i]').forEach(inp => {
+                        inp.oninput = () => {
+                            inp.value = inp.value.replace(/\D/g, '').slice(0, 4);
+                            const o = rows[+inp.dataset.i]; o.r.companyCode = inp.value; o.edited = true;
+                            const n = rows.filter(badCC).length, el = modal.querySelector('#ipMissing');
+                            el.textContent = n; el.style.color = n ? '#dc2626' : '#059669';
+                        };
+                    });
+                };
+                render();
+            });
         }
 
         // Get status label
@@ -4995,7 +5407,9 @@ AMERBankingValidation@resideo.com`;
                 return;
             }
 
-            const ctx = document.getElementById('activityChart').getContext('2d');
+            const activityCanvas = document.getElementById('activityChart');
+            if (!activityCanvas) return;
+            const ctx = activityCanvas.getContext('2d');
             if (activityChart) {
                 activityChart.destroy();
             }
@@ -5530,25 +5944,11 @@ AMERBankingValidation@resideo.com`;
                 }
             });
 
-            // Build preview summary
-            const statusBreakdown = {};
-            mapped.forEach(r => { statusBreakdown[r.status] = (statusBreakdown[r.status] || 0) + 1; });
-            const breakdown = Object.entries(statusBreakdown)
-                .map(([s, n]) => `  • ${s}: ${n}`).join('\n');
-
-            const proceed = window.confirm(
-                `📊 ${fileType} Import Preview\n\n` +
-                `Records found: ${mapped.length}\n` +
-                (skippedSaved ? `⚠️ Skipped (SAVED/Draft): ${skippedSaved} — not yet submitted to VM team\n` : '') +
-                (autoGenCount ? `Auto-generated IDs: ${autoGenCount}\n` : '') +
-                `\nStatus breakdown:\n${breakdown}\n\n` +
-                `Import ${mapped.length} records into AVSF Dashboard?\n` +
-                `(Existing records will be updated, new ones will be created)`
-            );
-            if (!proceed) return;
+            const toWrite = await showImportPreview(mapped, { fileType, skippedSaved, autoGenCount });
+            if (!toWrite) return;
 
             let newCount = 0, updatedCount = 0, skippedCount = 0;
-            for (const record of mapped) {
+            for (const record of toWrite) {
                 try {
                     const docRef = db.collection('avsfs').doc(record.requestNo);
                     const docSnap = await docRef.get();
@@ -5578,10 +5978,7 @@ AMERBankingValidation@resideo.com`;
                     skippedCount++;
                 }
             }
-            alert('✅ ' + fileType + ' Import Complete!\n\n' +
-                  newCount + ' new records added\n' +
-                  updatedCount + ' existing records updated\n' +
-                  (skippedCount ? '\n⚠️ ' + skippedCount + ' records skipped (see console for details)' : ''));
+            appToast(`✅ ${fileType} import done: ${newCount} new, ${updatedCount} updated, ${mapped.length - toWrite.length} unchanged` + (skippedCount ? `, ⚠️ ${skippedCount} failed (see console)` : ''), null, 10000);
         }
 
         function importDataFile() {
