@@ -1007,6 +1007,27 @@
             #appToast { bottom:76px; }
             .hdr-hint, #hdrSearch { display:none; }
         }
+    
+        /* ── Audit feed, swipe actions ──────────────────────────────────── */
+        .au-bar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px; }
+        .au-sum { font-size:12px; color:var(--text-tertiary); margin:4px 2px 10px; }
+        .au-day { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); margin:16px 2px 6px; position:sticky; top:0; background:var(--bg-card); padding:4px 0; z-index:1; }
+        .au-item { display:flex; gap:12px; padding:10px 12px; border:1px solid var(--border-light); border-radius:var(--radius-md); margin-bottom:6px; background:var(--bg-card); }
+        .au-item.link { cursor:pointer; }
+        .au-item.link:hover { background:var(--bg-hover); }
+        .au-av { width:30px; height:30px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; color:#fff; }
+        .au-main { flex:1; min-width:0; }
+        .au-line { display:flex; gap:8px; align-items:center; flex-wrap:wrap; font-size:13px; }
+        .au-act { border-radius:var(--radius-full); padding:1px 9px; font-size:11px; font-weight:800; }
+        .au-add { background:#d1fae5; color:#065f46; } .au-edit { background:#dbeafe; color:#1e3a8a; } .au-status { background:#ede9fe; color:#4c1d95; }
+        .au-del { background:#fee2e2; color:#991b1b; } .au-imp { background:#fef3c7; color:#78350f; } .au-oth { background:var(--bg-secondary); color:var(--text-secondary); }
+        .au-det { font-size:12px; color:var(--text-tertiary); margin-top:2px; word-break:break-word; }
+        .au-time { font-size:11.5px; color:var(--text-muted); white-space:nowrap; text-align:right; }
+        .q-card { position:relative; touch-action:pan-y; user-select:none; -webkit-user-select:none; }
+        .q-card[data-swipe]::after { content:attr(data-label); position:absolute; top:50%; transform:translateY(-50%); font-weight:800; font-size:13px; pointer-events:none; }
+        .q-card[data-swipe="right"] { background:#d1fae5; color:#065f46; } .q-card[data-swipe="right"]::after { left:14px; }
+        .q-card[data-swipe="left"] { background:#fef3c7; color:#78350f; } .q-card[data-swipe="left"]::after { right:14px; }
+        .q-card[data-swipe] > * { opacity:.35; }
     </style>
 </head>
 <body>
@@ -1378,36 +1399,29 @@
                 </div>
             </div>
 
-            </div>
 
             <!-- Tab 3: Audit Log -->
             <div class="dash-tab-content" id="dashTab3Content">
-                <div class="data-section">
-                    <div class="section-header">
-                        <span class="section-title">📜 Change History</span>
-                        <button class="btn btn-secondary" onclick="clearOldAuditLogs()">Clear Logs &gt;30 days</button>
-                    </div>
-                    <div style="overflow-x:auto;">
-                        <table id="auditTable" style="min-width:700px;">
-                            <thead>
-                                <tr>
-                                    <th>Date / Time</th>
-                                    <th>User</th>
-                                    <th>Action</th>
-                                    <th>Request #</th>
-                                    <th>Vendor</th>
-                                    <th>Details</th>
-                                </tr>
-                            </thead>
-                            <tbody id="auditTableBody"></tbody>
-                        </table>
-                    </div>
-                    <div id="auditEmptyState" class="empty-state" style="display:none;">
-                        <div class="empty-state-icon">📜</div>
-                        <h3>No Changes Logged Yet</h3>
-                        <p>All edits, additions, and deletions will appear here</p>
+                <div class="au-bar">
+                    <input type="text" class="search-box" id="auSearch" placeholder="Search vendor, request #, details…" oninput="renderAudit(true)" style="flex:1;min-width:200px;">
+                    <select id="auUser" class="filter-select" onchange="renderAudit(true)"><option value="">Everyone</option></select>
+                    <div class="vt-seg" id="auRange">
+                        <button data-r="1" onclick="setAuditRange('1')">Today</button>
+                        <button data-r="7" onclick="setAuditRange('7')">7d</button>
+                        <button data-r="30" onclick="setAuditRange('30')">30d</button>
+                        <button data-r="all" onclick="setAuditRange('all')">All</button>
                     </div>
                 </div>
+                <div class="au-bar">
+                    <div class="q-tabs" id="auTypes"></div>
+                    <span style="margin-left:auto;display:flex;gap:6px;">
+                        <button class="btn btn-secondary" onclick="exportAuditCSV()">Export CSV</button>
+                        <button class="btn btn-secondary" onclick="clearOldAuditLogs()">Clear &gt;30 days</button>
+                    </span>
+                </div>
+                <div id="auSummary" class="au-sum"></div>
+                <div id="auFeed"></div>
+                <div id="auMore" style="text-align:center;margin:12px 0;"></div>
             </div>
 
             <!-- Tab 4: Payment Method Advisor -->
@@ -1949,7 +1963,6 @@
                 </div>
             </div>
 
-    </div>
 
     <!-- Add/Edit Modal -->
     <div class="modal" id="avsfModal">
@@ -2157,7 +2170,6 @@ Example formats accepted:
     </div>
 
 
-            </div>
 
             <!-- ═══════════════════════════════ TAB 6 — Email Templates ═══ -->
             <div class="dash-tab-content" id="dashTab6Content" style="display:none;">
@@ -2444,6 +2456,8 @@ Select a request from the left to preview the email...
             </div>
 
             </div><!-- /dash-tab-content-area -->
+        </div><!-- /content-wrapper -->
+    </div><!-- /container -->
 
     <!-- Calendar Event Modal -->
     <div class="modal" id="calEventModal" onclick="if(event.target===this)calCloseEventModal()">
@@ -3105,32 +3119,6 @@ Select a request from the left to preview the email...
                 details,
                 user: getCurrentUser(),
                 timestamp: new Date().toISOString()
-            });
-        }
-
-        function renderAuditTable() {
-            db.collection('auditLog').orderBy('timestamp', 'desc').limit(200).get().then(snapshot => {
-                const tbody = document.getElementById('auditTableBody');
-                const empty = document.getElementById('auditEmptyState');
-                if (snapshot.empty) {
-                    tbody.innerHTML = '';
-                    empty.style.display = 'block';
-                    return;
-                }
-                empty.style.display = 'none';
-                tbody.innerHTML = snapshot.docs.map(doc => {
-                    const d = doc.data();
-                    const dt = new Date(d.timestamp).toLocaleString('en-US', {month:'2-digit',day:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
-                    const badgeClass = d.action === 'Added' ? 'audit-added' : d.action === 'Edited' ? 'audit-edited' : 'audit-deleted';
-                    return `<tr>
-                        <td style="white-space:nowrap;">${dt}</td>
-                        <td><strong>${d.user || 'Unknown'}</strong></td>
-                        <td><span class="audit-badge ${badgeClass}">${d.action}</span></td>
-                        <td>${formatRequestNumber(d.requestNo || '')}</td>
-                        <td>${d.vendorName || '-'}</td>
-                        <td style="color:var(--text-secondary);font-size:12px;">${d.details || ''}</td>
-                    </tr>`;
-                }).join('');
             });
         }
 
@@ -5598,6 +5586,181 @@ AMERBankingValidation@resideo.com`;
 
         switchDashTab(9);
 
+        // ══ Audit Log feed, swipe actions, import writer ═══════════════════
+        let _auRows = [], _auRange = '7', _auType = 'all', _auLimit = 100;
+        const AU_TYPES = [
+            { id: 'all', label: 'All' }, { id: 'add', label: 'Added' }, { id: 'edit', label: 'Edits' },
+            { id: 'status', label: 'Status changes' }, { id: 'del', label: 'Deleted' }, { id: 'imp', label: 'Imports' }
+        ];
+        function auCat(a) {
+            a = String(a || '');
+            if (a === 'Added') return 'add';
+            if (a === 'Edited' || /^Checklist/i.test(a)) return 'edit';
+            if (/^Status|^Undo/i.test(a)) return 'status';
+            if (a === 'Deleted') return 'del';
+            if (/^Import/i.test(a)) return 'imp';
+            return 'oth';
+        }
+        const AU_COLORS = ['#0f766e', '#1d4ed8', '#be185d', '#b45309', '#6d28d9', '#047857'];
+        function auColor(u) { let h = 0; for (const c of String(u || '?')) h = (h * 31 + c.charCodeAt(0)) >>> 0; return AU_COLORS[h % AU_COLORS.length]; }
+        function setAuditRange(r) { _auRange = r; renderAudit(true); }
+        async function renderAuditTable() {
+            try {
+                const snap = await db.collection('auditLog').orderBy('timestamp', 'desc').limit(1000).get();
+                _auRows = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            } catch (e) { console.error(e); _auRows = []; }
+            const sel = document.getElementById('auUser'), cur = sel.value;
+            const users = [...new Set(_auRows.map(r => r.user).filter(Boolean))].sort();
+            sel.innerHTML = '<option value="">Everyone</option>' + users.map(u => `<option ${u === cur ? 'selected' : ''}>${esc(u)}</option>`).join('');
+            renderAudit(true);
+        }
+        function auFiltered() {
+            const q = document.getElementById('auSearch').value.trim().toLowerCase();
+            const user = document.getElementById('auUser').value;
+            const since = _auRange === 'all' ? 0 : (_auRange === '1' ? new Date(new Date().setHours(0, 0, 0, 0)).getTime() : Date.now() - (+_auRange) * 86400000);
+            return _auRows.filter(r => {
+                if (user && r.user !== user) return false;
+                if (_auType !== 'all' && auCat(r.action) !== _auType) return false;
+                if (since && new Date(r.timestamp).getTime() < since) return false;
+                if (q && ![r.vendorName, r.requestNo, formatRequestNumber(r.requestNo || ''), r.details, r.action, r.user].join(' ').toLowerCase().includes(q)) return false;
+                return true;
+            });
+        }
+        function renderAudit(reset) {
+            if (reset) _auLimit = 100;
+            document.querySelectorAll('#auRange button').forEach(b => b.classList.toggle('on', b.dataset.r === _auRange));
+            const base = _auType;
+            document.getElementById('auTypes').innerHTML = AU_TYPES.map(t => {
+                _auType = t.id; const n = auFiltered().length; _auType = base;
+                return `<button class="q-tab ${t.id === base ? 'on' : ''}" onclick="_auType='${t.id}';renderAudit(true)">${t.label}<span class="n">${n}</span></button>`;
+            }).join('');
+            const list = auFiltered(), shown = list.slice(0, _auLimit);
+            const feed = document.getElementById('auFeed');
+            document.getElementById('auSummary').textContent = `${list.length} event${list.length === 1 ? '' : 's'}` + (_auRows.length >= 1000 ? ' (latest 1,000 loaded)' : '');
+            if (!shown.length) { feed.innerHTML = '<div class="q-empty">No matching activity.</div>'; document.getElementById('auMore').innerHTML = ''; return; }
+            const today = new Date().toDateString(), yest = new Date(Date.now() - 86400000).toDateString();
+            let lastDay = '';
+            feed.innerHTML = shown.map(r => {
+                const dt = new Date(r.timestamp), ds = dt.toDateString();
+                const head = ds !== lastDay ? `<div class="au-day">${ds === today ? 'Today' : ds === yest ? 'Yesterday' : dt.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })}</div>` : '';
+                lastDay = ds;
+                const mins = Math.round((Date.now() - dt.getTime()) / 60000);
+                const time = ds === today && mins < 60 ? (mins < 1 ? 'just now' : mins + ' min ago') : dt.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+                const exists = r.requestNo && avsfs.some(a => a.requestNo === r.requestNo);
+                return `${head}<div class="au-item ${exists ? 'link' : ''}" ${exists ? `data-no="${esc(r.requestNo)}"` : ''}>
+                    <div class="au-av" style="background:${auColor(r.user)};" title="${esc(r.user || 'Unknown')}">${esc(String(r.user || '?').charAt(0).toUpperCase())}</div>
+                    <div class="au-main"><div class="au-line"><b>${esc(r.user || 'Unknown')}</b><span class="au-act au-${auCat(r.action)}">${esc(r.action)}</span>
+                        ${r.requestNo ? `<span>#${esc(formatRequestNumber(r.requestNo))}</span>` : ''}<span style="color:var(--text-secondary);">${esc(r.vendorName || '')}</span></div>
+                        ${r.details ? `<div class="au-det">${esc(r.details)}</div>` : ''}</div>
+                    <div class="au-time" title="${esc(dt.toLocaleString())}">${esc(time)}</div></div>`;
+            }).join('');
+            document.getElementById('auMore').innerHTML = list.length > _auLimit ? `<button class="btn btn-secondary" onclick="_auLimit+=100;renderAudit()">Show more (${list.length - _auLimit} left)</button>` : '';
+        }
+        document.getElementById('auFeed').addEventListener('click', e => {
+            const it = e.target.closest('.au-item[data-no]');
+            if (it) openDetail(it.dataset.no);
+        });
+        function exportAuditCSV() {
+            const rows = auFiltered();
+            const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+            const csv = ['Date,User,Action,Request,Vendor,Details'].concat(rows.map(r =>
+                [r.timestamp, r.user, r.action, formatRequestNumber(r.requestNo || ''), r.vendorName, r.details].map(q).join(','))).join('\n');
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv' }));
+            a.download = 'audit-log-' + todayUTC() + '.csv'; a.click();
+        }
+
+        // ── Swipe actions on queue cards (touch / pen) ───────────────────
+        (function () {
+            let st = null;
+            const box = document.getElementById('avsfQueue');
+            const actionsFor = a => OPEN_STATUSES.has(a.status)
+                ? { right: ['COMPLETED', '✓ Complete'], left: [a.status === 'ON_HOLD' ? 'PROCESSING' : 'ON_HOLD', a.status === 'ON_HOLD' ? '↺ Resume' : '⏸ Hold'] }
+                : { right: null, left: ['PROCESSING', '↺ Reopen'] };
+            box.addEventListener('pointerdown', e => {
+                if (e.pointerType === 'mouse' || e.target.closest('button')) return;
+                const card = e.target.closest('.q-card'); if (!card) return;
+                const a = avsfs.find(x => x.requestNo === card.dataset.no); if (!a) return;
+                st = { card, a, x: e.clientX, y: e.clientY, dx: 0, locked: false, acts: actionsFor(a) };
+            });
+            box.addEventListener('pointermove', e => {
+                if (!st) return;
+                const dx = e.clientX - st.x, dy = e.clientY - st.y;
+                if (!st.locked) {
+                    if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) { st = null; return; }
+                    if (Math.abs(dx) < 10) return;
+                    st.locked = true; try { st.card.setPointerCapture(e.pointerId); } catch (x) {}
+                }
+                const dir = dx > 0 ? 'right' : 'left';
+                const act = st.acts[dir];
+                st.dx = act ? dx : dx / 4;
+                st.card.style.transition = 'none';
+                st.card.style.transform = `translateX(${Math.max(-140, Math.min(140, st.dx))}px)`;
+                if (act && Math.abs(dx) > 20) { st.card.dataset.swipe = dir; st.card.dataset.label = act[1]; }
+                else { delete st.card.dataset.swipe; }
+            });
+            const end = () => {
+                if (!st) return;
+                const { card, a, dx, acts, locked } = st; st = null;
+                card.style.transition = 'transform .18s'; card.style.transform = '';
+                const dir = dx > 0 ? 'right' : 'left', act = acts[dir];
+                delete card.dataset.swipe;
+                if (locked) {
+                    box._swiped = Date.now();
+                    if (act && Math.abs(dx) > 90) quickSetStatus(a.requestNo, act[0]);
+                }
+            };
+            box.addEventListener('pointerup', end);
+            box.addEventListener('pointercancel', end);
+            box.addEventListener('click', e => { if (box._swiped && Date.now() - box._swiped < 350) { e.stopImmediatePropagation(); e.preventDefault(); } }, true);
+        })();
+
+        // ── Import: batched writes with a persistent result ──────────────
+        function importModalEl() {
+            let m = document.getElementById('importPreviewModal');
+            if (!m) { m = document.createElement('div'); m.id = 'importPreviewModal'; m.className = 'modal'; document.body.appendChild(m); }
+            return m;
+        }
+        function importStatus(title, body, buttons) {
+            const m = importModalEl();
+            m.innerHTML = `<div class="modal-content" style="max-width:520px;"><div style="padding:18px 22px;border-bottom:1px solid var(--border);font-weight:800;font-size:17px;">${title}</div>
+                <div class="modal-body">${body}</div>
+                <div style="padding:12px 22px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;">${buttons || ''}</div></div>`;
+            m.classList.add('active');
+        }
+        function closeSapImportModal() { const m = importModalEl(); m.classList.remove('active'); m.innerHTML = ''; }
+        async function writeImportBatches(toWrite, fileType) {
+            const exist = new Map(avsfs.map(a => [a.requestNo, a]));
+            let newCount = 0, updatedCount = 0, skippedCount = 0;
+            const CHUNK = 400;
+            const progress = n => importStatus('⏳ Importing…', `<div style="font-size:14px;margin-bottom:10px;">${n} / ${toWrite.length} requests saved</div>
+                <div class="td-bar"><i style="width:${Math.round(n / toWrite.length * 100)}%;"></i></div>`);
+            progress(0);
+            for (let i = 0; i < toWrite.length; i += CHUNK) {
+                const chunk = toWrite.slice(i, i + CHUNK);
+                const batch = db.batch();
+                let cn = 0, cu = 0;
+                chunk.forEach(record => {
+                    const ex = exist.get(record.requestNo);
+                    const ref = db.collection('avsfs').doc(record.requestNo);
+                    if (!ex) {
+                        record.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+                        batch.set(ref, record); cn++;
+                    } else {
+                        const existingReqs = ex.requirements || {};
+                        if (Object.values(existingReqs).some(v => v === true)) record.requirements = existingReqs;
+                        if (!record.completedBy && ex.completedBy) record.completedBy = ex.completedBy;
+                        batch.set(ref, record, { merge: true }); cu++;
+                    }
+                });
+                try { await batch.commit(); newCount += cn; updatedCount += cu; }
+                catch (err) { console.error('Import batch failed', err); skippedCount += chunk.length; lastErr = err; }
+                progress(Math.min(i + CHUNK, toWrite.length));
+            }
+            return { newCount, updatedCount, skippedCount };
+        }
+        let lastErr = null;
+
         // Get status label
         function getStatusLabel(status) {
             const labels = {
@@ -6303,38 +6466,16 @@ AMERBankingValidation@resideo.com`;
             const toWrite = await showImportPreview(mapped, { fileType, skippedSaved, autoGenCount });
             if (!toWrite) return;
 
-            let newCount = 0, updatedCount = 0, skippedCount = 0;
-            for (const record of toWrite) {
-                try {
-                    const docRef = db.collection('avsfs').doc(record.requestNo);
-                    const docSnap = await docRef.get();
-                    if (!docSnap.exists) {
-                        // New record — keep the auto-filled requirements (don't clear them)
-                        record.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-                        await docRef.set(record);
-                        newCount++;
-                    } else {
-                        const existing = docSnap.data();
-                        // Preserve existing requirements ONLY if they have real checkmarks;
-                        // otherwise use the auto-filled ones from import
-                        const existingReqs = existing.requirements || {};
-                        const hasExistingChecks = Object.values(existingReqs).some(v => v === true);
-                        if (hasExistingChecks) {
-                            record.requirements = existingReqs;
-                        }
-                        // completedBy: import value takes priority; fall back to existing if new import has none
-                        if (!record.completedBy && existing.completedBy) {
-                            record.completedBy = existing.completedBy;
-                        }
-                        await docRef.set(record, { merge: true });
-                        updatedCount++;
-                    }
-                } catch (err) {
-                    console.error('Import error for', record.requestNo, err);
-                    skippedCount++;
-                }
+            const { newCount, updatedCount, skippedCount } = await writeImportBatches(toWrite, fileType);
+            const unchanged = mapped.length - toWrite.length;
+            if (newCount + updatedCount) {
+                logAudit('Imported', '', fileType + ' file', `${newCount} new, ${updatedCount} updated, ${unchanged} unchanged` + (skippedCount ? `, ${skippedCount} failed` : ''));
             }
-            appToast(`✅ ${fileType} import done: ${newCount} new, ${updatedCount} updated, ${mapped.length - toWrite.length} unchanged` + (skippedCount ? `, ⚠️ ${skippedCount} failed (see console)` : ''), null, 10000);
+            importStatus(skippedCount ? '⚠️ Import finished with errors' : '✅ Import complete',
+                `<div class="ip-grid"><div class="ip-stat"><b style="color:#059669;">${newCount}</b>New</div><div class="ip-stat"><b style="color:#d97706;">${updatedCount}</b>Updated</div>
+                 <div class="ip-stat"><b style="color:#6b7280;">${unchanged}</b>Unchanged</div><div class="ip-stat"><b style="color:${skippedCount ? '#dc2626' : '#059669'};">${skippedCount}</b>Failed</div></div>
+                 ${skippedCount ? `<div style="color:#991b1b;font-size:13px;">${skippedCount} request(s) could not be saved: ${esc(lastErr && lastErr.message || 'unknown error')}. Check your connection and Firestore permissions, then import again.</div>` : '<div style="font-size:13px;color:var(--text-secondary);">Completed and rejected requests are in the <b>All</b> tab of the Queue; open ones are in Processing / On hold.</div>'}`,
+                '<button class="btn btn-secondary" onclick="closeSapImportModal()">Close</button><button class="btn btn-primary" onclick="closeSapImportModal();switchDashTab(1);setViewMode(\'queue\');setQueueTab(\'all\')">Show in Tracker</button>');
         }
 
         function importDataFile() {
