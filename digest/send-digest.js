@@ -81,6 +81,23 @@ async function fetchAvsfs(cfg, base) {
   return out;
 }
 
+// Time of the newest "Imported…" entry in the audit log = "SAP data as of".
+async function fetchLastImport(cfg, base) {
+  const root = base || process.env.FIRESTORE_BASE || 'https://firestore.googleapis.com';
+  const headers = {};
+  if (cfg.serviceAccount) headers.authorization = 'Bearer ' + await getAccessToken(cfg.serviceAccount, process.env.TOKEN_URL);
+  const qs = new URLSearchParams({ pageSize: '60', orderBy: 'timestamp desc' });
+  if (cfg.apiKey && !cfg.serviceAccount) qs.set('key', cfg.apiKey);
+  const res = await fetch(`${root}/v1/projects/${cfg.projectId}/databases/(default)/documents/auditLog?${qs}`, { headers });
+  if (!res.ok) return null;
+  const body = await res.json();
+  for (const d of body.documents || []) {
+    const f = Object.fromEntries(Object.entries(d.fields || {}).map(([k, v]) => [k, fromValue(v)]));
+    if (/^Import/i.test(f.action || '')) return f.timestamp || null;
+  }
+  return null;
+}
+
 function ageDays(a, now) {
   const d = String(a.entryDate || '').split('T')[0];
   if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return null;
@@ -102,6 +119,10 @@ function waitingOnOthers(a) {
 
 function buildDigest(records, opts = {}) {
   const days = opts.days || 7, now = opts.now || new Date(), url = opts.url || '';
+  const staleAfter = opts.staleHours || 30;
+  const asOfAgeH = opts.asOf ? (now.getTime() - new Date(opts.asOf).getTime()) / 3600000 : Infinity;
+  const stale = asOfAgeH > staleAfter;
+  const staleMsg = stale ? (opts.asOf ? `SAP data was last imported ${Math.round(asOfAgeH / 24 * 10) / 10} day(s) ago (${new Date(opts.asOf).toISOString().replace('T', ' ').slice(0, 16)} UTC)` : 'SAP data has never been imported') + ' - import the latest SAP export; the numbers below may be out of date.' : '';
   const open = records.filter(a => OPEN.has(a.status) && !(a.status === 'IDOC_ERROR' && a.completionDate));
   const stuck = open.map(a => ({ ...a, age: ageDays(a, now) })).filter(a => a.age != null && a.age >= days)
     .sort((a, b) => b.age - a.age);
@@ -109,13 +130,14 @@ function buildDigest(records, opts = {}) {
   const others = stuck.filter(waitingOnOthers);
   const since = new Date(now.getTime() - 86400000).toISOString().split('T')[0];
   const doneYesterday = records.filter(a => a.status === 'COMPLETED' && String(a.completionDate || '').split('T')[0] >= since).length;
-  const subject = stuck.length
+  const subject0 = stuck.length
     ? `AVSF digest: ${stuck.length} request${stuck.length === 1 ? '' : 's'} open ${days}+ days (oldest ${stuck[0].age}d)`
     : `AVSF digest: nothing open ${days}+ days`;
+  const subject = stale ? '[STALE DATA] ' + subject0 : subject0;
 
   const rowText = a => `  #${reqNo(a.requestNo)}  ${String(a.age).padStart(3)}d  ${LABEL[a.status] || a.status}  CC ${a.companyCode || '-'}  ${a.vendorName || ''}${a.approverName ? '  (' + a.approverName + ')' : ''}`;
   const text = [
-    subject, '',
+    subject, '', stale ? '!! ' + staleMsg + '\n' : '',
     `Open: ${open.length} | Stuck ${days}+ days: ${stuck.length} | Completed in the last 24h: ${doneYesterday}`, '',
     ours.length ? `IN OUR QUEUE (${ours.length})\n${ours.map(rowText).join('\n')}\n` : '',
     others.length ? `WAITING ON OTHERS (${others.length})\n${others.map(rowText).join('\n')}\n` : '',
@@ -134,6 +156,7 @@ function buildDigest(records, opts = {}) {
   const html = `<!doctype html><html><body style="font-family:Segoe UI,Arial,sans-serif;color:#18171a;max-width:760px;margin:0 auto;padding:16px;">
     <h2 style="margin:0 0 4px;">AVSF daily digest</h2>
     <div style="color:#6b7280;font-size:13px;">${esc(now.toISOString().split('T')[0])} · ${open.length} open · <b>${stuck.length}</b> open ${days}+ days · ${doneYesterday} completed in the last 24h</div>
+    ${stale ? `<div style="margin-top:14px;padding:10px 14px;background:#fef3c7;border:1px solid #fbbf24;border-radius:8px;color:#78350f;font-size:13px;"><b>&#9888; ${esc(staleMsg)}</b></div>` : ''}
     ${stuck.length ? table('In our queue', ours, '#0f766e') + table('Waiting on others', others, '#b45309')
       : '<p style="margin-top:20px;">Nothing has been open for ' + days + '+ days. 🎉</p>'}
     ${url ? `<p style="margin-top:24px;"><a href="${esc(url)}" style="background:#0f766e;color:#fff;padding:9px 16px;border-radius:8px;text-decoration:none;font-weight:600;">Open the dashboard</a></p>` : ''}
@@ -148,7 +171,8 @@ async function main(argv = process.argv.slice(2), env = process.env, deps = {}) 
   const days = +(val('--days') || env.STUCK_DAYS || 7);
   const cfg = deps.cfg || loadFirebaseConfig();
   const records = deps.records || await fetchAvsfs(cfg);
-  const digest = buildDigest(records, { days, url: env.DASHBOARD_URL || '' });
+  const asOf = deps.asOf !== undefined ? deps.asOf : await fetchLastImport(cfg).catch(() => null);
+  const digest = buildDigest(records, { days, url: env.DASHBOARD_URL || '', asOf, staleHours: +(env.STALE_HOURS || 30) });
   console.log(`Loaded ${records.length} requests; ${digest.count} open ${days}+ days.`);
   if (!digest.count && !flag('--send-empty') && env.DIGEST_SEND_EMPTY !== '1') {
     console.log('Nothing to report - no email sent.');
@@ -171,5 +195,5 @@ async function main(argv = process.argv.slice(2), env = process.env, deps = {}) 
   return { sent: true, digest, info };
 }
 
-module.exports = { waitingOnOthers, buildDigest, fetchAvsfs, fromValue, getAccessToken, main };
+module.exports = { waitingOnOthers, buildDigest, fetchLastImport, fetchAvsfs, fromValue, getAccessToken, main };
 if (require.main === module) main().catch(e => { console.error(e.message); process.exit(1); });

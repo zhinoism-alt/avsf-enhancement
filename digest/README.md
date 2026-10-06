@@ -2,8 +2,11 @@
 
 Emails a list of requests that have been open for N+ days (default 7), split into
 "in our queue" and "waiting on others". Runs on a schedule via GitHub Actions
-(`.github/workflows/daily-digest.yml`, weekdays 13:00 UTC). The workflow only runs
+(`.github/workflows/daily-digest.yml`, weekdays 15:00 UTC = 09:00 Mexico City). The workflow only runs
 on the default branch.
+
+The email also carries a **stale data** warning when the last SAP import (newest "Imported…" entry in the
+audit log) is older than 30 hours (`STALE_HOURS` variable).
 
 ## One-time setup (repo → Settings → Secrets and variables → Actions)
 

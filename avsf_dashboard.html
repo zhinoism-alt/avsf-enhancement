@@ -1224,6 +1224,10 @@
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                                 Import SAP
                             </button>
+                            <button class="btn btn-secondary" id="sapFolderBtn" onclick="sapFolderClick()">📁 Connect SAP folder</button>
+                            <button class="btn btn-secondary" id="sapFolderOff" onclick="sapFolderDisconnect()" style="display:none;padding:6px 9px;" title="Disconnect SAP folder">✕</button>
+                            <span id="sapAsOf" class="q-chip" title="When the last SAP import ran">SAP data: …</span>
+                            <span id="sapFolderNote" class="q-chip" style="display:none;"></span>
                             <button class="btn btn-secondary" onclick="exportData()" title="Export current view as CSV">
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
                                 Export CSV
@@ -4863,6 +4867,8 @@ AMERBankingValidation@resideo.com`;
                         _retryCount = 0; _lastSnap = Date.now();
                         if (_retryTimer) { clearTimeout(_retryTimer); _retryTimer = null; }
                         avsfs = snapshot.docs.map(d => ({ ...d.data(), _id: d.id }));
+                        const firstLoad = !window._avsfLoaded; window._avsfLoaded = true;
+                        if (firstLoad && typeof loadLastImport === 'function') setTimeout(loadLastImport, 0);
                         refresh();
                         setStatus(DOT('#6ee7b7','rgba(110,231,183,.3)') + 'Live · ' + new Date().toLocaleTimeString());
                         if (!_firstSnapshotDone) {
@@ -5520,6 +5526,7 @@ AMERBankingValidation@resideo.com`;
             });
             const maxW = Math.max(1, ...team.map(x => x.w));
             root.innerHTML = `
+                ${window._lastImportLoaded && staleHours() > 30 ? `<div style="border:1px solid #fbbf24;background:#fef3c7;color:#78350f;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;">⚠️ <b>SAP data ${window._lastImportAt ? 'was last imported ' + Math.round(staleHours() / 24 * 10) / 10 + ' day(s) ago' : 'has never been imported'}.</b> Numbers below may be out of date. <button class="btn btn-secondary" style="margin-left:8px;" onclick="switchDashTab(1);importDataFile()">Import SAP file</button></div>` : ''}
                 <div class="td-head"><div><h2>${hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'}, ${esc(me.split(' ')[0])}</h2>
                     <p>${new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} · ${open.length} open request${open.length === 1 ? '' : 's'}</p></div>
                     <button class="btn btn-primary" onclick="openAddModal()">+ Add AVSF</button></div>
@@ -5767,13 +5774,13 @@ AMERBankingValidation@resideo.com`;
             m.classList.add('active');
         }
         function closeSapImportModal() { const m = importModalEl(); m.classList.remove('active'); m.innerHTML = ''; }
-        async function writeImportBatches(toWrite, fileType) {
+        async function writeImportBatches(toWrite, fileType, silent) {
             const exist = new Map(avsfs.map(a => [a.requestNo, a]));
             let newCount = 0, updatedCount = 0, skippedCount = 0;
             const CHUNK = 400;
             const progress = n => importStatus('⏳ Importing…', `<div style="font-size:14px;margin-bottom:10px;">${n} / ${toWrite.length} requests saved</div>
                 <div class="td-bar"><i style="width:${Math.round(n / toWrite.length * 100)}%;"></i></div>`);
-            progress(0);
+            if (!silent) progress(0);
             for (let i = 0; i < toWrite.length; i += CHUNK) {
                 const chunk = toWrite.slice(i, i + CHUNK);
                 const batch = db.batch();
@@ -5793,7 +5800,7 @@ AMERBankingValidation@resideo.com`;
                 });
                 try { await batch.commit(); newCount += cn; updatedCount += cu; }
                 catch (err) { console.error('Import batch failed', err); skippedCount += chunk.length; lastErr = err; }
-                progress(Math.min(i + CHUNK, toWrite.length));
+                if (!silent) progress(Math.min(i + CHUNK, toWrite.length));
             }
             return { newCount, updatedCount, skippedCount };
         }
@@ -5917,6 +5924,125 @@ AMERBankingValidation@resideo.com`;
         setInterval(updateNotifications, 30 * 60 * 1000);
 
         switchDashTab(9);
+
+        // ══ Auto-import from a connected SAP export folder + "SAP data as of" ═══
+        const IMPORT_FIELDS = ['status', 'completedBy', 'companyCode', 'completionDate', 'approverName', 'vendorName', 'country'];
+        function diffForImport(mapped) {
+            const exist = new Map(avsfs.map(a => [a.requestNo, a]));
+            return mapped.filter(r => {
+                const ex = exist.get(r.requestNo);
+                if (ex && !r.companyCode && ex.companyCode) r.companyCode = ex.companyCode;
+                if (!ex) return true;
+                return IMPORT_FIELDS.some(k => !(k === 'completedBy' && !r.completedBy) && String(ex[k] || '') !== String(r[k] || ''));
+            });
+        }
+
+        // folder handle persistence (IndexedDB)
+        function idbOpen() {
+            return new Promise((res, rej) => {
+                const rq = indexedDB.open('avsf-fs', 1);
+                rq.onupgradeneeded = () => rq.result.createObjectStore('h');
+                rq.onsuccess = () => res(rq.result); rq.onerror = () => rej(rq.error);
+            });
+        }
+        async function idbGet(k) { const db_ = await idbOpen(); return new Promise((res, rej) => { const r = db_.transaction('h').objectStore('h').get(k); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
+        async function idbSet(k, v) { const db_ = await idbOpen(); return new Promise((res, rej) => { const t = db_.transaction('h', 'readwrite'); t.objectStore('h').put(v, k); t.oncomplete = res; t.onerror = () => rej(t.error); }); }
+        async function idbDel(k) { const db_ = await idbOpen(); return new Promise((res, rej) => { const t = db_.transaction('h', 'readwrite'); t.objectStore('h').delete(k); t.oncomplete = res; t.onerror = () => rej(t.error); }); }
+
+        let _autoBusy = false, _sapState = { mode: 'none', note: '' };
+        function setSapUI(mode, note) {
+            _sapState = { mode, note: note || '' };
+            const b = document.getElementById('sapFolderBtn'), off = document.getElementById('sapFolderOff'), n = document.getElementById('sapFolderNote');
+            if (!b) return;
+            b.textContent = mode === 'none' ? '📁 Connect SAP folder' : mode === 'perm' ? '📁 Allow folder access' : '📁 Auto-import on · Check now';
+            b.title = mode === 'none' ? 'Pick the folder where the SAP export is saved; new files are imported automatically'
+                : mode === 'perm' ? 'Click to let the dashboard read the SAP export folder again' : 'Look for a new SAP export now';
+            off.style.display = mode === 'none' ? 'none' : '';
+            n.textContent = note || ''; n.style.display = note ? '' : 'none';
+        }
+        async function sapFolderClick() {
+            if (!window.showDirectoryPicker) { alert('This browser cannot read folders. Use Microsoft Edge or Google Chrome.'); return; }
+            try {
+                const h = await idbGet('dir');
+                if (!h) {
+                    const dir = await showDirectoryPicker({ id: 'avsf-sap', mode: 'read' });
+                    await idbSet('dir', dir);
+                    try { localStorage.removeItem('avsfAutoSig'); } catch (e) {}
+                    setSapUI('ok', 'Folder: ' + dir.name);
+                    return autoImportTick(true);
+                }
+                if ((await h.queryPermission({ mode: 'read' })) !== 'granted') await h.requestPermission({ mode: 'read' });
+                autoImportTick(true);
+            } catch (e) { if (e.name !== 'AbortError') console.error(e); }
+        }
+        async function sapFolderDisconnect() {
+            if (!confirm('Stop auto-importing from the SAP folder?')) return;
+            await idbDel('dir'); try { localStorage.removeItem('avsfAutoSig'); } catch (e) {}
+            setSapUI('none');
+        }
+        async function newestSapFile(dir) {
+            let best = null;
+            for await (const [name, h] of dir.entries()) {
+                if (h.kind !== 'file' || !/\.xlsx$/i.test(name) || name.startsWith('~$')) continue;
+                const f = await h.getFile();
+                if (!best || f.lastModified > best.lastModified) best = f;
+            }
+            return best;
+        }
+        async function autoImportTick(force) {
+            if (_autoBusy || !window.indexedDB) return;
+            _autoBusy = true;
+            try {
+                const dir = await idbGet('dir');
+                if (!dir) { setSapUI('none'); return; }
+                if ((await dir.queryPermission({ mode: 'read' })) !== 'granted') { setSapUI('perm', 'Click to allow folder access'); return; }
+                if (!window._avsfLoaded) return;
+                const f = await newestSapFile(dir);
+                if (!f) { setSapUI('ok', 'No .xlsx in ' + dir.name); return; }
+                const sig = [f.name, f.lastModified, f.size].join('|');
+                let seen = ''; try { seen = localStorage.getItem('avsfAutoSig') || ''; } catch (e) {}
+                if (sig === seen && !force) { setSapUI('ok', 'Up to date · ' + f.name); return; }
+                if (Date.now() - f.lastModified < 20000) { setSapUI('ok', 'Waiting for ' + f.name + ' to finish saving…'); return; }
+                if (typeof XLSX === 'undefined') { setSapUI('ok', 'Excel library not loaded'); return; }
+                const wb = XLSX.read(new Uint8Array(await f.arrayBuffer()), { type: 'array', cellDates: true });
+                const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '', raw: true });
+                const heads = Object.keys(rows[0] || {}).map(k => k.toLowerCase().trim());
+                try { localStorage.setItem('avsfAutoSig', sig); } catch (e) {}
+                if (!heads.includes('vendor request no.')) { setSapUI('ok', 'Ignored ' + f.name + ' (not a vendor request export)'); return; }
+                setSapUI('ok', 'Importing ' + f.name + '…');
+                const r = await processImportedRows(rows, 'Excel', { auto: true, fileName: f.name });
+                setSapUI('ok', `Imported ${f.name} · ${r.newCount} new, ${r.updatedCount} updated`);
+                appToast(`SAP file ${f.name} imported: ${r.newCount} new, ${r.updatedCount} updated, ${r.unchanged} unchanged`, null, 10000);
+            } catch (e) {
+                console.error('Auto-import failed', e);
+                setSapUI('ok', 'Auto-import failed: ' + (e.message || e));
+            } finally { _autoBusy = false; }
+        }
+        setInterval(() => autoImportTick(false), 120000);
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) autoImportTick(false); });
+        setTimeout(() => { idbGet('dir').then(h => { if (h) autoImportTick(false); }).catch(() => {}); }, 4000);
+
+        // "SAP data as of": newest 'Imported*' entry in the audit log
+        window._lastImportAt = null;
+        async function loadLastImport() {
+            try {
+                const snap = await db.collection('auditLog').orderBy('timestamp', 'desc').limit(60).get();
+                const hit = snap.docs.map(d => d.data()).find(d => /^Import/i.test(d.action || ''));
+                window._lastImportAt = hit ? hit.timestamp : null;
+            } catch (e) { console.error(e); }
+            window._lastImportLoaded = true;
+            renderSapAsOf();
+        }
+        function staleHours() { return window._lastImportAt ? (Date.now() - new Date(window._lastImportAt).getTime()) / 3600000 : Infinity; }
+        function renderSapAsOf() {
+            const el = document.getElementById('sapAsOf');
+            if (!el) return;
+            const h = staleHours();
+            el.textContent = window._lastImportAt ? 'SAP data: ' + new Date(window._lastImportAt).toLocaleString(undefined, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'SAP data: never imported';
+            el.style.background = h < 30 ? '#d1fae5' : h < 72 ? '#fef3c7' : '#fee2e2';
+            el.style.color = h < 30 ? '#065f46' : h < 72 ? '#78350f' : '#7f1d1d';
+            if (typeof renderToday === 'function') renderToday();
+        }
 
         // Get status label
         function getStatusLabel(status) {
@@ -6579,7 +6705,7 @@ AMERBankingValidation@resideo.com`;
         }
 
         // ── Shared import logic (used by both CSV and XLSX paths) ────────
-        async function processImportedRows(rawRows, fileType) {
+        async function processImportedRows(rawRows, fileType, opts = {}) {
             // Skip "SAVED" draft records — they haven't been submitted to VM team yet
             const filteredRaw = rawRows.filter(row => {
                 const keys = {};
@@ -6589,6 +6715,7 @@ AMERBankingValidation@resideo.com`;
             });
             const skippedSaved = rawRows.length - filteredRaw.length;
             const mapped = filteredRaw.map(mapSAPRow).filter(r => r && (r.requestNo || r.vendorName));
+            if (!mapped.length && opts.auto) throw new Error('No requests found in ' + (opts.fileName || 'the file'));
             if (!mapped.length) {
                 const sample = Object.keys(rawRows[0] || {}).slice(0, 6).join(', ');
                 alert('❌ Could not map ' + fileType + ' columns to AVSF fields.\n\n' +
@@ -6623,13 +6750,20 @@ AMERBankingValidation@resideo.com`;
                 }
             });
 
-            const toWrite = await showImportPreview(mapped, { fileType, skippedSaved, autoGenCount });
-            if (!toWrite) return;
+            let toWrite;
+            if (opts.auto) toWrite = diffForImport(mapped);
+            else { toWrite = await showImportPreview(mapped, { fileType, skippedSaved, autoGenCount }); if (!toWrite) return; }
 
-            const { newCount, updatedCount, skippedCount } = await writeImportBatches(toWrite, fileType);
+            const { newCount, updatedCount, skippedCount } = await writeImportBatches(toWrite, fileType, !!opts.auto);
             const unchanged = mapped.length - toWrite.length;
-            if (newCount + updatedCount) {
-                logAudit('Imported', '', fileType + ' file', `${newCount} new, ${updatedCount} updated, ${unchanged} unchanged` + (skippedCount ? `, ${skippedCount} failed` : ''));
+            if (!skippedCount) {
+                logAudit(opts.auto ? 'Imported (auto)' : 'Imported', '', opts.fileName || (fileType + ' file'),
+                    `${newCount} new, ${updatedCount} updated, ${unchanged} unchanged`);
+                window._lastImportAt = new Date().toISOString(); renderSapAsOf();
+            }
+            if (opts.auto) {
+                if (skippedCount) throw new Error(skippedCount + ' request(s) could not be saved: ' + (lastErr && lastErr.message || 'unknown error'));
+                return { newCount, updatedCount, unchanged };
             }
             importStatus(skippedCount ? '⚠️ Import finished with errors' : '✅ Import complete',
                 `<div class="ip-grid"><div class="ip-stat"><b style="color:#059669;">${newCount}</b>New</div><div class="ip-stat"><b style="color:#d97706;">${updatedCount}</b>Updated</div>

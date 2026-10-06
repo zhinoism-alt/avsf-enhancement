@@ -2,8 +2,8 @@ name: Daily AVSF digest
 
 on:
   schedule:
-    # 13:00 UTC, Monday-Friday (07:00 Mexico City, 09:00 US Eastern in winter). Edit to taste.
-    - cron: '0 13 * * 1-5'
+    # 15:00 UTC, Monday-Friday (09:00 Mexico City) - after the 08:05 SAP export and auto-import.
+    - cron: '0 15 * * 1-5'
   workflow_dispatch:
     inputs:
       dry_run:
