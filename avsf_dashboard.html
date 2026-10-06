@@ -5183,7 +5183,7 @@ AMERBankingValidation@resideo.com`;
                     <div class="q-top"><span class="q-no">#${esc(formatRequestNumber(a.requestNo))} <span class="q-chip">${esc(a.requestType || '—')}</span></span>
                         <span class="status-badge status-${esc(String(a.status).toLowerCase().replace(/_/g, '-'))}">${esc(getStatusLabel(a.status))}</span></div>
                     <div class="q-vendor">${esc(a.vendorName)}</div>
-                    <div class="q-meta"><span>${flagOf(a.country)} CC ${esc(a.companyCode || '—')}</span>${a.vendorNumber ? `<span>Vendor ${esc(a.vendorNumber)}</span>` : ''}${a.requestorName ? `<span>👤 ${esc(a.requestorName)}</span>` : ''}</div>
+                    <div class="q-meta"><span>${flagOf(a.country)} CC ${esc(a.companyCode || '—')}</span>${a.vendorNumber ? `<span>Vendor ${esc(a.vendorNumber)}</span>` : ''}${a.requestorName ? `<span>👤 ${esc(a.requestorName)}</span>` : ''}${a.status === 'PROCESSING' && a.approverName && !/^VM TEAM/i.test(a.approverName) && !canonicalTeamName(a.approverName) ? `<span title="Current approver in SAP">⏳ with ${esc(a.approverName)}</span>` : ''}</div>
                     <div class="q-meta">
                         ${open && age != null ? `<span class="q-chip" style="background:${age >= 7 ? '#fee2e2' : age >= 3 ? '#fef3c7' : 'var(--bg-secondary)'};">⏱ ${age}d open</span>` : `<span>${esc(formatDate(a.completionDate || a.entryDate))}</span>`}
                         <span class="q-chip" style="background:${rcol};color:#fff;">☑ ${rp.total ? rp.done + '/' + rp.total : 'N/A'}</span>
@@ -6452,12 +6452,9 @@ AMERBankingValidation@resideo.com`;
             if (s === 'IDOC ERROR' || s === 'IDOC_ERROR')
                                    return { status: 'PROCESSING', completedBy: '' };
 
-            // APPR_AWAIT (or anything else):
-            // If current approver is VM TEAM or one of our team = it's in our hands = PROCESSING
-            // If current approver is someone outside our team = not yet reached us = ON_HOLD
-            if (isOurTeam || isVMTeam) return { status: 'PROCESSING', completedBy: '' };
-            if (ap.length > 0)         return { status: 'ON_HOLD',    completedBy: '' };
-            return                            { status: 'PROCESSING', completedBy: '' };
+            // APPR_AWAIT (or anything else still open): VM must process it, whoever the
+            // current approver is. The approver name is kept so the app can show who it is with.
+            return { status: 'PROCESSING', completedBy: '' };
         }
 
         // Primary CC may be blank on creation requests: fall back to the "Multiple Company Code"
