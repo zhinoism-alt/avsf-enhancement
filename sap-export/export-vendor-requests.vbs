@@ -4,21 +4,23 @@
 Option Explicit
 
 ' ===== Settings =====
-Dim OUT_DIR, OUT_FILE, MONTHS_BACK, TCODE, DEBUG_POPUPS
+Dim OUT_DIR, MONTHS_BACK, KEEP_DAYS, TCODE, DEBUG_POPUPS
 OUT_DIR = "C:\Users\290158\Documents\avsf-inbox"   ' the folder connected in the dashboard
-OUT_FILE = "export.xlsx"
+KEEP_DAYS = 7           ' old export-*.xlsx files in the folder are deleted after this many days
 MONTHS_BACK = 3          ' export from the 1st of this many months ago until today
 TCODE = "ZMMVEND_DIS"
-DEBUG_POPUPS = True      ' True = a message box after each step (use for the first runs); then set False
+DEBUG_POPUPS = False     ' True = a message box after each step (only for troubleshooting)
 ' ====================
 
-Dim fso, sh, session, application, connection, SapGuiAuto, logPath, outPath, scriptDir
+Dim fso, sh, session, application, connection, SapGuiAuto, logPath, outPath, outFile, scriptDir
 Set fso = CreateObject("Scripting.FileSystemObject")
 Set sh = CreateObject("WScript.Shell")
 scriptDir = fso.GetParentFolderName(WScript.ScriptFullName)
 If Not fso.FolderExists(OUT_DIR) Then fso.CreateFolder OUT_DIR
 logPath = fso.BuildPath(OUT_DIR, "export-log.txt")
-outPath = fso.BuildPath(OUT_DIR, OUT_FILE)
+' every run saves a new, uniquely named file, so there is never an existing file to replace
+outFile = "export-" & Year(Now) & Right("0" & Month(Now), 2) & Right("0" & Day(Now), 2) & "-" & Right("0" & Hour(Now), 2) & Right("0" & Minute(Now), 2) & Right("0" & Second(Now), 2) & ".xlsx"
+outPath = fso.BuildPath(OUT_DIR, outFile)
 
 Sub Log(msg)
   Dim f
@@ -107,7 +109,6 @@ If WaitFor("wnd[0]/tbar[1]/btn[43]", 120) Is Nothing Then Fail "The result list 
 StepDone "Result list is open."
 
 ' ---- export to Excel ----
-If fso.FileExists(outPath) Then fso.DeleteFile outPath, True
 session.findById("wnd[0]/tbar[1]/btn[43]").press
 
 ' format popup (SAP skips it when "Always use selected format" is ticked)
@@ -118,7 +119,7 @@ End If
 ' SAP's own save dialog: Directory + File Name, then Generate
 If WaitFor("wnd[1]/usr/ctxtDY_PATH", 20) Is Nothing Then Fail "The SAP save dialog did not appear (expected Directory / File Name fields)."
 session.findById("wnd[1]/usr/ctxtDY_PATH").text = OUT_DIR & "\"
-session.findById("wnd[1]/usr/ctxtDY_FILENAME").text = OUT_FILE
+session.findById("wnd[1]/usr/ctxtDY_FILENAME").text = outFile
 session.findById("wnd[1]/tbar[0]/btn[0]").press
 WScript.Sleep 1000
 ' if the file could not be deleted beforehand, the dialog stays open with Replace available
@@ -145,13 +146,25 @@ On Error Resume Next
 Set xl = GetObject(, "Excel.Application")
 If Err.Number = 0 Then
   For Each wb In xl.Workbooks
-    If LCase(wb.Name) = LCase(OUT_FILE) Then wb.Close False
+    If LCase(wb.Name) = LCase(outFile) Then wb.Close False
   Next
 End If
+Err.Clear
+On Error GoTo 0
+
+' tidy up: delete old exports (never fails the run)
+Dim fl
+On Error Resume Next
+For Each fl In fso.GetFolder(OUT_DIR).Files
+  If LCase(Left(fl.Name, 7)) = "export-" And LCase(Right(fl.Name, 5)) = ".xlsx" Then
+    If DateDiff("d", fl.DateLastModified, Now) > KEEP_DAYS Then fl.Delete True
+  End If
+Next
 Err.Clear
 On Error GoTo 0
 
 session.findById("wnd[0]/tbar[0]/okcd").text = "/n"
 session.findById("wnd[0]").sendVKey 0
 Log "Done."
+
 If DEBUG_POPUPS Then MsgBox "Export finished.", 64, "AVSF export"

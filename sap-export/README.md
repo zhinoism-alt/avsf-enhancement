@@ -21,7 +21,7 @@ and updates the "SAP data: …" chip.
 3. In SAP GUI Options → Accessibility & Scripting → Scripting, **untick** "Notify when a script attaches
    to SAP GUI" and "...opens a connection", otherwise a confirmation window blocks the script.
 4. **First test:** log in to SAP (any screen) and double-click the script. `DEBUG_POPUPS = True` shows a
-   message after each step. Check that `export.xlsx` appears in the inbox folder and that the dashboard
+   message after each step. Check that `export-<date>.xlsx` appears in the inbox folder and that the dashboard
    imports it within about 2 minutes ("SAP data" chip updates).
 5. When it works, change `DEBUG_POPUPS` to `False`.
 
@@ -31,9 +31,13 @@ popups like the recording did, clicks the Excel button, fills SAP's own save dia
 main screen. Progress and errors are written to `export-log.txt` in the inbox folder.
 
 ## 3. Schedule it
-Windows Task Scheduler → Create Task → trigger weekdays 08:05 → action
-`wscript.exe "C:\path\to\export-vendor-requests.vbs"`; tick "Run only when user is logged on".
-SAP must be open and logged in at that time and the PC unlocked.
+Double-click `schedule-export-task.cmd` (keep it next to the `.vbs`). It creates the Windows task
+"AVSF SAP export": weekdays at 08:05, while you are logged in. SAP must be open and logged in and the PC
+unlocked at that time. Test it once without waiting: Task Scheduler → "AVSF SAP export" → Run.
+
+Each run saves a new file named `export-YYYYMMDD-HHMMSS.xlsx` (so there is never an existing file to
+replace); exports older than 7 days are deleted automatically. Set `DEBUG_POPUPS = True` in the script only
+when troubleshooting.
 
 ## Date range
 Use a window of about 3 months, not "first of the month". Requests still open from earlier
