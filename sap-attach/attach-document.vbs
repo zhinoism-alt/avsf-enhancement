@@ -8,9 +8,9 @@ Dim VENDOR_FILE, ATTACH_FOLDER, ATTACH_NAME, DRY_RUN, START_ROW, MAX_VENDORS, MA
 VENDOR_FILE = "C:\Users\290158\Downloads\Scripts\Attachment Script.xlsx"   ' Excel file, vendor numbers in column A of the first sheet
 ATTACH_FOLDER = "C:\Users\290158\Downloads\Scripts"
 ATTACH_NAME = "RE_ Suspensiones hasta nuevo aviso.msg"
-DRY_RUN = False           ' True = open each vendor and its attachment list but attach NOTHING
+DRY_RUN = True            ' True = open each vendor and its attachment list but attach NOTHING
 START_ROW = 1             ' first Excel row to process (use it to continue after an interruption)
-MAX_VENDORS = 0           ' 0 = all vendors in the Excel file; use a small number to test
+MAX_VENDORS = 2           ' 0 = all vendors in the Excel file; use a small number to test
 MAX_FAILS_IN_ROW = 3      ' stop after this many failures in a row
 WAIT_SECS = 120           ' how long to wait for slow SAP screens
 ' ====================
@@ -145,24 +145,40 @@ Function RowCountOf(grid)
   RowCountOf = n
 End Function
 
+Function ScreenNo()
+  ScreenNo = ""
+  On Error Resume Next
+  ScreenNo = session.info.screenNumber
+  Err.Clear
+  On Error GoTo 0
+End Function
+
+' Closes one popup SAFELY. It never confirms a question with "Yes" / Enter, so it cannot log you off or save.
+Function ClosePopup(n)
+  Dim title
+  ClosePopup = False
+  If Find("wnd[" & n & "]") Is Nothing Then Exit Function
+  title = PopupTitle(n)
+  If InStr(LCase(title), "attachment list") > 0 And Not Find("wnd[" & n & "]/tbar[0]/btn[0]") Is Nothing Then
+    Press "wnd[" & n & "]/tbar[0]/btn[0]"
+  ElseIf Not Find("wnd[" & n & "]/usr/btnSPOP-OPTION2") Is Nothing Then
+    Press "wnd[" & n & "]/usr/btnSPOP-OPTION2"
+  Else
+    On Error Resume Next
+    session.findById("wnd[" & n & "]").Close
+    Err.Clear
+    On Error GoTo 0
+  End If
+  Trace "closed popup: " & title
+  WScript.Sleep 700
+  ClosePopup = True
+End Function
+
 ' close popups left over from a previous step (innermost first)
 Sub ClosePopups()
-  Dim i, w
+  Dim i
   For i = 4 To 1 Step -1
-    Set w = Find("wnd[" & i & "]")
-    If Not w Is Nothing Then
-      If Not Find("wnd[" & i & "]/usr/btnSPOP-OPTION2") Is Nothing Then
-        Press "wnd[" & i & "]/usr/btnSPOP-OPTION2"
-      ElseIf Not Find("wnd[" & i & "]/tbar[0]/btn[0]") Is Nothing Then
-        Press "wnd[" & i & "]/tbar[0]/btn[0]"
-      Else
-        On Error Resume Next
-        w.Close
-        Err.Clear
-        On Error GoTo 0
-      End If
-      WScript.Sleep 700
-    End If
+    ClosePopup i
   Next
 End Sub
 
@@ -193,9 +209,10 @@ End Function
 
 ' Returns True when the file was attached (or, in dry run, when the attachment list opened).
 Function DoVendor(lifnr, ByRef msg)
-  Dim grid, before, after, t, ready, i, title, ok3, errText
+  Dim grid, before, after, t, ready, i, title, ok3, errText, initScreen
   DoVendor = False
   msg = ""
+  If Find("wnd[0]") Is Nothing Then msg = "SAP session is no longer available (logged off?)": Exit Function
   ClosePopups
 
   Trace "opening XK02 for vendor " & lifnr
@@ -203,23 +220,24 @@ Function DoVendor(lifnr, ByRef msg)
   If Not SetText("wnd[0]/tbar[0]/okcd", "/nXK02") Then msg = gErr: Exit Function
   If Not SendKey("wnd[0]", 0) Then msg = gErr: Exit Function
   If WaitFor("wnd[0]/usr/ctxtRF02K-LIFNR", 60) Is Nothing Then msg = "XK02 start screen did not appear": Exit Function
+  initScreen = ScreenNo()
   If Not SetChecked("wnd[0]/usr/chkRF02K-D0110", True) Then msg = gErr: Exit Function
   If Not SetText("wnd[0]/usr/ctxtRF02K-LIFNR", lifnr) Then msg = gErr: Exit Function
   If Not SendKey("wnd[0]", 0) Then msg = gErr: Exit Function
 
-  ' 2. wait for the vendor screen (can take ~30 s); answer harmless popups, stop on errors
+  ' 2. wait for the vendor screen (can take ~30 s). SAP may show the "Attachment list" popup by itself.
   ready = False
   t = Timer
   Do While Timer - t < WAIT_SECS
-    If Find("wnd[0]/usr/ctxtRF02K-LIFNR") Is Nothing And Not Find("wnd[0]/titl/shellcont/shell") Is Nothing Then
-      ready = True
-      Exit Do
-    End If
-    If StatusError() <> "" Then msg = "SAP message: " & StatusError(): Exit Function
     If Not Find("wnd[1]") Is Nothing Then
       title = PopupTitle(1)
-      Log "   popup while opening vendor (" & title & "), confirmed with Enter"
-      Press "wnd[1]/tbar[0]/btn[0]"
+      ClosePopup 1
+      If InStr(LCase(title), "attachment list") = 0 Then msg = "Unexpected popup while opening the vendor: " & title: Exit Function
+    End If
+    If StatusError() <> "" Then msg = "SAP message: " & StatusError(): Exit Function
+    If Not Find("wnd[0]/titl/shellcont/shell") Is Nothing And ScreenNo() <> initScreen And Find("wnd[1]") Is Nothing Then
+      ready = True
+      Exit Do
     End If
     WScript.Sleep 500
   Loop
@@ -294,8 +312,8 @@ Function DoVendor(lifnr, ByRef msg)
   ' 6. close the list and leave XK02 (attachments are stored as soon as they are created)
   Trace "closing the list and leaving XK02"
   ClosePopups
-  If Not Press("wnd[0]/tbar[0]/btn[15]") Then Log "   note: " & gErr
-  WScript.Sleep 1000
+  If SetText("wnd[0]/tbar[0]/okcd", "/n") Then SendKey "wnd[0]", 0
+  WScript.Sleep 1500
   ClosePopups
 End Function
 
@@ -342,6 +360,11 @@ For Each k In vendors.Keys
       failCount = failCount + 1
       fails = fails + 1
       Log "row " & k & "  vendor " & vendors(k) & "  FAILED   " & msg
+      If InStr(msg, "no longer available") > 0 Then
+        stoppedEarly = True
+        Log "Stopped: the SAP session is gone."
+        Exit For
+      End If
       ClosePopups
       If fails >= MAX_FAILS_IN_ROW Then
         stoppedEarly = True
