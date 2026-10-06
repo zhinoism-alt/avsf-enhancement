@@ -4,16 +4,17 @@
 Option Explicit
 
 ' ===== Settings =====
-Dim VENDOR_FILE, ATTACH_FOLDER, ATTACH_NAME, DRY_RUN, START_ROW, MAX_VENDORS, MAX_FAILS_IN_ROW, WAIT_SECS, LOAD_SECS, DIALOG_SECS
+Dim VENDOR_FILE, ATTACH_FOLDER, ATTACH_NAME, DRY_RUN, START_ROW, MAX_VENDORS, MAX_FAILS_IN_ROW, WAIT_SECS, LOAD_SECS, DIALOG_SECS, MENU_SECS
 VENDOR_FILE = "C:\Users\290158\Downloads\Scripts\Attachment Script.xlsx"   ' Excel file, vendor numbers in column A of the first sheet
 ATTACH_FOLDER = "C:\Users\290158\Downloads\Scripts"
 ATTACH_NAME = "RE_ Suspensiones hasta nuevo aviso.msg"
 DRY_RUN = False           ' True = open each vendor and its attachment list but attach NOTHING
-START_ROW = 5             ' first Excel row to process (rows 2-4 are done: tests and the first successful run)
-MAX_VENDORS = 0           ' 0 = all vendors in the Excel file; use a small number to test
+START_ROW = 5             ' first Excel row to process (all 4 sample vendors already have the file; this retest adds a 2nd copy to row 5)
+MAX_VENDORS = 1           ' 0 = all vendors in the Excel file; 1 = just one vendor for the automation test
 MAX_FAILS_IN_ROW = 3      ' stop after this many failures in a row
 WAIT_SECS = 120           ' how long to wait for slow SAP screens
 LOAD_SECS = 0             ' optional pause after the vendor opens before touching Services for Object (0 = none)
+MENU_SECS = 90            ' how long SAP may take to fill the Services for Object menu after the button is pressed
 DIALOG_SECS = 150         ' how long SAP may take to open the Import file dialog after Create attachment is selected
 ' ====================
 
@@ -304,7 +305,7 @@ End Function
 
 ' Returns True when the file was attached (or, in dry run, when the attachment list opened).
 Function DoVendor(lifnr, ByRef msg)
-  Dim grid, before, after, t, ready, i, title, ok3, errText, initScreen, dumped, lastLogged
+  Dim grid, before, after, t, ready, i, title, ok3, errText, initScreen, dumped, lastLogged, picked
   DoVendor = False
   msg = ""
   If Find("wnd[0]") Is Nothing Then WScript.Sleep 5000
@@ -357,41 +358,62 @@ Function DoVendor(lifnr, ByRef msg)
 
   ok3 = False
   DumpToolbar
-  For i = 1 To 2
+  For i = 1 To 3
+    ' Open the menu ONCE. SAP needs a server round trip (about 20 s here) to fill it, and pressing the
+    ' button again would close/reset it. So poll for the entry instead of pressing again.
     errText = ""
     On Error Resume Next
     session.findById("wnd[0]/titl/shellcont/shell").pressContextButton "%GOS_TOOLBOX"
     If Err.Number <> 0 Then
       errText = "toolbox button: " & Err.Description
       Err.Clear
-    Else
-      session.findById("wnd[0]/titl/shellcont/shell").selectContextMenuItem "%GOS_PCATTA_CREA"
-      If Err.Number <> 0 Then
-        errText = "create attachment menu item: " & Err.Description
-        Err.Clear
-        ' second way: pick the entry by its text instead of its function code
-        session.findById("wnd[0]/titl/shellcont/shell").selectContextMenuItemByText "Create attachment"
-        If Err.Number <> 0 Then
-          errText = errText & " | by text: " & Err.Description
-          Err.Clear
-        Else
-          errText = ""
-        End If
-      End If
     End If
     On Error GoTo 0
-    If errText = "" Then
-      Trace "attempt " & i & ": menu item selected, waiting for the Import file dialog"
+    If errText <> "" Then
+      Trace "attempt " & i & ": " & errText
+      WScript.Sleep 5000
     Else
-      Trace "attempt " & i & ": SAP answered '" & errText & "' - waiting anyway, it may still be starting the dialog"
+      Trace "attempt " & i & ": menu opened, waiting for SAP to fill it (up to " & MENU_SECS & " s)"
+      t = Timer
+      picked = False
+      Do While Timer - t < MENU_SECS
+        If Not Find("wnd[1]/usr/ctxtDY_PATH") Is Nothing Then
+          picked = True
+          Exit Do
+        End If
+        If Not Find("wnd[1]") Is Nothing Then
+          If InStr(LCase(PopupTitle(1)), "attachment list") > 0 Then
+            ClosePopup 1
+            Exit Do
+          End If
+        End If
+        On Error Resume Next
+        session.findById("wnd[0]/titl/shellcont/shell").selectContextMenuItem "%GOS_PCATTA_CREA"
+        If Err.Number <> 0 Then
+          Err.Clear
+          session.findById("wnd[0]/titl/shellcont/shell").selectContextMenuItemByText "Create attachment"
+          If Err.Number <> 0 Then Err.Clear Else picked = True
+        Else
+          picked = True
+        End If
+        On Error GoTo 0
+        If picked Then Exit Do
+        WScript.Sleep 2000
+      Loop
+      If picked Then
+        Trace "menu entry selected after " & Int(Timer - t) & " s, waiting for the Import file dialog"
+      Else
+        Trace "menu was not ready after " & Int(Timer - t) & " s"
+      End If
+      t = Timer
+      If WaitForImportDialog(DIALOG_SECS) Then
+        ok3 = True
+        Trace "Import file dialog opened after " & Int(Timer - t) & " s"
+        Exit For
+      End If
+      errText = "no Import file dialog"
+      Trace "attempt " & i & ": no Import file dialog, trying again"
     End If
-    t = Timer
-    If WaitForImportDialog(DIALOG_SECS) Then
-      ok3 = True
-      Trace "Import file dialog opened after " & Int(Timer - t) & " s"
-      Exit For
-    End If
-    Trace "no Import file dialog after " & DIALOG_SECS & " s"
   Next
   If Not ok3 Then msg = "The Import file dialog did not appear (" & errText & ")": Exit Function
 
