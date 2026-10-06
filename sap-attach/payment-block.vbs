@@ -359,6 +359,19 @@ Function OpenList()
   Set OpenList = g
 End Function
 
+Function SelectMenu(id)
+  SelectMenu = False
+  On Error Resume Next
+  session.findById(id).select
+  If Err.Number <> 0 Then
+    gErr = "menu " & id & ": " & Err.Description
+    Err.Clear
+  Else
+    SelectMenu = True
+  End If
+  On Error GoTo 0
+End Function
+
 Function StatusType()
   Dim sb
   StatusType = ""
@@ -380,32 +393,53 @@ End Function
 ' Moves to the company code Payment transactions screen and applies the payment block rules.
 ' Returns True when everything is as wanted (changed, or nothing needed, or left alone on purpose).
 Function HandleBlock(desired, ByRef bmsg)
-  Dim cur, newVal, t, st, stText, ttl
+  Dim cur, newVal, t, st, stText, ttl, way, moved
   HandleBlock = False
   bmsg = ""
   desired = UCase(Trim(desired))
 
-  ' Enter on the Address screen moves to the next selected view = company code Payment transactions
+  ' Go to the company code Payment transactions screen. SAP can ignore the first way, so three are tried:
+  ' 1 = Enter (as in the recording), 2 = the Next screen button, 3 = Goto > Company code data > Payment transactions
+  ClosePopups
   If Find(ZAHLS) Is Nothing Then
-    Trace "going to the Payment transactions screen"
-    If Not SendKey("wnd[0]", 0) Then bmsg = gErr: Exit Function
-    t = Timer
-    Do While Timer - t < WAIT_SECS
-      If Not Find(ZAHLS) Is Nothing Then Exit Do
-      If Not Find("wnd[1]") Is Nothing Then
-        ttl = PopupTitle(1)
-        ClosePopup 1
-        bmsg = "unexpected popup while moving to the Payment transactions screen: " & ttl
-        Exit Function
+    For way = 1 To 3
+      moved = False
+      If way = 1 Then
+        Trace "going to the Payment transactions screen: way 1, Enter"
+        moved = SendKey("wnd[0]", 0)
+      ElseIf way = 2 Then
+        Trace "going to the Payment transactions screen: way 2, Next screen button"
+        moved = Press("wnd[0]/tbar[1]/btn[8]")
+      Else
+        Trace "going to the Payment transactions screen: way 3, Goto menu"
+        moved = SelectMenu("wnd[0]/mbar/menu[2]/menu[4]/menu[1]")
       End If
-      If StatusError() <> "" Then
-        bmsg = "SAP message: " & StatusError()
-        Exit Function
+      If Not moved Then Trace "way " & way & " could not be used: " & gErr
+      t = Timer
+      Do While Timer - t < 20
+        If Not Find(ZAHLS) Is Nothing Then Exit Do
+        If Not Find("wnd[1]") Is Nothing Then
+          ttl = PopupTitle(1)
+          ClosePopup 1
+          If InStr(LCase(ttl), "attachment list") = 0 Then
+            bmsg = "unexpected popup while moving to the Payment transactions screen: " & ttl
+            Exit Function
+          End If
+        End If
+        If StatusError() <> "" Then
+          bmsg = "SAP message: " & StatusError()
+          Exit Function
+        End If
+        WScript.Sleep 500
+      Loop
+      If Not Find(ZAHLS) Is Nothing Then
+        Trace "reached the Payment transactions screen with way " & way
+        Exit For
       End If
-      WScript.Sleep 500
-    Loop
+      Trace "way " & way & " did not reach it (window title: " & TitleText() & ", status bar: " & StatusText() & ")"
+    Next
     If Find(ZAHLS) Is Nothing Then
-      bmsg = "the Payment block field did not appear (window title: " & TitleText() & ")"
+      bmsg = "the Payment block field did not appear after 3 ways (window title: " & TitleText() & ")"
       Exit Function
     End If
   End If
