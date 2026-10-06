@@ -5183,7 +5183,7 @@ AMERBankingValidation@resideo.com`;
                     <div class="q-top"><span class="q-no">#${esc(formatRequestNumber(a.requestNo))} <span class="q-chip">${esc(a.requestType || '—')}</span></span>
                         <span class="status-badge status-${esc(String(a.status).toLowerCase().replace(/_/g, '-'))}">${esc(getStatusLabel(a.status))}</span></div>
                     <div class="q-vendor">${esc(a.vendorName)}</div>
-                    <div class="q-meta"><span>${flagOf(a.country)} CC ${esc(a.companyCode || '—')}</span>${a.vendorNumber ? `<span>Vendor ${esc(a.vendorNumber)}</span>` : ''}${a.requestorName ? `<span>👤 ${esc(a.requestorName)}</span>` : ''}${a.status === 'PROCESSING' && a.approverName && !/^VM TEAM/i.test(a.approverName) && !canonicalTeamName(a.approverName) ? `<span title="Current approver in SAP">⏳ with ${esc(a.approverName)}</span>` : ''}</div>
+                    <div class="q-meta"><span>${flagOf(a.country)} CC ${esc(a.companyCode || '—')}</span>${a.vendorNumber ? `<span>Vendor ${esc(a.vendorNumber)}</span>` : ''}${a.requestorName ? `<span>👤 ${esc(a.requestorName)}</span>` : ''}${withOtherApprover(a) ? `<span title="Current approver in SAP">⏳ with ${esc(a.approverName)}</span>` : ''}</div>
                     <div class="q-meta">
                         ${open && age != null ? `<span class="q-chip" style="background:${age >= 7 ? '#fee2e2' : age >= 3 ? '#fef3c7' : 'var(--bg-secondary)'};">⏱ ${age}d open</span>` : `<span>${esc(formatDate(a.completionDate || a.entryDate))}</span>`}
                         <span class="q-chip" style="background:${rcol};color:#fff;">☑ ${rp.total ? rp.done + '/' + rp.total : 'N/A'}</span>
@@ -5470,6 +5470,13 @@ AMERBankingValidation@resideo.com`;
             setQueueTab(tabId);
         }
 
+        // Processing in our app, but SAP says another approver still holds it.
+        function withOtherApprover(a) {
+            const ap = String(a.approverName || '').trim();
+            return a.status === 'PROCESSING' && !!ap && !/^VM TEAM/i.test(ap) && !canonicalTeamName(ap);
+        }
+        function isWaitingOnOthers(a) { return a.status === 'ON_HOLD' || a.status === 'PENDING_BUYER' || withOtherApprover(a); }
+
         // ── Today view ───────────────────────────────────────────────────
         function dayOf(v) { return String(v || '').split('T')[0]; }
         function renderToday() {
@@ -5481,11 +5488,12 @@ AMERBankingValidation@resideo.com`;
             const age = a => ageDays(a) || 0;
             const open = avsfs.filter(a => OPEN_STATUSES.has(a.status));
             const mine = ['PROCESSING', 'IDOC_ERROR'];
-            const attention = open.filter(a => mine.includes(a.status) && age(a) >= 3).sort((a, b) => age(b) - age(a));
-            const waiting = open.filter(a => a.status === 'ON_HOLD' || a.status === 'PENDING_BUYER').sort((a, b) => age(b) - age(a));
+            const ours = open.filter(a => mine.includes(a.status) && !isWaitingOnOthers(a));
+            const attention = ours.filter(a => age(a) >= 3).sort((a, b) => age(b) - age(a));
+            const waiting = open.filter(isWaitingOnOthers).sort((a, b) => age(b) - age(a));
             const doneToday = avsfs.filter(a => a.status === 'COMPLETED' && dayOf(a.completionDate) === today);
             const overdue = open.filter(a => age(a) >= NF.days).length;
-            const next = open.filter(a => mine.includes(a.status)).sort((a, b) => age(b) - age(a))[0];
+            const next = ours.sort((a, b) => age(b) - age(a))[0];
             const me = getEmailFullName();
             const hour = new Date().getHours();
             const row = (a, extra) => `<div class="td-row" data-no="${esc(a.requestNo)}"><span class="status-badge status-${esc(String(a.status).toLowerCase().replace(/_/g, '-'))}">${esc(getStatusLabel(a.status))}</span>
@@ -5505,7 +5513,7 @@ AMERBankingValidation@resideo.com`;
                     <p>${new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} · ${open.length} open request${open.length === 1 ? '' : 's'}</p></div>
                     <button class="btn btn-primary" onclick="openAddModal()">+ Add AVSF</button></div>
                 <div class="td-tiles">
-                    <button class="td-tile" onclick="goQueue('processing')"><div class="l">In my queue</div><div class="v">${avsfs.filter(a => a.status === 'PROCESSING').length}</div></button>
+                    <button class="td-tile" onclick="goQueue('processing')"><div class="l">In my queue</div><div class="v">${avsfs.filter(a => a.status === 'PROCESSING' && !isWaitingOnOthers(a)).length}</div></button>
                     <button class="td-tile" onclick="goQueue('processing')"><div class="l">Stuck (${NF.days}d+)</div><div class="v" style="color:${overdue ? '#dc2626' : 'inherit'};">${overdue}</div></button>
                     <button class="td-tile" onclick="goQueue('onhold')"><div class="l">Waiting on others</div><div class="v">${waiting.length}</div></button>
                     <button class="td-tile" onclick="goQueue('today')"><div class="l">Completed today</div><div class="v" style="color:#059669;">${doneToday.length}</div></button>
@@ -5825,8 +5833,8 @@ AMERBankingValidation@resideo.com`;
         function digestText() {
             const list = stuckList(true);
             const line = a => `  #${formatRequestNumber(a.requestNo)}  ${String(ageDays(a)).padStart(3)}d  ${getStatusLabel(a.status)}  CC ${a.companyCode || '-'}  ${a.vendorName}${a.approverName ? '  (' + a.approverName + ')' : ''}`;
-            const ours = list.filter(a => a.status === 'PROCESSING' || a.status === 'IDOC_ERROR');
-            const others = list.filter(a => a.status === 'ON_HOLD' || a.status === 'PENDING_BUYER');
+            const ours = list.filter(a => !isWaitingOnOthers(a));
+            const others = list.filter(isWaitingOnOthers);
             return `AVSF requests open ${NF.days}+ days (${list.length})\n\n` +
                 (ours.length ? `IN OUR QUEUE (${ours.length})\n${ours.map(line).join('\n')}\n\n` : '') +
                 (others.length ? `WAITING ON OTHERS (${others.length})\n${others.map(line).join('\n')}\n` : '');
@@ -5857,7 +5865,7 @@ AMERBankingValidation@resideo.com`;
                 <div class="nf-list">${list.length ? list.map(a => `<div class="nf-row" data-no="${esc(a.requestNo)}">
                         <span class="nf-age">${ageDays(a)}d</span>
                         <div class="m"><b>#${esc(formatRequestNumber(a.requestNo))} · ${esc(a.vendorName)}</b>
-                            <span>${esc(getStatusLabel(a.status))}${a.status === 'ON_HOLD' || a.status === 'PENDING_BUYER' ? ' · waiting on others' : ''} · ${flagOf(a.country)} CC ${esc(a.companyCode || '—')}</span></div>
+                            <span>${esc(getStatusLabel(a.status))}${isWaitingOnOthers(a) ? ' · waiting on others' + (withOtherApprover(a) ? ' (' + esc(a.approverName) + ')' : '') : ''} · ${flagOf(a.country)} CC ${esc(a.companyCode || '—')}</span></div>
                         <button class="nf-snz" data-nf="snooze" title="Hide until tomorrow">Snooze</button></div>`).join('')
                     : `<div class="q-empty">${all ? `All ${all} stuck request(s) are snoozed until tomorrow.` : `Nothing open for ${NF.days}+ days. 🎉`}</div>`}</div>
                 <div class="nf-foot">

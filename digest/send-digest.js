@@ -88,13 +88,25 @@ function ageDays(a, now) {
   return Math.max(0, Math.floor((today - Date.parse(d + 'T00:00:00Z')) / 86400000));
 }
 
+const TEAM = [['ROSANA', 'MUNOZ'], ['BRANDON', 'RAMOS'], ['YANNICK', 'ROJAS']];
+function isTeamMember(name) {
+  const toks = String(name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().split(/[^A-Z]+/).filter(Boolean);
+  return TEAM.some(([f, l]) => toks.includes(f) && toks.includes(l));
+}
+// Processing in the dashboard, but SAP says another approver still holds it.
+function waitingOnOthers(a) {
+  if (a.status === 'ON_HOLD' || a.status === 'PENDING_BUYER') return true;
+  const ap = String(a.approverName || '').trim();
+  return a.status === 'PROCESSING' && !!ap && !/^VM TEAM/i.test(ap) && !isTeamMember(ap);
+}
+
 function buildDigest(records, opts = {}) {
   const days = opts.days || 7, now = opts.now || new Date(), url = opts.url || '';
   const open = records.filter(a => OPEN.has(a.status));
   const stuck = open.map(a => ({ ...a, age: ageDays(a, now) })).filter(a => a.age != null && a.age >= days)
     .sort((a, b) => b.age - a.age);
-  const ours = stuck.filter(a => a.status === 'PROCESSING' || a.status === 'IDOC_ERROR');
-  const others = stuck.filter(a => a.status === 'ON_HOLD' || a.status === 'PENDING_BUYER');
+  const ours = stuck.filter(a => !waitingOnOthers(a));
+  const others = stuck.filter(waitingOnOthers);
   const since = new Date(now.getTime() - 86400000).toISOString().split('T')[0];
   const doneYesterday = records.filter(a => a.status === 'COMPLETED' && String(a.completionDate || '').split('T')[0] >= since).length;
   const subject = stuck.length
@@ -159,5 +171,5 @@ async function main(argv = process.argv.slice(2), env = process.env, deps = {}) 
   return { sent: true, digest, info };
 }
 
-module.exports = { buildDigest, fetchAvsfs, fromValue, getAccessToken, main };
+module.exports = { waitingOnOthers, buildDigest, fetchAvsfs, fromValue, getAccessToken, main };
 if (require.main === module) main().catch(e => { console.error(e.message); process.exit(1); });
