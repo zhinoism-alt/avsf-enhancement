@@ -4,7 +4,7 @@
 Option Explicit
 
 ' ===== Settings =====
-Dim VENDOR_FILE, ATTACH_FOLDER, ATTACH_NAME, DRY_RUN, START_ROW, MAX_VENDORS, MAX_FAILS_IN_ROW, WAIT_SECS
+Dim VENDOR_FILE, ATTACH_FOLDER, ATTACH_NAME, DRY_RUN, START_ROW, MAX_VENDORS, MAX_FAILS_IN_ROW, WAIT_SECS, LOAD_SECS
 VENDOR_FILE = "C:\Users\290158\Downloads\Scripts\Attachment Script.xlsx"   ' Excel file, vendor numbers in column A of the first sheet
 ATTACH_FOLDER = "C:\Users\290158\Downloads\Scripts"
 ATTACH_NAME = "RE_ Suspensiones hasta nuevo aviso.msg"
@@ -13,6 +13,7 @@ START_ROW = 4             ' first Excel row to process (rows 2 and 3 were alread
 MAX_VENDORS = 0           ' 0 = all vendors in the Excel file; use a small number to test
 MAX_FAILS_IN_ROW = 3      ' stop after this many failures in a row
 WAIT_SECS = 120           ' how long to wait for slow SAP screens
+LOAD_SECS = 40            ' seconds to leave the vendor screen alone so SAP can finish loading Services for Object
 ' ====================
 
 ' tidy the settings: remove stray quote marks (e.g. from "Copy as path") and trailing backslashes
@@ -321,12 +322,23 @@ Function DoVendor(lifnr, ByRef msg)
   ' 3. Services for Object > Create attachment. (The "Attachment list" entry only exists for vendors that
   '    already have attachments, so the Create entry is used directly.)
   Trace "vendor screen is open (" & TitleText() & ", " & Int(Timer - t) & " s), opening Services for Object > Create attachment"
+  ' Do not touch the toolbar while SAP is still loading it (a half-loaded menu rejects every item).
+  ' Meanwhile close the attachment list SAP may pop up by itself.
+  Trace "waiting " & LOAD_SECS & " s for SAP to finish loading the vendor"
+  t = Timer
+  Do While Timer - t < LOAD_SECS
+    If Not Find("wnd[1]") Is Nothing Then ClosePopup 1
+    If StatusError() <> "" Then msg = "SAP message: " & StatusError(): Exit Function
+    WScript.Sleep 1000
+  Loop
+  On Error Resume Next
+  Trace "title toolbar object: " & session.findById("wnd[0]/titl/shellcont/shell").Type & " / " & session.findById("wnd[0]/titl/shellcont/shell").SubType
+  Err.Clear
+  On Error GoTo 0
+
   ok3 = False
   errText = ""
-  lastLogged = -1
-  t = Timer
-  Do While Timer - t < WAIT_SECS
-    ' SAP can pop up the attachment list by itself while the vendor loads: close it (never confirms anything)
+  For i = 1 To 4
     If Not Find("wnd[1]") Is Nothing And Find("wnd[1]/usr/ctxtDY_PATH") Is Nothing Then ClosePopup 1
     errText = ""
     On Error Resume Next
@@ -335,7 +347,6 @@ Function DoVendor(lifnr, ByRef msg)
       errText = "toolbox button: " & Err.Description
       Err.Clear
     Else
-      WScript.Sleep 1000
       session.findById("wnd[0]/titl/shellcont/shell").selectContextMenuItem "%GOS_PCATTA_CREA"
       If Err.Number <> 0 Then
         errText = "create attachment menu item: " & Err.Description
@@ -345,15 +356,11 @@ Function DoVendor(lifnr, ByRef msg)
     On Error GoTo 0
     If errText = "" Then
       ok3 = True
-      Exit Do
+      Exit For
     End If
-    ' the menu takes about 30 s to fill in after the vendor opens; log only every ~15 s
-    If Int((Timer - t) / 15) <> lastLogged Then
-      lastLogged = Int((Timer - t) / 15)
-      Trace "waiting for the Services for Object menu (" & Int(Timer - t) & " s): " & errText
-    End If
-    WScript.Sleep 3000
-  Loop
+    Trace "attempt " & i & " failed: " & errText
+    WScript.Sleep 15000
+  Next
   If Not ok3 Then msg = "Services for Object menu: " & errText: Exit Function
   If WaitFor("wnd[1]/usr/ctxtDY_PATH", WAIT_SECS) Is Nothing Then msg = "The Import file dialog did not appear": Exit Function
 
