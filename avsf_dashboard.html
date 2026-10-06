@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AVSF Dashboard - Vendor Master Tracking</title>
+    <meta name="theme-color" content="#0f766e">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" href="icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <script>try{var _t=localStorage.getItem('avsfTheme');if(!_t&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)_t='dark';if(_t==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -850,6 +857,156 @@
         .ip-table { width:100%; border-collapse:collapse; font-size:12px; }
         .ip-table th, .ip-table td { padding:5px 8px; border-bottom:1px solid var(--border-light); text-align:left; }
         @media (max-width:640px) { #avsfQueue { max-height:none; } }
+    
+        /* ── Dark mode ───────────────────────────────────────────────────── */
+        :root[data-theme="dark"] {
+            color-scheme: dark;
+            --bg-main:#121214; --bg-card:#1b1b1e; --bg-hover:#25252a; --bg-secondary:#2a2a2f;
+            --border:#3a3a40; --border-light:#2e2e34;
+            --text-primary:#ececee; --text-secondary:#c4c2c9; --text-tertiary:#9d9ba4; --text-muted:#76747d;
+            --primary:#2dd4bf; --primary-light:#5eead4; --primary-dark:#0f766e; --primary-50:#10302d; --primary-100:#134e4a;
+            --shadow-xs:0 1px 2px rgb(0 0 0/.4); --shadow-sm:0 1px 3px rgb(0 0 0/.5); --shadow-md:0 4px 8px rgb(0 0 0/.5);
+            --shadow-lg:0 12px 24px rgb(0 0 0/.55); --shadow-xl:0 20px 40px rgb(0 0 0/.6);
+        }
+        [data-theme="dark"] header { background:linear-gradient(140deg,#0b3b36 0%,#0d5e56 55%,#0f766e 100%); }
+        [data-theme="dark"] input, [data-theme="dark"] select, [data-theme="dark"] textarea { background:var(--bg-secondary); color:var(--text-primary); border-color:var(--border); }
+        [data-theme="dark"] input::placeholder, [data-theme="dark"] textarea::placeholder { color:var(--text-muted); }
+        [data-theme="dark"] table th { background:var(--bg-hover); color:var(--text-secondary); }
+        [data-theme="dark"] .btn-secondary { background:var(--bg-secondary); color:var(--text-primary); border-color:var(--border); }
+        [data-theme="dark"] .btn-primary, [data-theme="dark"] .vt-seg button.on, [data-theme="dark"] .q-actions .go, [data-theme="dark"] .dp-foot .go { color:#06201d; }
+        [data-theme="dark"] .q-tab.on { color:var(--primary-light); }
+        [data-theme="dark"] .q-tab.on .n { color:#06201d; }
+        [data-theme="dark"] .q-actions .bad, [data-theme="dark"] .dp-foot .bad { color:#fca5a5; border-color:#7f1d1d; }
+        [data-theme="dark"] .dp-req.ok { background:#10281c; border-color:#166534; }
+        [data-theme="dark"] .modal-content, [data-theme="dark"] .dash-tab-content-area, [data-theme="dark"] .dash-tabs-wrap { background:var(--bg-card); }
+        [data-theme="dark"] [style*="background:white"], [data-theme="dark"] [style*="background: white"],
+        [data-theme="dark"] [style*="background:#fff"], [data-theme="dark"] [style*="background: #fff"],
+        [data-theme="dark"] [style*="background:#ffffff"], [data-theme="dark"] [style*="background: #ffffff"] { background:var(--bg-card) !important; }
+        [data-theme="dark"] [style*="background:#f3f4f6"], [data-theme="dark"] [style*="background: #f3f4f6"],
+        [data-theme="dark"] [style*="background:#f9fafb"], [data-theme="dark"] [style*="background: #f9fafb"],
+        [data-theme="dark"] [style*="background:#fafaf8"], [data-theme="dark"] [style*="background: #fafaf8"] { background:var(--bg-hover) !important; }
+        [data-theme="dark"] [style*="background:#d1fae5"], [data-theme="dark"] [style*="background: #d1fae5"],
+        [data-theme="dark"] [style*="background:#fee2e2"], [data-theme="dark"] [style*="background: #fee2e2"],
+        [data-theme="dark"] [style*="background:#fef3c7"], [data-theme="dark"] [style*="background: #fef3c7"],
+        [data-theme="dark"] [style*="background:#dbeafe"], [data-theme="dark"] [style*="background: #dbeafe"],
+        [data-theme="dark"] [style*="background:#ede9fe"], [data-theme="dark"] [style*="background: #ede9fe"],
+        [data-theme="dark"] [style*="background:#eff6ff"], [data-theme="dark"] [style*="background: #eff6ff"],
+        [data-theme="dark"] [style*="background:#f0fdf4"], [data-theme="dark"] [style*="background: #f0fdf4"],
+        [data-theme="dark"] [style*="background:#fef2f2"], [data-theme="dark"] [style*="background: #fef2f2"],
+        [data-theme="dark"] [style*="background:#f5f3ff"], [data-theme="dark"] [style*="background: #f5f3ff"],
+        [data-theme="dark"] [style*="background:#fff7ed"], [data-theme="dark"] [style*="background: #fff7ed"],
+        [data-theme="dark"] [style*="background:#f0f9ff"], [data-theme="dark"] [style*="background: #f0f9ff"],
+        [data-theme="dark"] [style*="background:#fdf4ff"], [data-theme="dark"] [style*="background: #fdf4ff"],
+        [data-theme="dark"] [style*="background:#fef08a"], [data-theme="dark"] [style*="background: #fef08a"],
+        [data-theme="dark"] [style*="background:#ffedd5"], [data-theme="dark"] [style*="background: #ffedd5"],
+        [data-theme="dark"] [style*="background:#f0fdf8"], [data-theme="dark"] [style*="background: #f0fdf8"],
+        [data-theme="dark"] [style*="background:#fff5f5"], [data-theme="dark"] [style*="background: #fff5f5"],
+        [data-theme="dark"] [style*="background:#fffbeb"], [data-theme="dark"] [style*="background: #fffbeb"],
+        [data-theme="dark"] [style*="background:#fdf2f8"], [data-theme="dark"] [style*="background: #fdf2f8"] { color:#1f2937; }
+        [data-theme="dark"] [style*="color:#374151"], [data-theme="dark"] [style*="color: #374151"] { color:var(--text-primary) !important; }
+        [data-theme="dark"] [style*="color:#111827"], [data-theme="dark"] [style*="color: #111827"] { color:var(--text-primary) !important; }
+        [data-theme="dark"] [style*="color:#333"], [data-theme="dark"] [style*="color: #333"] { color:var(--text-primary) !important; }
+        [data-theme="dark"] [style*="color:#6b7280"], [data-theme="dark"] [style*="color: #6b7280"] { color:var(--text-tertiary) !important; }
+        [data-theme="dark"] [style*="color:#9ca3af"], [data-theme="dark"] [style*="color: #9ca3af"] { color:var(--text-muted) !important; }
+        [data-theme="dark"] [style*="background:#d1fae5"] [style*="color:#374151"], [data-theme="dark"] [style*="background: #d1fae5"] [style*="color:#374151"],
+        [data-theme="dark"] [style*="background:#d1fae5"] [style*="color:#111827"], [data-theme="dark"] [style*="background: #d1fae5"] [style*="color:#111827"],
+        [data-theme="dark"] [style*="background:#d1fae5"] [style*="color:#6b7280"], [data-theme="dark"] [style*="background: #d1fae5"] [style*="color:#6b7280"],
+        [data-theme="dark"] [style*="background:#fee2e2"] [style*="color:#374151"], [data-theme="dark"] [style*="background: #fee2e2"] [style*="color:#374151"],
+        [data-theme="dark"] [style*="background:#fee2e2"] [style*="color:#111827"], [data-theme="dark"] [style*="background: #fee2e2"] [style*="color:#111827"],
+        [data-theme="dark"] [style*="background:#fee2e2"] [style*="color:#6b7280"], [data-theme="dark"] [style*="background: #fee2e2"] [style*="color:#6b7280"],
+        [data-theme="dark"] [style*="background:#fef3c7"] [style*="color:#374151"], [data-theme="dark"] [style*="background: #fef3c7"] [style*="color:#374151"],
+        [data-theme="dark"] [style*="background:#fef3c7"] [style*="color:#111827"], [data-theme="dark"] [style*="background: #fef3c7"] [style*="color:#111827"],
+        [data-theme="dark"] [style*="background:#fef3c7"] [style*="color:#6b7280"], [data-theme="dark"] [style*="background: #fef3c7"] [style*="color:#6b7280"],
+        [data-theme="dark"] [style*="background:#dbeafe"] [style*="color:#374151"], [data-theme="dark"] [style*="background: #dbeafe"] [style*="color:#374151"],
+        [data-theme="dark"] [style*="background:#dbeafe"] [style*="color:#111827"], [data-theme="dark"] [style*="background: #dbeafe"] [style*="color:#111827"],
+        [data-theme="dark"] [style*="background:#dbeafe"] [style*="color:#6b7280"], [data-theme="dark"] [style*="background: #dbeafe"] [style*="color:#6b7280"],
+        [data-theme="dark"] [style*="background:#ede9fe"] [style*="color:#374151"], [data-theme="dark"] [style*="background: #ede9fe"] [style*="color:#374151"],
+        [data-theme="dark"] [style*="background:#ede9fe"] [style*="color:#111827"], [data-theme="dark"] [style*="background: #ede9fe"] [style*="color:#111827"],
+        [data-theme="dark"] [style*="background:#ede9fe"] [style*="color:#6b7280"], [data-theme="dark"] [style*="background: #ede9fe"] [style*="color:#6b7280"],
+        [data-theme="dark"] [style*="background:#eff6ff"] [style*="color:#374151"], [data-theme="dark"] [style*="background: #eff6ff"] [style*="color:#374151"],
+        [data-theme="dark"] [style*="background:#eff6ff"] [style*="color:#111827"], [data-theme="dark"] [style*="background: #eff6ff"] [style*="color:#111827"],
+        [data-theme="dark"] [style*="background:#eff6ff"] [style*="color:#6b7280"], [data-theme="dark"] [style*="background: #eff6ff"] [style*="color:#6b7280"],
+        [data-theme="dark"] [style*="background:#f0fdf4"] [style*="color:#374151"], [data-theme="dark"] [style*="background: #f0fdf4"] [style*="color:#374151"],
+        [data-theme="dark"] [style*="background:#f0fdf4"] [style*="color:#111827"], [data-theme="dark"] [style*="background: #f0fdf4"] [style*="color:#111827"],
+        [data-theme="dark"] [style*="background:#f0fdf4"] [style*="color:#6b7280"], [data-theme="dark"] [style*="background: #f0fdf4"] [style*="color:#6b7280"],
+        [data-theme="dark"] [style*="background:#fef2f2"] [style*="color:#374151"], [data-theme="dark"] [style*="background: #fef2f2"] [style*="color:#374151"],
+        [data-theme="dark"] [style*="background:#fef2f2"] [style*="color:#111827"], [data-theme="dark"] [style*="background: #fef2f2"] [style*="color:#111827"],
+        [data-theme="dark"] [style*="background:#fef2f2"] [style*="color:#6b7280"], [data-theme="dark"] [style*="background: #fef2f2"] [style*="color:#6b7280"],
+        [data-theme="dark"] [style*="background:#f5f3ff"] [style*="color:#374151"], [data-theme="dark"] [style*="background: #f5f3ff"] [style*="color:#374151"],
+        [data-theme="dark"] [style*="background:#f5f3ff"] [style*="color:#111827"], [data-theme="dark"] [style*="background: #f5f3ff"] [style*="color:#111827"],
+        [data-theme="dark"] [style*="background:#f5f3ff"] [style*="color:#6b7280"], [data-theme="dark"] [style*="background: #f5f3ff"] [style*="color:#6b7280"],
+        [data-theme="dark"] [style*="background:#fff7ed"] [style*="color:#374151"], [data-theme="dark"] [style*="background: #fff7ed"] [style*="color:#374151"],
+        [data-theme="dark"] [style*="background:#fff7ed"] [style*="color:#111827"], [data-theme="dark"] [style*="background: #fff7ed"] [style*="color:#111827"],
+        [data-theme="dark"] [style*="background:#fff7ed"] [style*="color:#6b7280"], [data-theme="dark"] [style*="background: #fff7ed"] [style*="color:#6b7280"],
+        [data-theme="dark"] [style*="background:#f0f9ff"] [style*="color:#374151"], [data-theme="dark"] [style*="background: #f0f9ff"] [style*="color:#374151"],
+        [data-theme="dark"] [style*="background:#f0f9ff"] [style*="color:#111827"], [data-theme="dark"] [style*="background: #f0f9ff"] [style*="color:#111827"],
+        [data-theme="dark"] [style*="background:#f0f9ff"] [style*="color:#6b7280"], [data-theme="dark"] [style*="background: #f0f9ff"] [style*="color:#6b7280"],
+        [data-theme="dark"] [style*="background:#fdf4ff"] [style*="color:#374151"], [data-theme="dark"] [style*="background: #fdf4ff"] [style*="color:#374151"],
+        [data-theme="dark"] [style*="background:#fdf4ff"] [style*="color:#111827"], [data-theme="dark"] [style*="background: #fdf4ff"] [style*="color:#111827"],
+        [data-theme="dark"] [style*="background:#fdf4ff"] [style*="color:#6b7280"], [data-theme="dark"] [style*="background: #fdf4ff"] [style*="color:#6b7280"],
+        [data-theme="dark"] [style*="background:#fef08a"] [style*="color:#374151"], [data-theme="dark"] [style*="background: #fef08a"] [style*="color:#374151"],
+        [data-theme="dark"] [style*="background:#fef08a"] [style*="color:#111827"], [data-theme="dark"] [style*="background: #fef08a"] [style*="color:#111827"],
+        [data-theme="dark"] [style*="background:#fef08a"] [style*="color:#6b7280"], [data-theme="dark"] [style*="background: #fef08a"] [style*="color:#6b7280"],
+        [data-theme="dark"] [style*="background:#ffedd5"] [style*="color:#374151"], [data-theme="dark"] [style*="background: #ffedd5"] [style*="color:#374151"],
+        [data-theme="dark"] [style*="background:#ffedd5"] [style*="color:#111827"], [data-theme="dark"] [style*="background: #ffedd5"] [style*="color:#111827"],
+        [data-theme="dark"] [style*="background:#ffedd5"] [style*="color:#6b7280"], [data-theme="dark"] [style*="background: #ffedd5"] [style*="color:#6b7280"],
+        [data-theme="dark"] [style*="background:#f0fdf8"] [style*="color:#374151"], [data-theme="dark"] [style*="background: #f0fdf8"] [style*="color:#374151"],
+        [data-theme="dark"] [style*="background:#f0fdf8"] [style*="color:#111827"], [data-theme="dark"] [style*="background: #f0fdf8"] [style*="color:#111827"],
+        [data-theme="dark"] [style*="background:#f0fdf8"] [style*="color:#6b7280"], [data-theme="dark"] [style*="background: #f0fdf8"] [style*="color:#6b7280"],
+        [data-theme="dark"] [style*="background:#fff5f5"] [style*="color:#374151"], [data-theme="dark"] [style*="background: #fff5f5"] [style*="color:#374151"],
+        [data-theme="dark"] [style*="background:#fff5f5"] [style*="color:#111827"], [data-theme="dark"] [style*="background: #fff5f5"] [style*="color:#111827"],
+        [data-theme="dark"] [style*="background:#fff5f5"] [style*="color:#6b7280"], [data-theme="dark"] [style*="background: #fff5f5"] [style*="color:#6b7280"],
+        [data-theme="dark"] [style*="background:#fffbeb"] [style*="color:#374151"], [data-theme="dark"] [style*="background: #fffbeb"] [style*="color:#374151"],
+        [data-theme="dark"] [style*="background:#fffbeb"] [style*="color:#111827"], [data-theme="dark"] [style*="background: #fffbeb"] [style*="color:#111827"],
+        [data-theme="dark"] [style*="background:#fffbeb"] [style*="color:#6b7280"], [data-theme="dark"] [style*="background: #fffbeb"] [style*="color:#6b7280"],
+        [data-theme="dark"] [style*="background:#fdf2f8"] [style*="color:#374151"], [data-theme="dark"] [style*="background: #fdf2f8"] [style*="color:#374151"],
+        [data-theme="dark"] [style*="background:#fdf2f8"] [style*="color:#111827"], [data-theme="dark"] [style*="background: #fdf2f8"] [style*="color:#111827"],
+        [data-theme="dark"] [style*="background:#fdf2f8"] [style*="color:#6b7280"], [data-theme="dark"] [style*="background: #fdf2f8"] [style*="color:#6b7280"] { color:#374151 !important; }
+
+        /* ── Today view, command palette, bottom nav ────────────────────── */
+        .td-head { display:flex; align-items:flex-end; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+        .td-head h2 { font-size:1.35rem; font-weight:800; margin:0; }
+        .td-head p { color:var(--text-tertiary); font-size:13px; margin:2px 0 0; }
+        .td-tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:16px; }
+        .td-tile { border:1px solid var(--border); border-radius:var(--radius-md); padding:12px 14px; background:var(--bg-card); cursor:pointer; text-align:left; font-family:inherit; color:inherit; }
+        .td-tile:hover { box-shadow:var(--shadow-md); }
+        .td-tile .l { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-tertiary); }
+        .td-tile .v { font-size:26px; font-weight:800; line-height:1.2; }
+        .td-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr)); gap:14px; }
+        .td-card { border:1px solid var(--border); border-radius:var(--radius-md); padding:14px 16px; background:var(--bg-card); }
+        .td-card h3 { font-size:13px; font-weight:800; margin:0 0 8px; display:flex; justify-content:space-between; align-items:center; gap:8px; }
+        .td-card h3 button { border:0; background:transparent; color:var(--primary); font-weight:700; font-size:12px; cursor:pointer; font-family:inherit; }
+        .td-row { display:flex; align-items:center; gap:10px; padding:8px 6px; border-top:1px solid var(--border-light); cursor:pointer; border-radius:6px; }
+        .td-row:first-of-type { border-top:0; }
+        .td-row:hover { background:var(--bg-hover); }
+        .td-row .m { flex:1; min-width:0; }
+        .td-row .m b { display:block; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .td-row .m span { font-size:11.5px; color:var(--text-tertiary); }
+        .td-next { background:linear-gradient(135deg,var(--primary-50),var(--bg-card)); border-color:var(--primary); }
+        .td-bar { height:8px; border-radius:99px; background:var(--bg-secondary); overflow:hidden; }
+        .td-bar i { display:block; height:100%; background:var(--primary); }
+        #cmdk { position:fixed; inset:0; z-index:3000; background:rgba(15,10,5,.5); backdrop-filter:blur(3px); display:none; align-items:flex-start; justify-content:center; padding:12vh 12px 0; }
+        #cmdk.on { display:flex; }
+        #cmdkBox { width:min(620px,100%); background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow-xl); overflow:hidden; }
+        #cmdkInput { width:100%; border:0; border-bottom:1px solid var(--border); padding:16px 18px; font-size:16px; outline:none; background:transparent; color:var(--text-primary); font-family:inherit; box-sizing:border-box; }
+        #cmdkList { max-height:52vh; overflow-y:auto; padding:6px; }
+        .ck-g { font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); padding:8px 10px 4px; }
+        .ck-i { display:flex; gap:10px; align-items:center; padding:8px 10px; border-radius:8px; cursor:pointer; font-size:13.5px; }
+        .ck-i.on { background:var(--primary-50); outline:1px solid var(--primary); }
+        .ck-i small { color:var(--text-tertiary); margin-left:auto; font-size:11.5px; white-space:nowrap; }
+        .ck-foot { padding:7px 14px; font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); display:flex; gap:14px; }
+        kbd { background:var(--bg-secondary); border:1px solid var(--border); border-radius:4px; padding:0 5px; font-size:11px; font-family:inherit; }
+        .hdr-hint { opacity:.75; font-size:10.5px; margin-left:6px; }
+        #bottomNav { display:none; }
+        @media (max-width:700px) {
+            #bottomNav { display:flex; position:fixed; left:0; right:0; bottom:0; z-index:800; background:var(--bg-card); border-top:1px solid var(--border); padding:4px 4px calc(4px + env(safe-area-inset-bottom)); }
+            #bottomNav button { flex:1; border:0; background:transparent; color:var(--text-tertiary); font-size:10.5px; font-weight:700; padding:6px 0; display:flex; flex-direction:column; align-items:center; gap:2px; font-family:inherit; cursor:pointer; }
+            #bottomNav button .ic { font-size:18px; line-height:1; }
+            #bottomNav button.on { color:var(--primary); }
+            body { padding-bottom:64px; }
+            #appToast { bottom:76px; }
+            .hdr-hint, #hdrSearch { display:none; }
+        }
     </style>
 </head>
 <body>
@@ -864,6 +1021,9 @@
             </div>
             <div class="header-actions">
                 <div id="syncStatus">&#x25CF; Connecting...</div>
+                <button class="btn-admin" id="hdrSearch" onclick="openCmdk()" title="Search anything (Ctrl+K)">🔍 Search<span class="hdr-hint">Ctrl K</span></button>
+                <button class="btn-admin" id="themeBtn" onclick="toggleTheme()" title="Toggle dark mode">🌙</button>
+                <button class="btn-admin" id="installBtn" onclick="installApp()" style="display:none;" title="Install as an app">⬇ Install</button>
                 <button class="btn-admin" onclick="openAdminPanel()">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline;vertical-align:middle;margin-right:3px;"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>Admin
                 </button>
@@ -907,6 +1067,10 @@
             <!-- Dashboard Tab Navigation -->
             <div class="dash-tabs-wrap">
                 <div class="dash-tabs">
+                    <button class="dash-tab-btn" id="dashTab9Btn" onclick="switchDashTab(9)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        Today
+                    </button>
                     <button class="dash-tab-btn active" id="dashTab1Btn" onclick="switchDashTab(1)">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="m9 12 2 2 4-4"/></svg>
                         AVSF Tracker
@@ -942,6 +1106,10 @@
                 </div>
             </div>
             <div class="dash-tab-content-area">
+
+            <div class="dash-tab-content" id="dashTab9Content" style="display:none;">
+                <div id="todayRoot"></div>
+            </div>
 
             <div class="dash-tab-content active" id="dashTab1Content">
             <div class="metrics-grid">
@@ -1131,7 +1299,7 @@
                 <div id="refTab1Content">
                     <div class="data-section">
                         <div class="section-header">
-                            <span class="section-title">&#127981; Plant &#8594; Company Code (OX18) <span style="font-size:12px;font-weight:400;color:var(--text-tertiary);">196 plants loaded</span></span>
+                            <span class="section-title">&#127981; Plant &#8594; Company Code (OX18) <span style="font-size:12px;font-weight:400;color:var(--text-tertiary);"><span id="plantCountLabel">196</span> plants loaded</span></span>
                             <div style="display:flex;gap:8px;align-items:center;">
                                 <input type="text" class="search-box" id="plantSearch" placeholder="Search plant, name, CC..." oninput="renderPlantTable()" style="width:240px;">
                                 <select id="plantRegionFilter" class="filter-select" onchange="renderPlantTable()" style="width:150px;">
@@ -2837,6 +3005,20 @@ Select a request from the left to preview the email...
         <div id="detailBackdrop" onclick="closeDetail()"></div>
     <aside id="detailPanel" aria-label="AVSF detail" aria-hidden="true"></aside>
     <div id="appToast" role="status"></div>
+    <nav id="bottomNav" aria-label="Main">
+        <button data-bn="9" onclick="switchDashTab(9)"><span class="ic">🏠</span>Today</button>
+        <button data-bn="1" onclick="switchDashTab(1)"><span class="ic">📋</span>Tracker</button>
+        <button onclick="openCmdk()"><span class="ic">🔍</span>Search</button>
+        <button data-bn="4" onclick="switchDashTab(4)"><span class="ic">💳</span>Payments</button>
+        <button onclick="openValidationToolsModal()"><span class="ic">🛠</span>Tools</button>
+    </nav>
+    <div id="cmdk" onclick="if(event.target===this)closeCmdk()">
+        <div id="cmdkBox" role="dialog" aria-label="Search">
+            <input id="cmdkInput" placeholder="Search requests, vendors, company codes, or type a command…" autocomplete="off" oninput="renderCmdk()">
+            <div id="cmdkList"></div>
+            <div class="ck-foot"><span><kbd>↑</kbd> <kbd>↓</kbd> move</span><span><kbd>Enter</kbd> open</span><span><kbd>Esc</kbd> close</span></div>
+        </div>
+    </div>
 
 <script>
         // Firebase config
@@ -2898,12 +3080,14 @@ Select a request from the left to preview the email...
 
         // ── Dashboard Tab Switching ───────────────────────────────
         function switchDashTab(tab) {
-            [1,2,3,4,5,6,7,8].forEach(t => {
+            [1,2,3,4,5,6,7,8,9].forEach(t => {
                 const c = document.getElementById(`dashTab${t}Content`);
                 const b = document.getElementById(`dashTab${t}Btn`);
                 if (c) { c.classList.toggle('active', t === tab); c.style.display = t === tab ? 'block' : 'none'; }
                 if (b) b.classList.toggle('active', t === tab);
             });
+            updateBottomNav(tab);
+            if (tab === 9) renderToday();
             if (tab === 2) renderPlantTable();
             if (tab === 3) renderAuditTable();
             if (tab === 4) pmPopulateCountries();
@@ -2979,6 +3163,7 @@ Select a request from the left to preview the email...
         }
 
         function renderPlantTable() {
+            const plc = document.getElementById('plantCountLabel'); if (plc) plc.textContent = PLANT_DATA.length;
             const search = (document.getElementById('plantSearch')?.value || '').toLowerCase();
             const region = document.getElementById('plantRegionFilter')?.value || '';
             const filtered = PLANT_DATA.filter(p =>
@@ -4835,6 +5020,7 @@ AMERBankingValidation@resideo.com`;
             renderTableView(data);
             renderQueue(data);
             applyViewMode();
+            renderToday();
             if (_detailNo) renderDetail();
         }
 
@@ -5241,6 +5427,176 @@ AMERBankingValidation@resideo.com`;
                 render();
             });
         }
+
+        // ══ Theme, PWA, Today view, command palette ══════════════════════════
+        function toggleTheme() {
+            const dark = document.documentElement.getAttribute('data-theme') !== 'dark';
+            applyTheme(dark ? 'dark' : 'light');
+            try { localStorage.setItem('avsfTheme', dark ? 'dark' : 'light'); } catch (e) {}
+        }
+        function applyTheme(t) {
+            if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+            else document.documentElement.removeAttribute('data-theme');
+            const b = document.getElementById('themeBtn'); if (b) b.textContent = t === 'dark' ? '☀️' : '🌙';
+            const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = t === 'dark' ? '#0b3b36' : '#0f766e';
+        }
+        applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light');
+
+        let _installEv = null;
+        window.addEventListener('beforeinstallprompt', e => {
+            e.preventDefault(); _installEv = e;
+            const b = document.getElementById('installBtn'); if (b) b.style.display = '';
+        });
+        window.addEventListener('appinstalled', () => { const b = document.getElementById('installBtn'); if (b) b.style.display = 'none'; });
+        function installApp() { if (_installEv) { _installEv.prompt(); _installEv = null; } }
+        if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+            window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+        }
+
+        function updateBottomNav(tab) {
+            document.querySelectorAll('#bottomNav [data-bn]').forEach(b => b.classList.toggle('on', +b.dataset.bn === tab));
+        }
+        function goQueue(tabId) {
+            switchDashTab(1);
+            if (typeof setViewMode === 'function' && _viewMode !== 'queue') setViewMode('queue');
+            setQueueTab(tabId);
+        }
+
+        // ── Today view ───────────────────────────────────────────────────
+        function dayOf(v) { return String(v || '').split('T')[0]; }
+        function renderToday() {
+            const root = document.getElementById('todayRoot');
+            if (!root) return;
+            const today = todayUTC();
+            const weekStart = new Date(Date.now() - 6 * 86400000).toISOString().split('T')[0];
+            const monthStart = new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0];
+            const age = a => ageDays(a) || 0;
+            const open = avsfs.filter(a => OPEN_STATUSES.has(a.status));
+            const mine = ['PROCESSING', 'IDOC_ERROR'];
+            const attention = open.filter(a => mine.includes(a.status) && age(a) >= 3).sort((a, b) => age(b) - age(a));
+            const waiting = open.filter(a => a.status === 'ON_HOLD' || a.status === 'PENDING_BUYER').sort((a, b) => age(b) - age(a));
+            const doneToday = avsfs.filter(a => a.status === 'COMPLETED' && dayOf(a.completionDate) === today);
+            const overdue = open.filter(a => age(a) >= 7).length;
+            const next = open.filter(a => mine.includes(a.status)).sort((a, b) => age(b) - age(a))[0];
+            const me = getEmailFullName();
+            const hour = new Date().getHours();
+            const row = (a, extra) => `<div class="td-row" data-no="${esc(a.requestNo)}"><span class="status-badge status-${esc(String(a.status).toLowerCase().replace(/_/g, '-'))}">${esc(getStatusLabel(a.status))}</span>
+                <div class="m"><b>#${esc(formatRequestNumber(a.requestNo))} · ${esc(a.vendorName)}</b><span>${flagOf(a.country)} CC ${esc(a.companyCode || '—')}${a.approverName ? ' · ' + esc(a.approverName) : ''}</span></div>
+                <span class="q-chip" style="background:${age(a) >= 7 ? '#fee2e2;color:#7f1d1d' : age(a) >= 3 ? '#fef3c7;color:#78350f' : 'var(--bg-secondary)'};">${extra || age(a) + 'd'}</span></div>`;
+            const team = TEAM_NAMES.map(n => {
+                const mineDone = avsfs.filter(a => a.status === 'COMPLETED' && canonicalTeamName(a.completedBy) === n);
+                const t = mineDone.filter(a => dayOf(a.completionDate) === today).length;
+                const w = mineDone.filter(a => dayOf(a.completionDate) >= weekStart).length;
+                const tats = mineDone.filter(a => dayOf(a.completionDate) >= monthStart && a.entryDate)
+                    .map(a => Math.max(0, (new Date(dayOf(a.completionDate)) - new Date(dayOf(a.entryDate))) / 86400000));
+                return { n, t, w, avg: tats.length ? (tats.reduce((x, y) => x + y, 0) / tats.length) : null };
+            });
+            const maxW = Math.max(1, ...team.map(x => x.w));
+            root.innerHTML = `
+                <div class="td-head"><div><h2>${hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'}, ${esc(me.split(' ')[0])}</h2>
+                    <p>${new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} · ${open.length} open request${open.length === 1 ? '' : 's'}</p></div>
+                    <button class="btn btn-primary" onclick="openAddModal()">+ Add AVSF</button></div>
+                <div class="td-tiles">
+                    <button class="td-tile" onclick="goQueue('processing')"><div class="l">In my queue</div><div class="v">${avsfs.filter(a => a.status === 'PROCESSING').length}</div></button>
+                    <button class="td-tile" onclick="goQueue('processing')"><div class="l">Overdue (7d+)</div><div class="v" style="color:${overdue ? '#dc2626' : 'inherit'};">${overdue}</div></button>
+                    <button class="td-tile" onclick="goQueue('onhold')"><div class="l">Waiting on others</div><div class="v">${waiting.length}</div></button>
+                    <button class="td-tile" onclick="goQueue('today')"><div class="l">Completed today</div><div class="v" style="color:#059669;">${doneToday.length}</div></button>
+                </div>
+                ${next ? `<div class="td-card td-next" style="margin-bottom:14px;"><h3>⚡ Next up <button onclick="goQueue('processing')">Open queue →</button></h3>${row(next, age(next) + 'd open')}</div>` : ''}
+                <div class="td-grid">
+                    <div class="td-card"><h3>Needs attention (3d+) <span class="q-chip">${attention.length}</span></h3>
+                        ${attention.slice(0, 8).map(a => row(a)).join('') || '<div class="q-empty" style="padding:1rem;">Nothing aging. 🎉</div>'}
+                        ${attention.length > 8 ? `<button class="btn btn-secondary" style="margin-top:8px;" onclick="goQueue('processing')">View all ${attention.length}</button>` : ''}</div>
+                    <div class="td-card"><h3>Waiting on others <span class="q-chip">${waiting.length}</span></h3>
+                        ${waiting.slice(0, 8).map(a => row(a)).join('') || '<div class="q-empty" style="padding:1rem;">Nothing on hold.</div>'}
+                        ${waiting.length > 8 ? `<button class="btn btn-secondary" style="margin-top:8px;" onclick="goQueue('onhold')">View all ${waiting.length}</button>` : ''}</div>
+                    <div class="td-card"><h3>Team — completions</h3>
+                        ${team.map(x => `<div style="margin:10px 0;"><div style="display:flex;justify-content:space-between;font-size:13px;"><b>${esc(x.n)}</b>
+                            <span style="color:var(--text-tertiary);">today <b style="color:var(--text-primary);">${x.t}</b> · 7d <b style="color:var(--text-primary);">${x.w}</b>${x.avg != null ? ` · avg ${x.avg.toFixed(1)}d` : ''}</span></div>
+                            <div class="td-bar" style="margin-top:4px;"><i style="width:${Math.round(x.w / maxW * 100)}%;"></i></div></div>`).join('')}
+                        <div style="font-size:11px;color:var(--text-muted);">Average turnaround is over the last 30 days.</div></div>
+                    <div class="td-card"><h3>Completed today <span class="q-chip">${doneToday.length}</span></h3>
+                        ${doneToday.slice(0, 8).map(a => row(a, esc(canonicalTeamName(a.completedBy) || a.completedBy || ''))).join('') || '<div class="q-empty" style="padding:1rem;">No completions yet today.</div>'}</div>
+                </div>`;
+        }
+        const TEAM_NAMES = ['Rosana Munoz', 'Brandon Ramos', 'Yannick Rojas'];
+        document.getElementById('todayRoot').addEventListener('click', e => {
+            const r = e.target.closest('.td-row');
+            if (r) openDetail(r.dataset.no);
+        });
+
+        // ── Command palette (Ctrl/Cmd+K) ─────────────────────────────────
+        let _ckIdx = 0, _ckItems = [];
+        function openCmdk() {
+            const m = document.getElementById('cmdk'); m.classList.add('on');
+            const i = document.getElementById('cmdkInput'); i.value = ''; renderCmdk(); i.focus();
+        }
+        function closeCmdk() { document.getElementById('cmdk').classList.remove('on'); }
+        function cmdkCommands() {
+            const go = (n, t, ico) => ({ g: 'Go to', t: ico + ' ' + t, run: () => switchDashTab(n) });
+            return [
+                go(9, 'Today', '🏠'), go(1, 'AVSF Tracker', '📋'), go(2, 'Plant / CC Ref', '🏭'), go(3, 'Audit Log', '🧾'),
+                go(4, 'Payment Method advisor', '💳'), go(5, 'Resources', '🌐'), go(6, 'Email Templates', '✉️'), go(7, 'KPI', '📊'), go(8, 'Team Calendar', '🗓'),
+                { g: 'Actions', t: '➕ Add AVSF', run: () => { switchDashTab(1); openAddModal(); } },
+                { g: 'Actions', t: '📥 Import SAP file', run: () => { switchDashTab(1); importDataFile(); } },
+                { g: 'Actions', t: '🛠 Validation tools', run: openValidationToolsModal },
+                { g: 'Actions', t: '🔀 Switch Queue / Table view', run: () => { switchDashTab(1); setViewMode(_viewMode === 'queue' ? 'table' : 'queue'); } },
+                { g: 'Actions', t: '🌓 Toggle dark mode', run: toggleTheme }
+            ];
+        }
+        function renderCmdk() {
+            const q = document.getElementById('cmdkInput').value.trim().toLowerCase();
+            const toks = q.split(/\s+/).filter(Boolean);
+            const items = [];
+            if (toks.length) {
+                const hay = a => [a.requestNo, formatRequestNumber(a.requestNo), a.vendorName, a.vendorNumber, a.companyCode, a.requestorName, a.country].join(' ').toLowerCase();
+                avsfs.filter(a => toks.every(t => hay(a).includes(t)))
+                    .sort((a, b) => (formatRequestNumber(b.requestNo) === q) - (formatRequestNumber(a.requestNo) === q) || String(b.entryDate || '').localeCompare(String(a.entryDate || '')))
+                    .slice(0, 8).forEach(a => items.push({ g: 'Requests', t: `#${formatRequestNumber(a.requestNo)} · ${a.vendorName}`, s: `${getStatusLabel(a.status)} · CC ${a.companyCode || '—'}`,
+                        run: () => { switchDashTab(1); openDetail(a.requestNo); } }));
+                CC_DATA.filter(c => toks.every(t => (c.cc + ' ' + c.name + ' ' + c.country + ' ' + c.city).toLowerCase().includes(t)))
+                    .slice(0, 5).forEach(c => {
+                        items.push({ g: 'Company codes', t: `${flagOf(c.country)} ${c.cc} · ${c.name}`, s: `${c.country} · ${c.currency}`,
+                            run: () => { switchDashTab(2); switchRefTab(2); const i = document.getElementById('ccSearch'); if (i) { i.value = c.cc; renderCCTable(); } } });
+                        if (CC_PM_CONFIG[c.cc]) items.push({ g: 'Company codes', t: `💳 Payment method for ${c.cc}`, s: 'Advisor',
+                            run: () => { switchDashTab(4); const s = document.getElementById('pmCC'); s.value = c.cc; pmOnCCChange(); } });
+                    });
+            }
+            cmdkCommands().filter(c => !toks.length || toks.every(t => c.t.toLowerCase().includes(t))).slice(0, toks.length ? 6 : 20).forEach(c => items.push(c));
+            _ckItems = items; _ckIdx = 0;
+            let last = '';
+            document.getElementById('cmdkList').innerHTML = items.length ? items.map((it, i) => {
+                const h = it.g !== last ? `<div class="ck-g">${esc(it.g)}</div>` : ''; last = it.g;
+                return `${h}<div class="ck-i ${i === 0 ? 'on' : ''}" data-i="${i}">${esc(it.t)}${it.s ? `<small>${esc(it.s)}</small>` : ''}</div>`;
+            }).join('') : '<div class="q-empty" style="padding:1.5rem;">No matches.</div>';
+        }
+        function ckMove(d) {
+            if (!_ckItems.length) return;
+            _ckIdx = (_ckIdx + d + _ckItems.length) % _ckItems.length;
+            document.querySelectorAll('#cmdkList .ck-i').forEach((el, i) => el.classList.toggle('on', i === _ckIdx));
+            const on = document.querySelector('#cmdkList .ck-i.on'); if (on) on.scrollIntoView({ block: 'nearest' });
+        }
+        function ckRun(i) { const it = _ckItems[i]; if (!it) return; closeCmdk(); it.run(); }
+        document.getElementById('cmdkList').addEventListener('click', e => { const el = e.target.closest('.ck-i'); if (el) ckRun(+el.dataset.i); });
+        document.getElementById('cmdkList').addEventListener('mousemove', e => {
+            const el = e.target.closest('.ck-i');
+            if (el && +el.dataset.i !== _ckIdx) { _ckIdx = +el.dataset.i; document.querySelectorAll('#cmdkList .ck-i').forEach((x, i) => x.classList.toggle('on', i === _ckIdx)); }
+        });
+        document.addEventListener('keydown', e => {
+            const open = document.getElementById('cmdk').classList.contains('on');
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); open ? closeCmdk() : openCmdk(); return; }
+            if (open) {
+                if (e.key === 'Escape') closeCmdk();
+                else if (e.key === 'ArrowDown') { e.preventDefault(); ckMove(1); }
+                else if (e.key === 'ArrowUp') { e.preventDefault(); ckMove(-1); }
+                else if (e.key === 'Enter') { e.preventDefault(); ckRun(_ckIdx); }
+                return;
+            }
+            const tag = (e.target.tagName || '').toLowerCase();
+            if (e.key === '/' && !['input', 'textarea', 'select'].includes(tag) && !e.target.isContentEditable && !document.querySelector('.modal.active')) { e.preventDefault(); openCmdk(); }
+        });
+
+        switchDashTab(9);
 
         // Get status label
         function getStatusLabel(status) {
