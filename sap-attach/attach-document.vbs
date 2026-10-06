@@ -133,6 +133,26 @@ Function PopupTitle(n)
   End If
 End Function
 
+' lists the buttons of the title-bar toolbar (diagnostics, written to the log once per vendor)
+Sub DumpToolbar()
+  Dim sh, n, i
+  On Error Resume Next
+  Set sh = session.findById("wnd[0]/titl/shellcont/shell")
+  n = sh.GetButtonCount
+  If Err.Number <> 0 Then
+    Trace "toolbar dump failed: " & Err.Description
+    Err.Clear
+    On Error GoTo 0
+    Exit Sub
+  End If
+  Trace "title toolbar has " & n & " buttons"
+  For i = 0 To n - 1
+    Trace "   button " & i & ": id=" & sh.GetButtonId(i) & "  text=" & sh.GetButtonText(i) & "  type=" & sh.GetButtonType(i)
+  Next
+  Err.Clear
+  On Error GoTo 0
+End Sub
+
 Function RowCountOf(grid)
   Dim n
   On Error Resume Next
@@ -221,7 +241,7 @@ End Function
 
 ' Returns True when the file was attached (or, in dry run, when the attachment list opened).
 Function DoVendor(lifnr, ByRef msg)
-  Dim grid, before, after, t, ready, i, title, ok3, errText, initScreen
+  Dim grid, before, after, t, ready, i, title, ok3, errText, initScreen, dumped
   DoVendor = False
   msg = ""
   If Find("wnd[0]") Is Nothing Then msg = "SAP session is no longer available (logged off?)": Exit Function
@@ -259,15 +279,27 @@ Function DoVendor(lifnr, ByRef msg)
   Trace "vendor screen is open (" & TitleText() & ", " & Int(Timer - t) & " s), opening Services for Object"
   ok3 = False
   errText = ""
+  dumped = False
   t = Timer
   Do While Timer - t < WAIT_SECS
+    ' SAP may already have opened the attachment list by itself
+    If Not Find(LIST_SHELL) Is Nothing Then
+      Trace "attachment list is already open"
+      ok3 = True
+      Exit Do
+    End If
     errText = ""
     On Error Resume Next
     session.findById("wnd[0]/titl/shellcont/shell").pressContextButton "%GOS_TOOLBOX"
-    session.findById("wnd[0]/titl/shellcont/shell").selectContextMenuItem "%GOS_VIEW_ATTA"
     If Err.Number <> 0 Then
-      errText = Err.Description
+      errText = "toolbox button: " & Err.Description
       Err.Clear
+    Else
+      session.findById("wnd[0]/titl/shellcont/shell").selectContextMenuItem "%GOS_VIEW_ATTA"
+      If Err.Number <> 0 Then
+        errText = "attachment menu item: " & Err.Description
+        Err.Clear
+      End If
     End If
     On Error GoTo 0
     If errText = "" Then
@@ -275,7 +307,11 @@ Function DoVendor(lifnr, ByRef msg)
       Exit Do
     End If
     Trace "Services for Object not ready yet: " & errText
-    WScript.Sleep 2000
+    If Not dumped Then
+      DumpToolbar
+      dumped = True
+    End If
+    WScript.Sleep 3000
   Loop
   If Not ok3 Then msg = "Services for Object menu: " & errText: Exit Function
   Trace "waiting for the attachment list"
