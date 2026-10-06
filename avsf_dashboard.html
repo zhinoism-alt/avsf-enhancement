@@ -5822,6 +5822,24 @@ AMERBankingValidation@resideo.com`;
             } catch (e) { console.log('Notification failed', e); }
         }
 
+        function digestText() {
+            const list = stuckList(true);
+            const line = a => `  #${formatRequestNumber(a.requestNo)}  ${String(ageDays(a)).padStart(3)}d  ${getStatusLabel(a.status)}  CC ${a.companyCode || '-'}  ${a.vendorName}${a.approverName ? '  (' + a.approverName + ')' : ''}`;
+            const ours = list.filter(a => a.status === 'PROCESSING' || a.status === 'IDOC_ERROR');
+            const others = list.filter(a => a.status === 'ON_HOLD' || a.status === 'PENDING_BUYER');
+            return `AVSF requests open ${NF.days}+ days (${list.length})\n\n` +
+                (ours.length ? `IN OUR QUEUE (${ours.length})\n${ours.map(line).join('\n')}\n\n` : '') +
+                (others.length ? `WAITING ON OTHERS (${others.length})\n${others.map(line).join('\n')}\n` : '');
+        }
+        function draftDigestEmail() {
+            const text = digestText();
+            try { navigator.clipboard.writeText(text); } catch (e) {}
+            const subject = `AVSF digest: ${stuckList(true).length} request(s) open ${NF.days}+ days`;
+            const body = text.length > 1800 ? text.slice(0, 1800) + '\n…(full list copied to clipboard — paste it here)' : text;
+            window.location.href = 'mailto:?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+            appToast('Digest copied to clipboard and email draft opened');
+        }
+
         function toggleNotifPanel(force) {
             const p = document.getElementById('notifPanel');
             const on = force === true ? true : force === false ? false : !p.classList.contains('on');
@@ -5848,7 +5866,8 @@ AMERBankingValidation@resideo.com`;
                         : perm === 'denied' ? '<span>🚫 Desktop alerts blocked in browser settings</span>'
                         : perm === 'unsupported' ? '<span>Desktop alerts not supported here</span>'
                         : '<button class="nf-snz" data-nf="enable">Enable desktop alerts</button>'}
-                    ${all > list.length ? '<button class="nf-snz" data-nf="unsnooze">Show snoozed</button>' : ''}</div>`;
+                    ${all > list.length ? '<button class="nf-snz" data-nf="unsnooze">Show snoozed</button>' : ''}
+                    ${all ? '<button class="nf-snz" data-nf="draft" title="Open an email draft with this list">✉️ Draft digest</button>' : ''}</div>`;
         }
 
         document.getElementById('notifPanel').addEventListener('click', async e => {
@@ -5861,6 +5880,7 @@ AMERBankingValidation@resideo.com`;
                 if (k === 'snooze') { sn[row.dataset.no] = tomorrow; NF.write('avsfSnooze', sn); return updateNotifications(); }
                 if (k === 'snoozeAll') { stuckList().forEach(a => { sn[a.requestNo] = tomorrow; }); NF.write('avsfSnooze', sn); return updateNotifications(); }
                 if (k === 'unsnooze') { NF.write('avsfSnooze', {}); return updateNotifications(); }
+                if (k === 'draft') return draftDigestEmail();
                 if (k === 'enable') { try { await Notification.requestPermission(); } catch (x) {} return updateNotifications(); }
                 return;
             }

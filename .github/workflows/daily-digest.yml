@@ -1,0 +1,38 @@
+name: Daily AVSF digest
+
+on:
+  schedule:
+    # 13:00 UTC, Monday-Friday (07:00 Mexico City, 09:00 US Eastern in winter). Edit to taste.
+    - cron: '0 13 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (print the digest, do not send)'
+        type: boolean
+        default: true
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install dependencies
+        working-directory: digest
+        run: npm install --no-audit --no-fund
+      - name: Build and send the digest
+        working-directory: digest
+        env:
+          STUCK_DAYS: ${{ vars.STUCK_DAYS || '7' }}
+          DASHBOARD_URL: ${{ vars.DASHBOARD_URL }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '0' }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          DIGEST_FROM: ${{ secrets.DIGEST_FROM }}
+          DIGEST_TO: ${{ secrets.DIGEST_TO }}
+        run: node send-digest.js

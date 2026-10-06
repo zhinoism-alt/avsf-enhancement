@@ -1,0 +1,9 @@
+{
+  "name": "avsf-digest",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Daily email digest of stuck AVSF requests",
+  "main": "send-digest.js",
+  "scripts": { "dry-run": "node send-digest.js --dry-run", "send": "node send-digest.js" },
+  "dependencies": { "nodemailer": "^6.9.14" }
+}
