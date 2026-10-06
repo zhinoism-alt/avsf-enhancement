@@ -9,7 +9,7 @@ Option Explicit
 
 ' ===== Settings =====
 Dim VENDOR_FILE, ATTACH_FOLDER, ATTACH_NAME, ATTACH_EMAIL, DEFAULT_CC, DRY_RUN, START_ROW, MAX_VENDORS, MAX_FAILS_IN_ROW, WAIT_SECS, LOAD_SECS, DIALOG_SECS, MENU_SECS, SKIP_DONE
-VENDOR_FILE = "C:\Users\290158\Downloads\Scripts\PBA_1505.xlsx"
+VENDOR_FILE = "C:\Users\290158\Downloads\Scripts\PBA 1505.xlsx"
 ATTACH_FOLDER = "C:\Users\290158\Downloads\Scripts"
 ATTACH_NAME = "RE_ Suspensiones hasta nuevo aviso.msg"
 ATTACH_EMAIL = True       ' True = also attach the email to every vendor
@@ -26,7 +26,7 @@ DIALOG_SECS = 150         ' how long SAP may take to open/confirm the Import fil
 ' ====================
 
 ' tidy the settings: remove stray quote marks (e.g. from "Copy as path") and trailing backslashes
-VENDOR_FILE = CleanPath(VENDOR_FILE)
+VENDOR_FILE = "C:\Users\290158\Downloads\Scripts\PBA 1505.xlsx"
 ATTACH_FOLDER = CleanPath(ATTACH_FOLDER)
 ATTACH_NAME = CleanPath(ATTACH_NAME)
 
