@@ -43,16 +43,16 @@ End Sub
 
 ' lists every toolbar/shell found by name inside each window (these are not in the normal tree)
 Sub Snapshot(label)
-  Dim nw, wi, w, shells, k, ids, i, o
+  Dim nw, wi, win, shells, k, ids, i, o
   W ""
   W "==== " & label & " (" & Now & ") ===="
   nw = session.Children.Count
   W "windows open: " & nw
   For wi = 0 To nw - 1
-    Set w = session.Children(CLng(wi))
-    W "window " & wi & ": " & w.Id & "  text=" & w.Text
+    Set win = session.Children(CLng(wi))
+    W "window " & wi & ": " & win.Id & "  text=" & win.Text
     On Error Resume Next
-    Set shells = w.findAllByName("shell", "GuiShell")
+    Set shells = win.findAllByName("shell", "GuiShell")
     If Err.Number = 0 Then
       W "  shells found: " & shells.Count
       For k = 0 To shells.Count - 1
