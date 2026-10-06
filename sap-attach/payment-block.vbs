@@ -26,7 +26,7 @@ DIALOG_SECS = 150         ' how long SAP may take to open/confirm the Import fil
 ' ====================
 
 ' tidy the settings: remove stray quote marks (e.g. from "Copy as path") and trailing backslashes
-VENDOR_FILE = "C:\Users\290158\Downloads\Scripts\PBA 1505.xlsx"
+VENDOR_FILE = CleanPath(VENDOR_FILE)
 ATTACH_FOLDER = CleanPath(ATTACH_FOLDER)
 ATTACH_NAME = CleanPath(ATTACH_NAME)
 
