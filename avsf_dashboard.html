@@ -6436,7 +6436,7 @@ AMERBankingValidation@resideo.com`;
         //   IDOC ERROR / IDOC_ERROR    → PROCESSING (still needs fix)
         //   APPR_AWAIT + VM TEAM / our team → PROCESSING (we're working it)
         //   APPR_AWAIT + anyone else   → ON_HOLD (waiting to reach us)
-        function deriveStatusAndCompletedBy(sapStatusRaw, approverRaw) {
+        function deriveStatusAndCompletedBy(sapStatusRaw, approverRaw, hasCompletion) {
             const s  = String(sapStatusRaw  || '').toUpperCase().trim();
             const ap = String(approverRaw   || '').toUpperCase().trim();
 
@@ -6456,9 +6456,14 @@ AMERBankingValidation@resideo.com`;
             // Terminal statuses
             if (s === 'CANCELLED') return { status: 'CANCELLED', completedBy: '' };
 
-            // IDOC error = still in processing queue
-            if (s === 'IDOC ERROR' || s === 'IDOC_ERROR')
-                                   return { status: 'PROCESSING', completedBy: '' };
+            // IDOC error: if SAP shows a completion date or one of our team as approver, VM already
+            // completed it (the error is a posting issue afterwards), so it is Completed, not queue work.
+            if (s === 'IDOC ERROR' || s === 'IDOC_ERROR') {
+                if (hasCompletion || isOurTeam) {
+                    return { status: 'COMPLETED', completedBy: isOurTeam ? teamName : String(approverRaw || '').trim() };
+                }
+                return { status: 'PROCESSING', completedBy: '' };
+            }
 
             // APPR_AWAIT (or anything else still open): VM must process it, whoever the
             // current approver is. The approver name is kept so the app can show who it is with.
@@ -6523,7 +6528,11 @@ AMERBankingValidation@resideo.com`;
 
             const rawStatus  = getStr('request status','status','state');
             const rawApprover = getStr('current approver name','approver name','approver','approved by');
-            const { status, completedBy: importedCompletedBy } = deriveStatusAndCompletedBy(rawStatus, rawApprover);
+            const completionDate = getDate('completion date','completed date','last approved date','fertigstellungsdatum',
+                                        'date completed','approved on','approval date','last approval date','last approved on',
+                                        'closing date','date of completion','fecha completado','fecha aprobación',
+                                        'approval completion date','final approval date','last update date');
+            const { status, completedBy: importedCompletedBy } = deriveStatusAndCompletedBy(rawStatus, rawApprover, !!completionDate);
 
             // Multiple Company Code note
             const multiCC   = getStr('multiple company code','multiple company codes','additional company codes');
@@ -6547,10 +6556,7 @@ AMERBankingValidation@resideo.com`;
                 status,
                 entryDate:      getDate('requested date','entry date','date received','created on','creation date','request date','erstellungsdatum',
                                         'request creation date','date of request','fecha solicitud','fecha creación'),
-                completionDate: getDate('completion date','completed date','last approved date','fertigstellungsdatum',
-                                        'date completed','approved on','approval date','last approval date','last approved on',
-                                        'closing date','date of completion','fecha completado','fecha aprobación',
-                                        'approval completion date','final approval date','last update date'),
+                completionDate,
                 requestorName:  getStr('requestor name','requestor','requested by','requester'),
                 requestorEmail: getStr('email','requestor email','requester email','e-mail','mail'),
                 approverName:   rawApprover,
