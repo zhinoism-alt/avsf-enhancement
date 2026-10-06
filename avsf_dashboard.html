@@ -495,8 +495,10 @@
         .status-processing::before  { background: #3b82f6; }
         .status-idoc-error     { background: #fce7f3; color: #831843; }
         .status-idoc-error::before  { background: #ec4899; }
-        .status-buyer-response { background: #ede9fe; color: #4c1d95; }
-        .status-buyer-response::before { background: #8b5cf6; }
+        .status-buyer-response,
+        .status-pending-buyer  { background: #ede9fe; color: #4c1d95; }
+        .status-buyer-response::before,
+        .status-pending-buyer::before { background: #8b5cf6; }
         .status-on-hold        { background: #ffedd5; color: #7c2d12; }
         .status-on-hold::before     { background: #f97316; }
         .status-cancelled      { background: #f3f4f6; color: #374151; }
@@ -1259,6 +1261,7 @@
                                     <option value="2661">2661</option>
                                 </optgroup>
                                 <optgroup label="🇭🇺 Hungary">
+                                    <option value="2616">2616 – Resideo Kft. (Budapest)</option>
                                     <option value="2720">2720</option>
                                 </optgroup>
                                 <optgroup label="🇨🇿 Czech Republic">
@@ -1303,6 +1306,7 @@
                                         <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:3px;">Payment Currency</label>
                                         <select id="pmCurrency" class="form-select" onchange="pmAdvise()" style="width:100%;">
                                             <option value="">— Select currency —</option>
+                                            <option value="MULTI">★ Multicurrency (show all)</option>
                                             <option value="USD">USD – US Dollar</option>
                                             <option value="EUR">EUR – Euro</option>
                                             <option value="GBP">GBP – British Pound</option>
@@ -2492,6 +2496,7 @@ Select a request from the left to preview the email...
                             <select id="btCurrency" onchange="lookupPartnerBankType()"
                                     style="width: 100%; padding: 10px; border: 2px solid #ddd6fe; border-radius: 6px; font-size: 14px; background: white; box-sizing: border-box;">
                                 <option value="">— Select currency —</option>
+                                <option value="MULTI">★ Multicurrency (all currencies for this CC)</option>
                                 <option value="AED">AED – UAE Dirham</option>
                                 <option value="AUD">AUD – Australian Dollar</option>
                                 <option value="BGN">BGN – Bulgarian Lev</option>
@@ -3030,6 +3035,7 @@ Select a request from the left to preview the email...
             '2621':{type:'EMEA',country:'GB',domesticCurrency:'GBP',label:'UK (P&S)'},
             '2660':{type:'EMEA',country:'RO',domesticCurrency:'RON',label:'Romania (P&S)'},
             '2661':{type:'EMEA',country:'SK',domesticCurrency:'EUR',label:'Slovakia (P&S)'},
+            '2616':{type:'EMEA',country:'HU',domesticCurrency:'HUF',label:'Resideo Kft. (Hungary)'},
             '2720':{type:'EMEA',country:'HU',domesticCurrency:'HUF',label:'Hungary (P&S)'},
             '2727':{type:'EMEA',country:'CZ',domesticCurrency:'CZK',label:'Czech Rep. (P&S)'},
             '2731':{type:'EMEA_CH_MULTI',country:'CH',domesticCurrency:'CHF',label:'Switzerland multi-country (P&S)'},
@@ -3167,8 +3173,9 @@ Select a request from the left to preview the email...
         }
 
         function pmClear() {
-            document.getElementById('pmCC').value = '';
-            pmOnCCChange();
+            const q = document.getElementById('pmCCSearch');
+            if (q) q.value = '';
+            filterPMCC();
         }
 
         function pmCard(pm, color, label, desc, opts) {
@@ -3203,6 +3210,23 @@ Select a request from the left to preview the email...
             const res     = document.getElementById('pmResult');
             if (!res) return;
 
+            // ── Multicurrency: run the advisor once per relevant currency ──
+            if (cur === 'MULTI' && cfg.type !== 'NO_SAP') {
+                const sel = document.getElementById('pmCurrency');
+                const list = [...new Set([cfg.domesticCurrency, 'EUR', 'USD'])].filter(Boolean);
+                sel.value = list[0]; pmAdvise();
+                if (res.querySelector('p') && /select|complete/i.test(res.innerText) && !res.querySelector('span[style*="min-width:40px"]')) { sel.value = 'MULTI'; return; }
+                let html = '<div style="font-size:11px;background:#eff6ff;padding:5px 10px;border-radius:6px;color:#1e40af;margin-bottom:8px;">ℹ️ Multicurrency vendor — payment method per currency. Any other currency follows the foreign-payment rule shown for the CC.</div>';
+                list.forEach(c => {
+                    sel.value = c;
+                    pmAdvise();
+                    html += `<div style="font-size:12px;font-weight:800;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px;margin:10px 0 6px;">${c}${c === cfg.domesticCurrency ? ' (domestic)' : ''}</div>` + res.innerHTML;
+                });
+                sel.value = 'MULTI';
+                res.innerHTML = html;
+                return;
+            }
+
             // ── No SAP ──────────────────────────────────────────────
             if (cfg.type === 'NO_SAP') {
                 res.innerHTML = `<div style="background:#fee2e2;border:2px solid #ef4444;border-radius:10px;padding:1.25rem;">
@@ -3232,6 +3256,9 @@ Select a request from the left to preview the email...
                 let cards = '';
                 if (cur === 'USD') {
                     cards = pmCard('W','#3b82f6','USD Payment — PM W','USD payment from HSBC-based MX CC');
+                } else if ((cur && cur !== 'MXN') || (vc && vc !== 'MX')) {
+                    cards = pmCard('1','#f59e0b','Non-HSBC — PM 1',`Foreign currency / country (${cur || 'MXN'}${vc ? ' · ' + vc : ''}) — HSBC México (021) does not apply`) +
+                        pmCard('Z','#6b7280','Manual — PM Z','Manual payment fallback');
                 } else {
                     if (bank === '021') {
                         cards = pmCard('2','#0f766e','HSBC to HSBC — PM 2','Vendor bank is HSBC México (021)',
@@ -3253,6 +3280,9 @@ Select a request from the left to preview the email...
                 let cards = '';
                 if (cur === 'USD') {
                     cards = pmCard('W','#3b82f6','USD Payment — PM W','USD payment from BBVA-based MX CC');
+                } else if ((cur && cur !== 'MXN') || (vc && vc !== 'MX')) {
+                    cards = pmCard('V','#f59e0b','Non-BBVA — PM V',`Foreign currency / country (${cur || 'MXN'}${vc ? ' · ' + vc : ''}) — BBVA Bancomer (012) does not apply`) +
+                        pmCard('Z','#6b7280','Manual — PM Z','Manual payment fallback');
                 } else {
                     if (bank === '012') {
                         cards = pmCard('P','#0f766e','BBVA to BBVA — PM P','Vendor bank is BBVA Bancomer (012)');
@@ -3568,13 +3598,33 @@ Select a request from the left to preview the email...
         };
 
         function lookupPartnerBankType() {
-            const cc  = (document.getElementById('btCompanyCode')?.value || '').trim();
+            const cc  = (document.getElementById('btCompanyCode')?.value || '').trim().replace(/[^0-9A-Za-z]/g, '');
             const cur = (document.getElementById('btCurrency')?.value || '').trim();
             const res = document.getElementById('btResult');
             if (!res) return;
 
             if (!cc || !cur) {
                 res.innerHTML = '<div style="color:#9ca3af;text-align:center;padding:20px;font-size:13px;">Enter a Company Code and select a Currency to look up the Partner Bank Type.</div>';
+                return;
+            }
+
+            if (cur === 'MULTI') {
+                const rows = Object.keys(PARTNER_BANK_TYPE)
+                    .filter(k => k.endsWith('+' + cc))
+                    .map(k => ({ cur: k.split('+')[0], bt: PARTNER_BANK_TYPE[k], note: PARTNER_BANK_TYPE_NOTES[k] || '' }))
+                    .sort((a, b) => a.cur.localeCompare(b.cur));
+                if (!rows.length) {
+                    res.innerHTML = `<div style="background:#fee2e2;padding:16px 20px;border-radius:8px;border-left:4px solid #ef4444;color:#7f1d1d;font-size:13px;"><strong>⚠️ Not Found</strong><br>No Partner Bank Types exist for CC <strong>${cc}</strong>.</div>`;
+                    return;
+                }
+                res.innerHTML = `
+                    <div style="background:#f5f3ff;padding:16px 20px;border-radius:8px;border-left:4px solid #7c3aed;">
+                        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#5b21b6;margin-bottom:8px;">Multicurrency · CC ${cc} · ${rows.length} currenc${rows.length === 1 ? 'y' : 'ies'}</div>
+                        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                            <thead><tr style="text-align:left;color:#6b7280;"><th style="padding:4px 8px;">Currency</th><th style="padding:4px 8px;">Partner Bank Type</th><th style="padding:4px 8px;">Note</th></tr></thead>
+                            <tbody>${rows.map(r => `<tr style="border-top:1px solid #ddd6fe;"><td style="padding:6px 8px;font-weight:700;">${r.cur}</td><td style="padding:6px 8px;"><span style="background:#7c3aed;color:white;border-radius:6px;padding:2px 8px;font-weight:800;">${r.bt}</span></td><td style="padding:6px 8px;color:#92400e;font-size:12px;">${r.note}</td></tr>`).join('')}</tbody>
+                        </table>
+                    </div>`;
                 return;
             }
 
@@ -4489,7 +4539,7 @@ AMERBankingValidation@resideo.com`;
 
         function adminRerunMigrations() {
             localStorage.removeItem('avsfMigV2_checklist');
-            localStorage.removeItem('avsfMigV3_approver');
+            localStorage.removeItem('avsfMigV4_approver');
             adminLog('Migrations reset. They will re-run on next page load.');
         }
 
@@ -4636,25 +4686,30 @@ AMERBankingValidation@resideo.com`;
             console.log(`[AutoFix] Done — ${toFix.length} records persisted.`);
         }
 
+        function canonicalTeamName(raw) {
+            const TEAM_MEMBERS = ['Rosana Munoz', 'Brandon Ramos', 'Yannick Rojas'];
+            const toks = String(raw || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                .toUpperCase().split(/[^A-Z]+/).filter(Boolean);
+            if (!toks.length) return '';
+            return TEAM_MEMBERS.find(m => {
+                const [first, last] = m.toUpperCase().split(' ');
+                return toks.includes(first) && toks.includes(last);
+            }) || '';
+        }
+
         // ── Silent one-time migration: fix completedBy from approverName ──────
         async function runApproverMigration() {
-            const FLAG = 'avsfMigV3_approver';
+            const FLAG = 'avsfMigV4_approver';
             if (localStorage.getItem(FLAG)) return;
-
-            const TEAM_MAP = {
-                'ROSANA MUNOZ':  'Rosana Munoz',
-                'BRANDON RAMOS': 'Brandon Ramos',
-                'YANNICK ROJAS': 'Yannick Rojas'
-            };
 
             const toFix = [];
             avsfs.forEach(a => {
                 const ap = String(a.approverName || '').toUpperCase().trim();
-                const isOurTeam = Object.keys(TEAM_MAP).includes(ap);
+                const correct = canonicalTeamName(a.approverName);
+                const isOurTeam = !!correct;
                 const isVMTeam  = ap === 'VM TEAM' || ap.includes('VM TEAM');
 
                 if (a.status === 'COMPLETED' && isOurTeam) {
-                    const correct = TEAM_MAP[ap];
                     if ((a.completedBy || '').trim() !== correct) {
                         toFix.push({ id: a.requestNo, completedBy: correct });
                     }
@@ -4732,7 +4787,7 @@ AMERBankingValidation@resideo.com`;
                     <td>${avsf.companyCode}</td>
                     <td>${avsf.country || '-'}</td>
                     <td>
-                        <span class="status-badge status-${avsf.status.toLowerCase().replace('_', '-')}">${getStatusLabel(avsf.status)}</span>
+                        <span class="status-badge status-${avsf.status.toLowerCase().replace(/_/g, '-')}">${getStatusLabel(avsf.status)}</span>
                         ${(()=>{
                             if (avsf.status === 'PROCESSING' && avsf.entryDate) {
                                 const days = Math.floor((Date.now() - new Date(avsf.entryDate).getTime()) / 86400000);
@@ -5111,7 +5166,7 @@ AMERBankingValidation@resideo.com`;
 
             // Completed By
             if (_completedByFilter) {
-                filtered = filtered.filter(a => (a.completedBy || '') === _completedByFilter);
+                filtered = filtered.filter(a => canonicalTeamName(a.completedBy) === _completedByFilter || (a.completedBy || '') === _completedByFilter);
             }
 
             // Date range — normalize stored value to YYYY-MM-DD before comparing
@@ -5307,18 +5362,13 @@ AMERBankingValidation@resideo.com`;
             const s  = String(sapStatusRaw  || '').toUpperCase().trim();
             const ap = String(approverRaw   || '').toUpperCase().trim();
 
-            // Canonical display names for our VM team members
-            const TEAM_MAP = {
-                'ROSANA MUNOZ':  'Rosana Munoz',
-                'BRANDON RAMOS': 'Brandon Ramos',
-                'YANNICK ROJAS': 'Yannick Rojas'
-            };
-            const isOurTeam = Object.keys(TEAM_MAP).includes(ap);
+            const teamName  = canonicalTeamName(approverRaw);
+            const isOurTeam = !!teamName;
             const isVMTeam  = ap === 'VM TEAM' || ap.startsWith('VM TEAM');
 
             // COMPLETED — always COMPLETED; completedBy = canonical team name or raw approver
             if (s === 'COMPLETED') {
-                const completedBy = isOurTeam ? TEAM_MAP[ap] : (approverRaw.trim() || '');
+                const completedBy = isOurTeam ? teamName : (String(approverRaw || '').trim());
                 return { status: 'COMPLETED', completedBy };
             }
 
@@ -5338,6 +5388,28 @@ AMERBankingValidation@resideo.com`;
             if (isOurTeam || isVMTeam) return { status: 'PROCESSING', completedBy: '' };
             if (ap.length > 0)         return { status: 'ON_HOLD',    completedBy: '' };
             return                            { status: 'PROCESSING', completedBy: '' };
+        }
+
+        // Primary CC may be blank on creation requests: fall back to the "Multiple Company Code"
+        // list, then to an exact company-name match against CC_DATA.
+        function resolveCompanyCode(primary, multi, compName) {
+            const pick = txt => {
+                const m = String(txt || '').match(/\d+/g) || [];
+                for (const t of m) {
+                    const cc = t.replace(/^0+(?=\d{4})/, '');
+                    if (/^\d{4}$/.test(cc)) return cc;
+                }
+                return '';
+            };
+            let cc = pick(primary);
+            if (!cc && !String(primary || '').trim()) cc = pick(multi);
+            if (!cc && !String(primary || '').trim() && compName) {
+                const norm = x => String(x || '').replace(/\s+/g, ' ').trim().toLowerCase();
+                const n = norm(compName);
+                const hit = CC_DATA.filter(c => norm(c.name) === n);
+                if (hit.length === 1) cc = hit[0].cc;
+            }
+            return cc || String(primary || '').trim();
         }
 
         function mapSAPRow(row) {
@@ -5379,9 +5451,12 @@ AMERBankingValidation@resideo.com`;
             const { status, completedBy: importedCompletedBy } = deriveStatusAndCompletedBy(rawStatus, rawApprover);
 
             // Multiple Company Code note
-            const multiCC   = getStr('multiple company code');
+            const multiCC   = getStr('multiple company code','multiple company codes','additional company codes');
             const sbg       = getStr('sbg');
             const compName  = getStr('company name');
+            const companyCode = resolveCompanyCode(
+                getStr('company code','cocode','co. code','co.code','cc','bukrs','company code(s)','target company code','create in company code','extend to company code'),
+                multiCC, compName);
             let notes = '';
             if (multiCC) notes += 'Multiple CC: ' + multiCC;
             if (sbg)      notes += (notes ? ' | ' : '') + 'SBG: ' + sbg;
@@ -5392,7 +5467,7 @@ AMERBankingValidation@resideo.com`;
                 accountGroup:   getStr('account group','acctgrp','acc group'),
                 vendorNumber:   rawVendNo.replace(/^0+/, '') || rawVendNo,
                 vendorName:     getStr('vendor name','name','name 1','name1','supplier name','supplier','kreditoren name'),
-                companyCode:    getStr('company code','cocode','co. code','co.code','cc','bukrs'),
+                companyCode,
                 country:        getStr('country','country key','land1','land'),
                 status,
                 entryDate:      getDate('requested date','entry date','date received','created on','creation date','request date','erstellungsdatum',
@@ -6475,11 +6550,43 @@ AMERBankingValidation@resideo.com`;
         }
 
         // VAT Validation (Main Tool) - Multi-API Fallback
+        function cleanViesText(v) {
+            const t = String(v || '').replace(/\s+/g, ' ').trim();
+            return (!t || /^-+$/.test(t) || t === 'N/A') ? '' : t;
+        }
+
+        async function fetchViesData(cc, num) {
+            const target = `https://ec.europa.eu/taxation_customs/vies/rest-api/ms/${cc}/vat/${num}`;
+            const routes = [
+                target,
+                `https://corsproxy.io/?${encodeURIComponent(target)}`,
+                `https://api.allorigins.win/raw?url=${encodeURIComponent(target)}`,
+                `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(target)}`
+            ];
+            for (const url of routes) {
+                try {
+                    const ctrl = new AbortController();
+                    const t = setTimeout(() => ctrl.abort(), 12000);
+                    const r = await fetch(url, { signal: ctrl.signal });
+                    clearTimeout(t);
+                    const data = await r.json();
+                    if (data && (data.isValid !== undefined || data.valid !== undefined)) {
+                        // userError such as MS_UNAVAILABLE means VIES could not answer - try next route
+                        const ue = String(data.userError || '').toUpperCase();
+                        if (data.isValid === false && ue && ue !== 'INVALID' && ue !== 'INVALID_INPUT') continue;
+                        return data;
+                    }
+                } catch (e) { console.log('VIES route failed:', url, e); }
+            }
+            return null;
+        }
+
         async function validateVATMain() {
             const vatInput = document.getElementById('vatInputMain');
             const resultDiv = document.getElementById('vatResultMain');
             const pdfBtn = document.getElementById('vatPdfBtn');
-            const vat = vatInput.value.trim().replace(/\s/g, '').toUpperCase();
+            let vat = vatInput.value.trim().replace(/[^0-9A-Za-z]/g, '').toUpperCase();
+            if (vat.startsWith('GR')) vat = 'EL' + vat.substring(2); // VIES uses EL for Greece
             
             // Get vendor name
             const manualName = document.getElementById('manualVendorName').value.trim();
@@ -6503,25 +6610,22 @@ AMERBankingValidation@resideo.com`;
                 let isValid = false;
                 let apiUsed = 'EU VIES (free)';
 
-                // Step 1: Try EU VIES first (free, unlimited)
-                const apiUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://ec.europa.eu/taxation_customs/vies/rest-api/ms/${countryCode}/vat/${vatNumber}`)}`;
-                
-                try {
-                    const response = await fetch(apiUrl);
-                    const data = await response.json();
-                    
-                    if (data.isValid || data.valid) {
+                // Step 1: Try EU VIES first (free, unlimited) through several CORS routes
+                let viesInvalid = false;
+                const viesData = await fetchViesData(countryCode, vatNumber);
+                if (viesData) {
+                    if (viesData.isValid === true || viesData.valid === true) {
                         isValid = true;
-                        companyName = data.name || data.traderName || '';
-                        address = data.address || data.traderAddress || '';
+                        companyName = cleanViesText(viesData.name || viesData.traderName);
+                        address = cleanViesText(viesData.address || viesData.traderAddress);
+                    } else if (viesData.isValid === false || viesData.valid === false) {
+                        viesInvalid = true;
                     }
-                } catch (viesError) {
-                    console.log('VIES API failed, trying fallback:', viesError);
                 }
 
                 // Step 2: If VIES failed or missing data, try AbstractAPI fallback
                 const abstractVatApiKey = localStorage.getItem('abstractVatApiKey');
-                if ((!isValid || !companyName) && abstractVatApiKey) {
+                if (!viesInvalid && (!isValid || !companyName) && abstractVatApiKey) {
                     try {
                         resultDiv.innerHTML = '<div style="color: #6b7280; padding: 15px;">Getting enhanced data from AbstractAPI...</div>';
                         
@@ -6548,8 +6652,8 @@ AMERBankingValidation@resideo.com`;
                 // Step 3: Process results
                 if (isValid) {
                     // Fill in defaults if still missing
-                    if (!companyName) companyName = 'Available in VIES - Verify manually';
-                    if (!address) address = 'Available in VIES - Verify manually';
+                    if (!companyName) companyName = 'Not disclosed by this member state - verify manually';
+                    if (!address) address = 'Not disclosed by this member state - verify manually';
                     
                     validationResults.vat = {
                         vat: vat,
@@ -6579,6 +6683,18 @@ AMERBankingValidation@resideo.com`;
                         </div>
                     `;
                     pdfBtn.style.display = 'block';
+                } else if (viesInvalid) {
+                    validationResults.vat = {
+                        vat: vat, valid: false, countryCode: countryCode, vatNumber: vatNumber,
+                        companyName: 'N/A', address: 'N/A',
+                        timestamp: new Date().toISOString(), apiUsed: 'EU VIES (free)'
+                    };
+                    resultDiv.innerHTML = `
+                        <div style="background: #fee2e2; padding: 20px; border-radius: 6px; border-left: 4px solid #ef4444;">
+                            <div style="color: #991b1b; font-weight: 600; font-size: 16px; margin-bottom: 8px;">✗ VAT number not valid in VIES</div>
+                            <div style="color: #374151; font-size: 13px;">${vat} was reported as invalid / not registered by the EU VIES service.</div>
+                        </div>`;
+                    pdfBtn.style.display = 'none';
                 } else {
                     // Fallback: Basic format validation
                     const isValidFormat = /^[A-Z]{2}[0-9A-Z]+$/.test(vat);
@@ -6605,7 +6721,8 @@ AMERBankingValidation@resideo.com`;
                                     <strong>VAT:</strong> ${vat}<br>
                                     <strong>Country:</strong> ${countryCode}<br>
                                     <strong>Number:</strong> ${vatNumber}<br>
-                                    <em>Format appears valid. Please verify in VIES database for full validation.</em>
+                                    <em>Format appears valid, but no live service could be reached (VIES unavailable${countryCode === 'GB' ? '; GB is not covered by VIES' : ''}). Cross-check on
+                                    <a href="https://www.iban.com/vat-checker" target="_blank" rel="noopener">iban.com/vat-checker</a>${countryCode === 'GB' ? ' or the <a href="https://www.gov.uk/check-uk-vat-number" target="_blank" rel="noopener">HMRC checker</a>' : ''}.</em>
                                 </div>
                             </div>
                         `;
@@ -6878,7 +6995,7 @@ AMERBankingValidation@resideo.com`;
 
             const completed = avsfs.filter(a =>
                 a.status === 'COMPLETED' && a.entryDate && a.completionDate &&
-                (!personF || (a.completedBy||'') === personF) &&
+                (!personF || (canonicalTeamName(a.completedBy) === personF || (a.completedBy||'') === personF)) &&
                 (!yearF   || a.completionDate.startsWith(yearF)) &&
                 (!monthF  || a.completionDate.slice(5,7) === monthF)
             );
@@ -6976,7 +7093,7 @@ AMERBankingValidation@resideo.com`;
             // Per-person table
             const people = ['Brandon Ramos','Rosana Munoz','Yannick Rojas'];
             const pRows = people.map(name => {
-                const rs = rows.filter(r => (r.completedBy||'') === name);
+                const rs = rows.filter(r => canonicalTeamName(r.completedBy) === name || (r.completedBy||'') === name);
                 if (!rs.length) return null;
                 const a = rs.reduce((s,r)=>s+r.bd,0)/rs.length;
                 const o = rs.filter(r=>r.bd<=TARGET).length;
