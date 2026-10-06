@@ -8,9 +8,9 @@ Dim VENDOR_FILE, ATTACH_FOLDER, ATTACH_NAME, DRY_RUN, START_ROW, MAX_VENDORS, MA
 VENDOR_FILE = "C:\Users\290158\Downloads\Scripts\Attachment Script.xlsx"   ' Excel file, vendor numbers in column A of the first sheet
 ATTACH_FOLDER = "C:\Users\290158\Downloads\Scripts"
 ATTACH_NAME = "RE_ Suspensiones hasta nuevo aviso.msg"
-DRY_RUN = True            ' True = open each vendor and its attachment list but attach NOTHING
+DRY_RUN = False           ' True = open each vendor and its attachment list but attach NOTHING
 START_ROW = 1             ' first Excel row to process (use it to continue after an interruption)
-MAX_VENDORS = 3           ' 0 = all vendors; keep a small number for the first real test
+MAX_VENDORS = 0           ' 0 = all vendors in the Excel file; use a small number to test
 MAX_FAILS_IN_ROW = 3      ' stop after this many failures in a row
 WAIT_SECS = 120           ' how long to wait for slow SAP screens
 ' ====================
@@ -27,6 +27,10 @@ Sub Log(msg)
   Set f = fso.OpenTextFile(logPath, 8, True)
   f.WriteLine Now & "  " & msg
   f.Close
+End Sub
+
+Sub Trace(m)
+  Log "      " & m
 End Sub
 
 Function Find(id)
@@ -189,11 +193,12 @@ End Function
 
 ' Returns True when the file was attached (or, in dry run, when the attachment list opened).
 Function DoVendor(lifnr, ByRef msg)
-  Dim grid, before, after, t, ready, i, title
+  Dim grid, before, after, t, ready, i, title, ok3, errText
   DoVendor = False
   msg = ""
   ClosePopups
 
+  Trace "opening XK02 for vendor " & lifnr
   ' 1. XK02 start screen, vendor number, Address view (as recorded)
   If Not SetText("wnd[0]/tbar[0]/okcd", "/nXK02") Then msg = gErr: Exit Function
   If Not SendKey("wnd[0]", 0) Then msg = gErr: Exit Function
@@ -220,17 +225,29 @@ Function DoVendor(lifnr, ByRef msg)
   Loop
   If Not ready Then msg = "Vendor screen did not open within " & WAIT_SECS & " s": Exit Function
 
-  ' 3. Services for Object > Attachment list
-  On Error Resume Next
-  session.findById("wnd[0]/titl/shellcont/shell").pressContextButton "%GOS_TOOLBOX"
-  session.findById("wnd[0]/titl/shellcont/shell").selectContextMenuItem "%GOS_VIEW_ATTA"
-  If Err.Number <> 0 Then
-    msg = "Services for Object menu: " & Err.Description
-    Err.Clear
+  ' 3. Services for Object > Attachment list (the toolbar can load slowly, so retry on errors)
+  Trace "vendor screen is open, opening Services for Object"
+  ok3 = False
+  errText = ""
+  t = Timer
+  Do While Timer - t < WAIT_SECS
+    errText = ""
+    On Error Resume Next
+    session.findById("wnd[0]/titl/shellcont/shell").pressContextButton "%GOS_TOOLBOX"
+    session.findById("wnd[0]/titl/shellcont/shell").selectContextMenuItem "%GOS_VIEW_ATTA"
+    If Err.Number <> 0 Then
+      errText = Err.Description
+      Err.Clear
+    End If
     On Error GoTo 0
-    Exit Function
-  End If
-  On Error GoTo 0
+    If errText = "" Then
+      ok3 = True
+      Exit Do
+    End If
+    WScript.Sleep 2000
+  Loop
+  If Not ok3 Then msg = "Services for Object menu: " & errText: Exit Function
+  Trace "waiting for the attachment list"
   Set grid = WaitFor(LIST_SHELL, WAIT_SECS)
   If grid Is Nothing Then msg = "Attachment list did not open within " & WAIT_SECS & " s": Exit Function
   before = RowCountOf(grid)
@@ -240,6 +257,7 @@ Function DoVendor(lifnr, ByRef msg)
     DoVendor = True
   Else
     ' 4. Create > Create attachment (from PC) > SAP's own "Import file" dialog
+    Trace "creating the attachment"
     On Error Resume Next
     grid.pressToolbarContextButton "%ATTA_CREATE"
     grid.selectContextMenuItem "%GOS_PCATTA_CREA"
@@ -273,7 +291,8 @@ Function DoVendor(lifnr, ByRef msg)
     DoVendor = True
   End If
 
-  ' 6. close the list and leave XK02 without saving
+  ' 6. close the list and leave XK02 (attachments are stored as soon as they are created)
+  Trace "closing the list and leaving XK02"
   ClosePopups
   If Not Press("wnd[0]/tbar[0]/btn[15]") Then Log "   note: " & gErr
   WScript.Sleep 1000
