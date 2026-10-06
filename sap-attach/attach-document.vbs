@@ -4,14 +4,15 @@
 Option Explicit
 
 ' ===== Settings =====
-Dim VENDOR_FILE, ATTACH_FOLDER, ATTACH_NAME, DRY_RUN, START_ROW, MAX_VENDORS, MAX_FAILS_IN_ROW, WAIT_SECS, LOAD_SECS, DIALOG_SECS, MENU_SECS
+Dim VENDOR_FILE, ATTACH_FOLDER, ATTACH_NAME, DRY_RUN, START_ROW, MAX_VENDORS, MAX_FAILS_IN_ROW, WAIT_SECS, LOAD_SECS, DIALOG_SECS, MENU_SECS, SKIP_DONE
 VENDOR_FILE = "C:\Users\290158\Downloads\Scripts\Attachment Script.xlsx"   ' Excel file, vendor numbers in column A of the first sheet
 ATTACH_FOLDER = "C:\Users\290158\Downloads\Scripts"
 ATTACH_NAME = "RE_ Suspensiones hasta nuevo aviso.msg"
 DRY_RUN = False           ' True = open each vendor and its attachment list but attach NOTHING
-START_ROW = 5             ' first Excel row to process (all 4 sample vendors already have the file; this retest adds a 2nd copy to row 5)
-MAX_VENDORS = 1           ' 0 = all vendors in the Excel file; 1 = just one vendor for the automation test
+START_ROW = 2             ' first Excel row to process (row 1 is the header)
+MAX_VENDORS = 0           ' 0 = every vendor in the Excel file; use a small number to test
 MAX_FAILS_IN_ROW = 3      ' stop after this many failures in a row
+SKIP_DONE = True          ' skip vendors that already got THIS file name in an earlier run (list in attach-done.txt; delete that file to start over)
 WAIT_SECS = 120           ' how long to wait for slow SAP screens
 LOAD_SECS = 0             ' optional pause after the vendor opens before touching Services for Object (0 = none)
 MENU_SECS = 45            ' how long SAP may take to fill the Services for Object menu after the button is pressed
@@ -34,9 +35,10 @@ End Function
 Const LIST_SHELL = "wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell"
 Const TOOLBOX = "wnd[0]/shellcont/shell"   ' toolbar with CREATE_ATTA, VIEW_ATTA, ... shown by System > Services for Object
 
-Dim fso, session, application, connection, SapGuiAuto, logPath, gErr, runLabel
+Dim fso, session, application, connection, SapGuiAuto, logPath, doneFile, gErr, runLabel
 Set fso = CreateObject("Scripting.FileSystemObject")
 logPath = fso.BuildPath(fso.GetParentFolderName(WScript.ScriptFullName), "attach-log.txt")
+doneFile = fso.BuildPath(fso.GetParentFolderName(WScript.ScriptFullName), "attach-done.txt")
 gErr = ""
 
 Sub Log(msg)
@@ -640,11 +642,21 @@ End If
 On Error GoTo 0
 session.findById("wnd[0]").maximize
 
-Dim vendors, k, done, okCount, failCount, fails, msg, started, stoppedEarly
+Dim vendors, k, done, okCount, failCount, fails, msg, started, stoppedEarly, doneDict, doneKey, skipped, tsf, parts
 done = 0: okCount = 0: failCount = 0: fails = 0: stoppedEarly = False
 If Not fso.FileExists(VENDOR_FILE) Then
   MsgBox "Vendor file not found: " & VENDOR_FILE, 16, "Attach document"
   WScript.Quit 1
+End If
+Set doneDict = CreateObject("Scripting.Dictionary")
+skipped = 0
+If SKIP_DONE And fso.FileExists(doneFile) Then
+  Set tsf = fso.OpenTextFile(doneFile, 1)
+  Do While Not tsf.AtEndOfStream
+    parts = Split(tsf.ReadLine, "|")
+    If UBound(parts) >= 1 Then doneDict(parts(0) & "|" & LCase(parts(1))) = True
+  Loop
+  tsf.Close
 End If
 Set vendors = ReadVendors()
 If DRY_RUN Then runLabel = "DRY RUN" Else runLabel = "REAL RUN"
@@ -652,35 +664,45 @@ Log "===== " & runLabel & ": " & vendors.Count & " vendors in " & VENDOR_FILE & 
 
 For Each k In vendors.Keys
   If k >= START_ROW Then
-    If MAX_VENDORS > 0 And done >= MAX_VENDORS Then Exit For
-    done = done + 1
-    started = Timer
-    msg = ""
-    If DoVendor(vendors(k), msg) Then
-      okCount = okCount + 1
-      fails = 0
-      Log "row " & k & "  vendor " & vendors(k) & "  OK   " & msg & "  (" & Int(Timer - started) & " s)"
+    doneKey = vendors(k) & "|" & LCase(ATTACH_NAME)
+    If SKIP_DONE And doneDict.Exists(doneKey) Then
+      skipped = skipped + 1
+      Log "row " & k & "  vendor " & vendors(k) & "  SKIPPED  already attached in an earlier run (attach-done.txt)"
     Else
-      failCount = failCount + 1
-      fails = fails + 1
-      Log "row " & k & "  vendor " & vendors(k) & "  FAILED   " & msg
-      If InStr(msg, "no longer available") > 0 Then
-        stoppedEarly = True
-        Log "Stopped: the SAP session is gone."
-        Exit For
-      End If
-      ClosePopups
-      If fails >= MAX_FAILS_IN_ROW Then
-        stoppedEarly = True
-        Log "Stopped after " & fails & " failures in a row."
-        Exit For
+      If MAX_VENDORS > 0 And done >= MAX_VENDORS Then Exit For
+      done = done + 1
+      started = Timer
+      msg = ""
+      If DoVendor(vendors(k), msg) Then
+        okCount = okCount + 1
+        fails = 0
+        Log "row " & k & "  vendor " & vendors(k) & "  OK   " & msg & "  (" & Int(Timer - started) & " s)"
+        Set tsf = fso.OpenTextFile(doneFile, 8, True)
+        tsf.WriteLine vendors(k) & "|" & ATTACH_NAME & "|" & Now
+        tsf.Close
+        doneDict(doneKey) = True
+      Else
+        failCount = failCount + 1
+        fails = fails + 1
+        Log "row " & k & "  vendor " & vendors(k) & "  FAILED   " & msg
+        If InStr(msg, "no longer available") > 0 Then
+          stoppedEarly = True
+          Log "Stopped: the SAP session is gone."
+          Exit For
+        End If
+        ClosePopups
+        If fails >= MAX_FAILS_IN_ROW Then
+          stoppedEarly = True
+          Log "Stopped after " & fails & " failures in a row."
+          Exit For
+        End If
       End If
     End If
   End If
 Next
 
-Log "===== finished: " & okCount & " ok, " & failCount & " failed" & IIf2(stoppedEarly) & " ====="
-MsgBox runLabel & " finished." & vbCrLf & okCount & " ok, " & failCount & " failed" & IIf2(stoppedEarly) & "." & vbCrLf & "Details: " & logPath, 64, "Attach document"
+Log "===== finished: " & okCount & " ok, " & failCount & " failed, " & skipped & " skipped" & IIf2(stoppedEarly) & " ====="
+MsgBox runLabel & " finished." & vbCrLf & okCount & " ok, " & failCount & " failed, " & skipped & " skipped" & IIf2(stoppedEarly) & "." & vbCrLf & "Details: " & logPath, 64, "Attach document"
 
 Function IIf2(flag)
   If flag Then IIf2 = " (stopped early)" Else IIf2 = ""
