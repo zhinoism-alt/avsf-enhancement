@@ -283,7 +283,7 @@ End Function
 
 ' Returns True when the file was attached (or, in dry run, when the attachment list opened).
 Function DoVendor(lifnr, ByRef msg)
-  Dim grid, before, after, t, ready, i, title, ok3, errText, initScreen, dumped
+  Dim grid, before, after, t, ready, i, title, ok3, errText, initScreen, dumped, lastLogged
   DoVendor = False
   msg = ""
   If Find("wnd[0]") Is Nothing Then WScript.Sleep 5000
@@ -323,7 +323,11 @@ Function DoVendor(lifnr, ByRef msg)
   Trace "vendor screen is open (" & TitleText() & ", " & Int(Timer - t) & " s), opening Services for Object > Create attachment"
   ok3 = False
   errText = ""
-  For i = 1 To 3
+  lastLogged = -1
+  t = Timer
+  Do While Timer - t < WAIT_SECS
+    ' SAP can pop up the attachment list by itself while the vendor loads: close it (never confirms anything)
+    If Not Find("wnd[1]") Is Nothing And Find("wnd[1]/usr/ctxtDY_PATH") Is Nothing Then ClosePopup 1
     errText = ""
     On Error Resume Next
     session.findById("wnd[0]/titl/shellcont/shell").pressContextButton "%GOS_TOOLBOX"
@@ -331,6 +335,7 @@ Function DoVendor(lifnr, ByRef msg)
       errText = "toolbox button: " & Err.Description
       Err.Clear
     Else
+      WScript.Sleep 1000
       session.findById("wnd[0]/titl/shellcont/shell").selectContextMenuItem "%GOS_PCATTA_CREA"
       If Err.Number <> 0 Then
         errText = "create attachment menu item: " & Err.Description
@@ -340,11 +345,15 @@ Function DoVendor(lifnr, ByRef msg)
     On Error GoTo 0
     If errText = "" Then
       ok3 = True
-      Exit For
+      Exit Do
     End If
-    Trace "Services for Object not ready yet: " & errText
-    WScript.Sleep 4000
-  Next
+    ' the menu takes about 30 s to fill in after the vendor opens; log only every ~15 s
+    If Int((Timer - t) / 15) <> lastLogged Then
+      lastLogged = Int((Timer - t) / 15)
+      Trace "waiting for the Services for Object menu (" & Int(Timer - t) & " s): " & errText
+    End If
+    WScript.Sleep 3000
+  Loop
   If Not ok3 Then msg = "Services for Object menu: " & errText: Exit Function
   If WaitFor("wnd[1]/usr/ctxtDY_PATH", WAIT_SECS) Is Nothing Then msg = "The Import file dialog did not appear": Exit Function
 
@@ -376,6 +385,11 @@ Function DoVendor(lifnr, ByRef msg)
     If Not ready Then msg = "No 'attachment created' confirmation within " & WAIT_SECS & " s (status bar: " & StatusText() & ")": Exit Function
     msg = "attached (" & StatusText() & ")"
     DoVendor = True
+    ' as in the recording: press Save (nothing else changed, so SAP only reports "no changes")
+    Trace "pressing Save, as in the recording"
+    Press "wnd[0]/tbar[0]/btn[11]"
+    WScript.Sleep 1500
+    ClosePopups
   End If
 
   ' 6. dismiss any dialog and leave XK02 (attachments are stored as soon as they are created)
