@@ -32,6 +32,7 @@ Function CleanPath(p)
 End Function
 
 Const LIST_SHELL = "wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell"
+Const TOOLBOX = "wnd[0]/shellcont/shell"   ' toolbar with CREATE_ATTA, VIEW_ATTA, ... shown by System > Services for Object
 
 Dim fso, session, application, connection, SapGuiAuto, logPath, gErr, runLabel
 Set fso = CreateObject("Scripting.FileSystemObject")
@@ -357,30 +358,42 @@ Function DoVendor(lifnr, ByRef msg)
   End If
 
   ok3 = False
-  DumpToolbar
-  ' Opening Services for Object from a script behaves differently from a real click, so three ways are tried in turn:
-  '   1 = the dropdown part of the button, 2 = the icon part (what a mouse click presses), 3 = icon part after focusing the window
-  ' Each way is pressed ONCE (pressing again resets SAP's ~20 s menu round trip), then the menu entry is polled for.
-  For i = 1 To 3
+  For i = 1 To 2
     errText = ""
-    On Error Resume Next
-    session.findById("wnd[0]").setFocus
-    Err.Clear
-    If i = 1 Then
-      session.findById("wnd[0]/titl/shellcont/shell").pressContextButton "%GOS_TOOLBOX"
-    Else
-      session.findById("wnd[0]/titl/shellcont/shell").pressButton "%GOS_TOOLBOX"
+    ' SAP shows an "Attachment list" popup by itself for some vendors: close it (never confirms anything)
+    If Not Find("wnd[1]") Is Nothing Then
+      If InStr(LCase(PopupTitle(1)), "attachment list") > 0 Then ClosePopup 1
     End If
-    If Err.Number <> 0 Then
-      errText = "toolbox button: " & Err.Description
-      Err.Clear
+
+    ' 1. System > Services for Object (a normal menu click) shows the toolbox toolbar
+    If Find(TOOLBOX) Is Nothing Then
+      Trace "attempt " & i & ": opening System > Services for Object"
+      On Error Resume Next
+      session.findById("wnd[0]/mbar/menu[5]/menu[6]").select
+      If Err.Number <> 0 Then
+        errText = "menu System > Services for Object: " & Err.Description
+        Err.Clear
+      End If
+      On Error GoTo 0
+      If errText = "" Then
+        If WaitFor(TOOLBOX, 40) Is Nothing Then errText = "the Services for Object toolbar did not appear"
+      End If
     End If
-    On Error GoTo 0
-    If errText <> "" Then
-      Trace "way " & i & ": " & errText
-      WScript.Sleep 3000
-    Else
-      Trace "way " & i & ": button pressed, waiting for SAP to fill the menu (up to " & MENU_SECS & " s)"
+
+    ' 2. its "Create..." menu, opened ONCE
+    If errText = "" Then
+      Trace "attempt " & i & ": toolbar is open, opening its Create menu"
+      On Error Resume Next
+      session.findById(TOOLBOX).pressContextButton "CREATE_ATTA"
+      If Err.Number <> 0 Then
+        errText = "Create button: " & Err.Description
+        Err.Clear
+      End If
+      On Error GoTo 0
+    End If
+
+    ' 3. wait for SAP to fill the menu, then pick "Create attachment" (polling, never pressing the button again)
+    If errText = "" Then
       t = Timer
       picked = False
       Do While Timer - t < MENU_SECS
@@ -388,17 +401,11 @@ Function DoVendor(lifnr, ByRef msg)
           picked = True
           Exit Do
         End If
-        If Not Find("wnd[1]") Is Nothing Then
-          If InStr(LCase(PopupTitle(1)), "attachment list") > 0 Then
-            ClosePopup 1
-            Exit Do
-          End If
-        End If
         On Error Resume Next
-        session.findById("wnd[0]/titl/shellcont/shell").selectContextMenuItem "%GOS_PCATTA_CREA"
+        session.findById(TOOLBOX).selectContextMenuItem "%GOS_PCATTA_CREA"
         If Err.Number <> 0 Then
           Err.Clear
-          session.findById("wnd[0]/titl/shellcont/shell").selectContextMenuItemByText "Create attachment"
+          session.findById(TOOLBOX).selectContextMenuItemByText "Create attachment"
           If Err.Number <> 0 Then
             Err.Clear
           Else
@@ -412,19 +419,23 @@ Function DoVendor(lifnr, ByRef msg)
         WScript.Sleep 2000
       Loop
       If picked Then
-        Trace "way " & i & ": menu entry selected after " & Int(Timer - t) & " s, waiting for the Import file dialog"
-        t = Timer
-        If WaitForImportDialog(DIALOG_SECS) Then
-          ok3 = True
-          Trace "Import file dialog opened after " & Int(Timer - t) & " s (way " & i & ")"
-          Exit For
-        End If
-        Trace "way " & i & ": no Import file dialog"
+        Trace "attempt " & i & ": Create attachment selected after " & Int(Timer - t) & " s, waiting for the Import file dialog"
       Else
-        Trace "way " & i & ": menu was not ready after " & Int(Timer - t) & " s"
+        errText = "the Create menu was not ready after " & Int(Timer - t) & " s"
+      End If
+    End If
+
+    ' 4. SAP's own Import file dialog
+    If errText = "" Then
+      t = Timer
+      If WaitForImportDialog(DIALOG_SECS) Then
+        ok3 = True
+        Trace "Import file dialog opened after " & Int(Timer - t) & " s"
+        Exit For
       End If
       errText = "no Import file dialog"
     End If
+    Trace "attempt " & i & " failed: " & errText
   Next
   If Not ok3 Then msg = "The Import file dialog did not appear (" & errText & ")": Exit Function
 
