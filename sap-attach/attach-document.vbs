@@ -325,7 +325,7 @@ End Function
 
 ' Returns True when the file was attached (or, in dry run, when the attachment list opened).
 Function DoVendor(lifnr, ByRef msg)
-  Dim grid, before, after, t, ready, i, title, ok3, errText, initScreen, dumped, lastLogged, picked
+  Dim grid, before, after, t, ready, i, title, ok3, errText, initScreen, dumped, lastLogged, picked, viaList
   DoVendor = False
   msg = ""
   If Find("wnd[0]") Is Nothing Then WScript.Sleep 5000
@@ -380,6 +380,7 @@ Function DoVendor(lifnr, ByRef msg)
   For i = 1 To 2
     errText = ""
     picked = False
+    viaList = False
     ' SAP shows an "Attachment list" popup by itself for some vendors: close it (never confirms anything)
     If Not Find("wnd[1]") Is Nothing Then
       If InStr(LCase(PopupTitle(1)), "attachment list") > 0 Then ClosePopup 1
@@ -415,6 +416,7 @@ Function DoVendor(lifnr, ByRef msg)
       Set grid = WaitFor(LIST_SHELL, 40)
       If Not grid Is Nothing Then
         Trace "attachment list is open, opening its Create menu"
+        before = RowCountOf(grid)
         BringSapToFront
         On Error Resume Next
         grid.pressToolbarContextButton "%ATTA_CREATE"
@@ -441,7 +443,8 @@ Function DoVendor(lifnr, ByRef msg)
           WScript.Sleep 2000
         Loop
         If picked Then
-          Trace "Create attachment selected from the list after " & Int(Timer - t) & " s"
+          viaList = True
+          Trace "Create attachment selected from the list after " & Int(Timer - t) & " s (" & before & " attachments so far)"
         Else
           Trace "the list's Create menu was not ready after " & Int(Timer - t) & " s"
           If Find("wnd[1]/usr/ctxtDY_PATH") Is Nothing Then ClosePopup 1
@@ -519,26 +522,45 @@ Function DoVendor(lifnr, ByRef msg)
     If Not SetText("wnd[1]/usr/ctxtDY_FILENAME", ATTACH_NAME) Then msg = gErr: Exit Function
     If Not Press("wnd[1]/tbar[0]/btn[0]") Then msg = gErr: Exit Function
 
-    ' 5. wait for SAP's "The attachment was successfully created" message
+    ' 5. confirm the upload. Via the attachment list, SAP returns to the list (the status bar stays empty),
+    '    so the number of rows is compared; via the toolbar's Create menu SAP shows
+    '    "The attachment was successfully created".
     ready = False
+    after = -1
     t = Timer
     Do While Timer - t < DIALOG_SECS
       If Not Find("wnd[2]") Is Nothing Then msg = "Import file error popup: " & PopupTitle(2): Exit Function
       If Find("wnd[1]/usr/ctxtDY_PATH") Is Nothing Then
-        If Not Find("wnd[1]") Is Nothing Then ClosePopup 1
         If InStr(LCase(StatusText()), "attachment") > 0 And InStr(LCase(StatusText()), "created") > 0 Then
           ready = True
           Exit Do
         End If
         If StatusError() <> "" Then msg = "SAP message: " & StatusError(): Exit Function
+        If viaList Then
+          If Not Find(LIST_SHELL) Is Nothing Then
+            after = RowCountOf(Find(LIST_SHELL))
+            ' accept when the list shows one more row, or after a short settle time if the count cannot be read / was not refreshed
+            If before < 0 Or after < 0 Or after > before Or Timer - t > 25 Then
+              ready = True
+              Exit Do
+            End If
+          End If
+        ElseIf Not Find("wnd[1]") Is Nothing Then
+          ClosePopup 1
+        End If
       End If
       WScript.Sleep 500
     Loop
-    If Not ready Then msg = "No 'attachment created' confirmation within " & DIALOG_SECS & " s (status bar: " & StatusText() & ")": Exit Function
-    msg = "attached (" & StatusText() & ")"
+    If Not ready Then msg = "No confirmation within " & DIALOG_SECS & " s (status bar: " & StatusText() & ")": Exit Function
+    If viaList Then
+      msg = "attached via the attachment list (" & before & " -> " & after & " attachments)"
+    Else
+      msg = "attached (" & StatusText() & ")"
+    End If
     DoVendor = True
     ' as in the recording: press Save (nothing else changed, so SAP only reports "no changes")
-    Trace "pressing Save, as in the recording"
+    Trace "closing the attachment list (if open), then pressing Save as in the recording"
+    ClosePopups
     Press "wnd[0]/tbar[0]/btn[11]"
     WScript.Sleep 1500
     ClosePopups
