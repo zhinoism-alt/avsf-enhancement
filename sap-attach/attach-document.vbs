@@ -5,9 +5,9 @@ Option Explicit
 
 ' ===== Settings =====
 Dim VENDOR_FILE, ATTACH_FOLDER, ATTACH_NAME, DRY_RUN, START_ROW, MAX_VENDORS, MAX_FAILS_IN_ROW, WAIT_SECS
-VENDOR_FILE = "C:\Users\290158\Documents\vendors.xlsx"   ' Excel file, vendor numbers in column A of the first sheet
-ATTACH_FOLDER = "C:\Users\290158\Downloads"
-ATTACH_NAME = "hgs_list_delegatedauthority_nl_en.pdf"
+VENDOR_FILE = "C:\Users\290158\Downloads\Scripts\Attachment Script.xlsx"   ' Excel file, vendor numbers in column A of the first sheet
+ATTACH_FOLDER = "C:\Users\290158\Downloads\Scripts"
+ATTACH_NAME = "RE_ Suspensiones hasta nuevo aviso.msg"
 DRY_RUN = True            ' True = open each vendor and its attachment list but attach NOTHING
 START_ROW = 1             ' first Excel row to process (use it to continue after an interruption)
 MAX_VENDORS = 3           ' 0 = all vendors; keep a small number for the first real test
