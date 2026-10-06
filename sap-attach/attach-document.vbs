@@ -323,9 +323,31 @@ Function ReadVendors()
   Set ReadVendors = d
 End Function
 
+' opens the Attachment list (System > Services for Object if the toolbox is not open yet); returns the grid or Nothing
+Function OpenList()
+  Dim g
+  Set g = Nothing
+  If Find(TOOLBOX) Is Nothing Then
+    On Error Resume Next
+    session.findById("wnd[0]/mbar/menu[5]/menu[6]").select
+    Err.Clear
+    On Error GoTo 0
+    If WaitFor(TOOLBOX, 40) Is Nothing Then
+      Set OpenList = Nothing
+      Exit Function
+    End If
+  End If
+  On Error Resume Next
+  session.findById(TOOLBOX).pressButton "VIEW_ATTA"
+  Err.Clear
+  On Error GoTo 0
+  Set g = WaitFor(LIST_SHELL, 40)
+  Set OpenList = g
+End Function
+
 ' Returns True when the file was attached (or, in dry run, when the attachment list opened).
 Function DoVendor(lifnr, ByRef msg)
-  Dim grid, before, after, t, ready, i, title, ok3, errText, initScreen, dumped, lastLogged, picked, viaList
+  Dim grid, before, after, t, ready, i, title, ok3, errText, initScreen, dumped, lastLogged, picked, viaList, k, g2
   DoVendor = False
   msg = ""
   If Find("wnd[0]") Is Nothing Then WScript.Sleep 5000
@@ -522,36 +544,54 @@ Function DoVendor(lifnr, ByRef msg)
     If Not SetText("wnd[1]/usr/ctxtDY_FILENAME", ATTACH_NAME) Then msg = gErr: Exit Function
     If Not Press("wnd[1]/tbar[0]/btn[0]") Then msg = gErr: Exit Function
 
-    ' 5. confirm the upload. Via the attachment list, SAP returns to the list (the status bar stays empty),
-    '    so the number of rows is compared; via the toolbar's Create menu SAP shows
+    ' 5. confirm the upload.
+    '    Via the attachment list the list is re-opened after the upload and the rows are counted again
+    '    (the status bar stays empty in this route). Via the toolbar's Create menu SAP shows
     '    "The attachment was successfully created".
     ready = False
     after = -1
-    t = Timer
-    Do While Timer - t < DIALOG_SECS
-      If Not Find("wnd[2]") Is Nothing Then msg = "Import file error popup: " & PopupTitle(2): Exit Function
-      If Find("wnd[1]/usr/ctxtDY_PATH") Is Nothing Then
-        If InStr(LCase(StatusText()), "attachment") > 0 And InStr(LCase(StatusText()), "created") > 0 Then
-          ready = True
-          Exit Do
-        End If
-        If StatusError() <> "" Then msg = "SAP message: " & StatusError(): Exit Function
-        If viaList Then
-          If Not Find(LIST_SHELL) Is Nothing Then
-            after = RowCountOf(Find(LIST_SHELL))
-            ' accept when the list shows one more row, or after a short settle time if the count cannot be read / was not refreshed
-            If before < 0 Or after < 0 Or after > before Or Timer - t > 25 Then
+    If viaList Then
+      t = Timer
+      Do While Timer - t < DIALOG_SECS
+        If Not Find("wnd[2]") Is Nothing Then msg = "Import file error popup: " & PopupTitle(2): Exit Function
+        If Find("wnd[1]/usr/ctxtDY_PATH") Is Nothing Then Exit Do
+        WScript.Sleep 500
+      Loop
+      If before < 0 Then
+        ready = True
+        Trace "the attachment count could not be read before the upload, so the result cannot be verified"
+      Else
+        For k = 1 To 4
+          WScript.Sleep 4000
+          ClosePopups
+          Trace "re-opening the attachment list to count again (try " & k & ")"
+          Set g2 = OpenList()
+          If Not g2 Is Nothing Then
+            after = RowCountOf(g2)
+            If after > before Then
               ready = True
-              Exit Do
+              Exit For
             End If
           End If
-        ElseIf Not Find("wnd[1]") Is Nothing Then
-          ClosePopup 1
-        End If
+        Next
       End If
-      WScript.Sleep 500
-    Loop
-    If Not ready Then msg = "No confirmation within " & DIALOG_SECS & " s (status bar: " & StatusText() & ")": Exit Function
+      If Not ready Then msg = "the attachment was not confirmed: the list shows " & after & " attachments (was " & before & ")": Exit Function
+    Else
+      t = Timer
+      Do While Timer - t < DIALOG_SECS
+        If Not Find("wnd[2]") Is Nothing Then msg = "Import file error popup: " & PopupTitle(2): Exit Function
+        If Find("wnd[1]/usr/ctxtDY_PATH") Is Nothing Then
+          If InStr(LCase(StatusText()), "attachment") > 0 And InStr(LCase(StatusText()), "created") > 0 Then
+            ready = True
+            Exit Do
+          End If
+          If StatusError() <> "" Then msg = "SAP message: " & StatusError(): Exit Function
+          If Not Find("wnd[1]") Is Nothing Then ClosePopup 1
+        End If
+        WScript.Sleep 500
+      Loop
+      If Not ready Then msg = "No 'attachment created' confirmation within " & DIALOG_SECS & " s (status bar: " & StatusText() & ")": Exit Function
+    End If
     If viaList Then
       msg = "attached via the attachment list (" & before & " -> " & after & " attachments)"
     Else
