@@ -14,7 +14,7 @@ MAX_VENDORS = 1           ' 0 = all vendors in the Excel file; 1 = just one vend
 MAX_FAILS_IN_ROW = 3      ' stop after this many failures in a row
 WAIT_SECS = 120           ' how long to wait for slow SAP screens
 LOAD_SECS = 0             ' optional pause after the vendor opens before touching Services for Object (0 = none)
-MENU_SECS = 90            ' how long SAP may take to fill the Services for Object menu after the button is pressed
+MENU_SECS = 45            ' how long SAP may take to fill the Services for Object menu after the button is pressed
 DIALOG_SECS = 150         ' how long SAP may take to open the Import file dialog after Create attachment is selected
 ' ====================
 
@@ -358,22 +358,29 @@ Function DoVendor(lifnr, ByRef msg)
 
   ok3 = False
   DumpToolbar
+  ' Opening Services for Object from a script behaves differently from a real click, so three ways are tried in turn:
+  '   1 = the dropdown part of the button, 2 = the icon part (what a mouse click presses), 3 = icon part after focusing the window
+  ' Each way is pressed ONCE (pressing again resets SAP's ~20 s menu round trip), then the menu entry is polled for.
   For i = 1 To 3
-    ' Open the menu ONCE. SAP needs a server round trip (about 20 s here) to fill it, and pressing the
-    ' button again would close/reset it. So poll for the entry instead of pressing again.
     errText = ""
     On Error Resume Next
-    session.findById("wnd[0]/titl/shellcont/shell").pressContextButton "%GOS_TOOLBOX"
+    session.findById("wnd[0]").setFocus
+    Err.Clear
+    If i = 1 Then
+      session.findById("wnd[0]/titl/shellcont/shell").pressContextButton "%GOS_TOOLBOX"
+    Else
+      session.findById("wnd[0]/titl/shellcont/shell").pressButton "%GOS_TOOLBOX"
+    End If
     If Err.Number <> 0 Then
       errText = "toolbox button: " & Err.Description
       Err.Clear
     End If
     On Error GoTo 0
     If errText <> "" Then
-      Trace "attempt " & i & ": " & errText
-      WScript.Sleep 5000
+      Trace "way " & i & ": " & errText
+      WScript.Sleep 3000
     Else
-      Trace "attempt " & i & ": menu opened, waiting for SAP to fill it (up to " & MENU_SECS & " s)"
+      Trace "way " & i & ": button pressed, waiting for SAP to fill the menu (up to " & MENU_SECS & " s)"
       t = Timer
       picked = False
       Do While Timer - t < MENU_SECS
@@ -405,18 +412,18 @@ Function DoVendor(lifnr, ByRef msg)
         WScript.Sleep 2000
       Loop
       If picked Then
-        Trace "menu entry selected after " & Int(Timer - t) & " s, waiting for the Import file dialog"
+        Trace "way " & i & ": menu entry selected after " & Int(Timer - t) & " s, waiting for the Import file dialog"
+        t = Timer
+        If WaitForImportDialog(DIALOG_SECS) Then
+          ok3 = True
+          Trace "Import file dialog opened after " & Int(Timer - t) & " s (way " & i & ")"
+          Exit For
+        End If
+        Trace "way " & i & ": no Import file dialog"
       Else
-        Trace "menu was not ready after " & Int(Timer - t) & " s"
-      End If
-      t = Timer
-      If WaitForImportDialog(DIALOG_SECS) Then
-        ok3 = True
-        Trace "Import file dialog opened after " & Int(Timer - t) & " s"
-        Exit For
+        Trace "way " & i & ": menu was not ready after " & Int(Timer - t) & " s"
       End If
       errText = "no Import file dialog"
-      Trace "attempt " & i & ": no Import file dialog, trying again"
     End If
   Next
   If Not ok3 Then msg = "The Import file dialog did not appear (" & errText & ")": Exit Function
