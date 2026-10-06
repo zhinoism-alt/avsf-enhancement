@@ -145,6 +145,18 @@ Function RowCountOf(grid)
   RowCountOf = n
 End Function
 
+Function TitleText()
+  TitleText = ""
+  On Error Resume Next
+  TitleText = session.findById("wnd[0]").text
+  If Err.Number <> 0 Then
+    Err.Clear
+    TitleText = session.findById("wnd[0]/titl").text
+  End If
+  Err.Clear
+  On Error GoTo 0
+End Function
+
 Function ScreenNo()
   ScreenNo = ""
   On Error Resume Next
@@ -235,16 +247,16 @@ Function DoVendor(lifnr, ByRef msg)
       If InStr(LCase(title), "attachment list") = 0 Then msg = "Unexpected popup while opening the vendor: " & title: Exit Function
     End If
     If StatusError() <> "" Then msg = "SAP message: " & StatusError(): Exit Function
-    If Not Find("wnd[0]/titl/shellcont/shell") Is Nothing And ScreenNo() <> initScreen And Find("wnd[1]") Is Nothing Then
+    If InStr(LCase(TitleText()), "address") > 0 And Not Find("wnd[0]/titl/shellcont/shell") Is Nothing And Find("wnd[1]") Is Nothing Then
       ready = True
       Exit Do
     End If
     WScript.Sleep 500
   Loop
-  If Not ready Then msg = "Vendor screen did not open within " & WAIT_SECS & " s": Exit Function
+  If Not ready Then msg = "Vendor Address screen did not open within " & WAIT_SECS & " s (window title: " & TitleText() & ")": Exit Function
 
   ' 3. Services for Object > Attachment list (the toolbar can load slowly, so retry on errors)
-  Trace "vendor screen is open, opening Services for Object"
+  Trace "vendor screen is open (" & TitleText() & ", " & Int(Timer - t) & " s), opening Services for Object"
   ok3 = False
   errText = ""
   t = Timer
@@ -262,6 +274,7 @@ Function DoVendor(lifnr, ByRef msg)
       ok3 = True
       Exit Do
     End If
+    Trace "Services for Object not ready yet: " & errText
     WScript.Sleep 2000
   Loop
   If Not ok3 Then msg = "Services for Object menu: " & errText: Exit Function
