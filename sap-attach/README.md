@@ -26,3 +26,19 @@ If it stops, open `attach-log.txt`, fix the cause, set `START_ROW` to the row af
 again. Vendors are not skipped automatically, so re-running the same rows would attach the file twice.
 
 Check with your controls team that mass-attaching to vendor records is allowed; every attachment is audited in SAP.
+
+# Payment block + email (`payment-block.vbs`)
+
+Excel (first sheet, row 1 = header): **A** vendor number, **B** PBA (the block to set, e.g. `A`; **blank = remove block A**),
+**C** company code (blank = `DEFAULT_CC`, 1505).
+
+Per vendor it opens XK02 (Address + company code Payment transactions), attaches the email on the Address screen,
+presses Enter to reach the Payment transactions screen, reads the Payment block and applies these rules:
+- wanted `A`, vendor has no block → sets `A` and saves; already `A` → nothing.
+- wanted blank, vendor has `A` → removes it and saves; no block → nothing.
+- any other block in place → left unchanged and listed in the final message ("left unchanged on purpose").
+- any error (SAP message, popup, vendor not in the company code, Save not confirmed) → `FAILED` in `payment-block-log.txt`
+  and listed in the message box at the end.
+
+First run: `DRY_RUN = True`, `MAX_VENDORS = 1` (reads and reports only). Then `DRY_RUN = False` for the one test vendor,
+then `MAX_VENDORS = 0` for the whole list.
