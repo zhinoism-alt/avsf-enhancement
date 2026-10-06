@@ -392,7 +392,11 @@ Function DoVendor(lifnr, ByRef msg)
         If Err.Number <> 0 Then
           Err.Clear
           session.findById("wnd[0]/titl/shellcont/shell").selectContextMenuItemByText "Create attachment"
-          If Err.Number <> 0 Then Err.Clear Else picked = True
+          If Err.Number <> 0 Then
+            Err.Clear
+          Else
+            picked = True
+          End If
         Else
           picked = True
         End If
