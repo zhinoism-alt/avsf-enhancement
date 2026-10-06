@@ -102,7 +102,7 @@ function waitingOnOthers(a) {
 
 function buildDigest(records, opts = {}) {
   const days = opts.days || 7, now = opts.now || new Date(), url = opts.url || '';
-  const open = records.filter(a => OPEN.has(a.status));
+  const open = records.filter(a => OPEN.has(a.status) && !(a.status === 'IDOC_ERROR' && a.completionDate));
   const stuck = open.map(a => ({ ...a, age: ageDays(a, now) })).filter(a => a.age != null && a.age >= days)
     .sort((a, b) => b.age - a.age);
   const ours = stuck.filter(a => !waitingOnOthers(a));

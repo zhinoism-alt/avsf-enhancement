@@ -5109,6 +5109,9 @@ AMERBankingValidation@resideo.com`;
             return /^[A-Z]{2}$/.test(c) ? String.fromCodePoint(...[...c].map(x => 127397 + x.charCodeAt(0))) : '';
         }
         const OPEN_STATUSES = new Set(['PROCESSING', 'ON_HOLD', 'PENDING_BUYER', 'IDOC_ERROR']);
+        // IDOC error where VM already completed the request is not queue work (only the posting failed).
+        const isOpenReq = a => OPEN_STATUSES.has(a.status) && !(a.status === 'IDOC_ERROR' && a.completionDate);
+        const isIdocDone = a => a.status === 'IDOC_ERROR' && !!a.completionDate;
         let _viewMode = 'queue';
         try { _viewMode = localStorage.getItem('avsfViewMode') || 'queue'; } catch (e) {}
         let _queueTab = 'processing', _lastRendered = [], _detailNo = null, _toastTimer = null;
@@ -5130,7 +5133,7 @@ AMERBankingValidation@resideo.com`;
         }
         function slaClass(a) {
             if (a.status === 'COMPLETED') return 'sla-ok';
-            if (!OPEN_STATUSES.has(a.status)) return '';
+            if (!isOpenReq(a)) return '';
             const d = ageDays(a);
             return d >= 7 ? 'sla-late' : d >= 3 ? 'sla-warn' : '';
         }
@@ -5171,9 +5174,11 @@ AMERBankingValidation@resideo.com`;
             const shown = list.slice(0, 200);
             if (!shown.length) { box.innerHTML = '<div class="q-empty">Nothing in this tab. 🎉</div>'; return; }
             box.innerHTML = shown.map(a => {
-                const rp = reqProgress(a), age = ageDays(a), open = OPEN_STATUSES.has(a.status);
+                const rp = reqProgress(a), age = ageDays(a), open = isOpenReq(a);
                 const rcol = rp.total === 0 ? '#9ca3af' : rp.done === rp.total ? '#10b981' : rp.done ? '#f59e0b' : '#9ca3af';
-                const btns = a.status === 'COMPLETED'
+                const btns = isIdocDone(a)
+                    ? '<button class="go" data-act="COMPLETED">✓ Resolved</button><button data-act="PROCESSING">Reopen</button>'
+                    : a.status === 'COMPLETED'
                     ? '<button data-act="PROCESSING">Reopen</button>'
                     : a.status === 'CANCELLED' || a.status === 'REJECTED' ? '<button data-act="PROCESSING">Reopen</button>'
                     : `<button class="go" data-act="COMPLETED">✓ Complete</button>` +
@@ -5221,7 +5226,11 @@ AMERBankingValidation@resideo.com`;
             const prev = { status: a.status, completionDate: a.completionDate || '', completedBy: a.completedBy || '', approverName: a.approverName || '' };
             const me = getEmailFullName();
             const upd = { status, completionDate: '', completedBy: '' };
-            if (status === 'COMPLETED') { upd.completionDate = todayUTC(); upd.completedBy = me; }
+            if (status === 'COMPLETED') {
+                const keep = a.status === 'IDOC_ERROR' && a.completionDate;
+                upd.completionDate = keep ? a.completionDate : todayUTC();
+                upd.completedBy = keep && a.completedBy ? a.completedBy : me;
+            }
             if (status === 'REJECTED')  { upd.completionDate = todayUTC(); upd.approverName = me; }
             try {
                 await db.collection('avsfs').doc(no).update(upd);
@@ -5255,7 +5264,7 @@ AMERBankingValidation@resideo.com`;
             const a = avsfs.find(x => x.requestNo === _detailNo);
             const p = document.getElementById('detailPanel');
             if (!a) { closeDetail(); return; }
-            const rp = reqProgress(a), age = ageDays(a), open = OPEN_STATUSES.has(a.status);
+            const rp = reqProgress(a), age = ageDays(a), open = isOpenReq(a);
             const cc = (typeof CC_DATA !== 'undefined' ? CC_DATA : []).find(c => c.cc === a.companyCode);
             const steps = [{ cls: 'done', t: 'Received', s: formatDate(a.entryDate) + (a.requestorName ? ' · ' + a.requestorName : '') }];
             if (open) {
@@ -5263,11 +5272,13 @@ AMERBankingValidation@resideo.com`;
                 steps.push({ cls: '', t: 'Completion', s: 'Pending' });
             } else {
                 const tat = a.entryDate && a.completionDate ? Math.max(0, Math.round((new Date(String(a.completionDate).split('T')[0]) - new Date(String(a.entryDate).split('T')[0])) / 86400000)) : null;
-                const bad = a.status === 'REJECTED' || a.status === 'CANCELLED';
+                const bad = a.status === 'REJECTED' || a.status === 'CANCELLED' || a.status === 'IDOC_ERROR';
                 steps.push({ cls: bad ? 'bad' : 'done', t: getStatusLabel(a.status), s: formatDate(a.completionDate) + (a.completedBy ? ' · ' + a.completedBy : a.approverName && bad ? ' · ' + a.approverName : '') + (tat != null ? ` · ${tat}d turnaround` : '') });
             }
             const allDone = rp.total > 0 && rp.done === rp.total;
-            const acts = a.status === 'COMPLETED' || a.status === 'REJECTED' || a.status === 'CANCELLED'
+            const acts = isIdocDone(a)
+                ? '<button class="go" data-act="COMPLETED">✓ Mark IDOC resolved</button><button data-act="PROCESSING">Reopen</button>'
+                : a.status === 'COMPLETED' || a.status === 'REJECTED' || a.status === 'CANCELLED'
                 ? '<button data-act="PROCESSING">Reopen</button>'
                 : `<button class="go" data-act="COMPLETED">${allDone ? '✓ Complete (checklist done)' : '✓ Complete'}</button>` +
                   (a.status === 'ON_HOLD' ? '<button data-act="PROCESSING">Resume</button>' : '<button data-act="ON_HOLD">Hold</button>') +
@@ -5416,7 +5427,7 @@ AMERBankingValidation@resideo.com`;
                     modal.querySelector('#ipGo').onclick = () => {
                         classify();
                         rows.forEach(o => {
-                            if (o.edited && ['COMPLETED', 'REJECTED'].includes(o.r.status) && o.r.companyCode) {
+                            if (o.edited && (['COMPLETED', 'REJECTED'].includes(o.r.status) || (o.r.status === 'IDOC_ERROR' && o.r.completionDate)) && o.r.companyCode) {
                                 o.r.requirements = {};
                                 getRequirementsList(o.r.companyCode, o.r.country || '', o.r.requestType || '').forEach(q => { o.r.requirements[q.id] = true; });
                             }
@@ -5486,7 +5497,7 @@ AMERBankingValidation@resideo.com`;
             const weekStart = new Date(Date.now() - 6 * 86400000).toISOString().split('T')[0];
             const monthStart = new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0];
             const age = a => ageDays(a) || 0;
-            const open = avsfs.filter(a => OPEN_STATUSES.has(a.status));
+            const open = avsfs.filter(isOpenReq);
             const mine = ['PROCESSING', 'IDOC_ERROR'];
             const ours = open.filter(a => mine.includes(a.status) && !isWaitingOnOthers(a));
             const attention = ours.filter(a => age(a) >= 3).sort((a, b) => age(b) - age(a));
@@ -5700,7 +5711,8 @@ AMERBankingValidation@resideo.com`;
         (function () {
             let st = null;
             const box = document.getElementById('avsfQueue');
-            const actionsFor = a => OPEN_STATUSES.has(a.status)
+            const actionsFor = a => isIdocDone(a) ? { right: ['COMPLETED', '✓ Resolved'], left: ['PROCESSING', '↺ Reopen'] }
+                : isOpenReq(a)
                 ? { right: ['COMPLETED', '✓ Complete'], left: [a.status === 'ON_HOLD' ? 'PROCESSING' : 'ON_HOLD', a.status === 'ON_HOLD' ? '↺ Resume' : '⏸ Hold'] }
                 : { right: null, left: ['PROCESSING', '↺ Reopen'] };
             box.addEventListener('pointerdown', e => {
@@ -5798,7 +5810,7 @@ AMERBankingValidation@resideo.com`;
 
         function stuckList(includeSnoozed) {
             const snooze = NF.read('avsfSnooze'), today = todayUTC();
-            return avsfs.filter(a => OPEN_STATUSES.has(a.status) && (ageDays(a) || 0) >= NF.days
+            return avsfs.filter(a => isOpenReq(a) && (ageDays(a) || 0) >= NF.days
                 && (includeSnoozed || !(snooze[a.requestNo] && snooze[a.requestNo] > today)))
                 .sort((a, b) => ageDays(b) - ageDays(a));
         }
@@ -6456,13 +6468,13 @@ AMERBankingValidation@resideo.com`;
             // Terminal statuses
             if (s === 'CANCELLED') return { status: 'CANCELLED', completedBy: '' };
 
-            // IDOC error: if SAP shows a completion date or one of our team as approver, VM already
-            // completed it (the error is a posting issue afterwards), so it is Completed, not queue work.
+            // IDOC error keeps its own status. If SAP shows a completion date or one of our team as
+            // approver, VM already completed it (only the posting failed), so completedBy is set.
             if (s === 'IDOC ERROR' || s === 'IDOC_ERROR') {
                 if (hasCompletion || isOurTeam) {
-                    return { status: 'COMPLETED', completedBy: isOurTeam ? teamName : String(approverRaw || '').trim() };
+                    return { status: 'IDOC_ERROR', completedBy: isOurTeam ? teamName : String(approverRaw || '').trim() };
                 }
-                return { status: 'PROCESSING', completedBy: '' };
+                return { status: 'IDOC_ERROR', completedBy: '' };
             }
 
             // APPR_AWAIT (or anything else still open): VM must process it, whoever the
@@ -6602,7 +6614,7 @@ AMERBankingValidation@resideo.com`;
                     r.completionDate = r.entryDate;
                 }
                 // Auto-check all requirements for COMPLETED or REJECTED records
-                if ((r.status === 'COMPLETED' || r.status === 'REJECTED') && r.companyCode) {
+                if ((r.status === 'COMPLETED' || r.status === 'REJECTED' || (r.status === 'IDOC_ERROR' && r.completionDate)) && r.companyCode) {
                     const reqs = getRequirementsList(r.companyCode, r.country || '', r.requestType || '');
                     r.requirements = {};
                     reqs.forEach(req => { r.requirements[req.id] = true; });
