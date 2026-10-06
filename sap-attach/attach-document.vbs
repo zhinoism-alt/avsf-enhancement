@@ -9,7 +9,7 @@ VENDOR_FILE = "C:\Users\290158\Downloads\Scripts\Attachment Script.xlsx"   ' Exc
 ATTACH_FOLDER = "C:\Users\290158\Downloads\Scripts"
 ATTACH_NAME = "RE_ Suspensiones hasta nuevo aviso.msg"
 DRY_RUN = False           ' True = open each vendor and its attachment list but attach NOTHING
-START_ROW = 4             ' first Excel row to process (rows 2 and 3 were already done in the tests)
+START_ROW = 5             ' first Excel row to process (rows 2-4 are done: tests and the first successful run)
 MAX_VENDORS = 0           ' 0 = all vendors in the Excel file; use a small number to test
 MAX_FAILS_IN_ROW = 3      ' stop after this many failures in a row
 WAIT_SECS = 120           ' how long to wait for slow SAP screens
