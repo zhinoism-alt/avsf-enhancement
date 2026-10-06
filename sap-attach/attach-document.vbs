@@ -163,7 +163,7 @@ Sub DumpToolbar()
   Dim sh, n, i
   On Error Resume Next
   Set sh = session.findById("wnd[0]/titl/shellcont/shell")
-  n = sh.GetButtonCount
+  n = sh.ButtonCount
   If Err.Number <> 0 Then
     Trace "toolbar dump failed: " & Err.Description
     Err.Clear
@@ -356,6 +356,7 @@ Function DoVendor(lifnr, ByRef msg)
   End If
 
   ok3 = False
+  DumpToolbar
   For i = 1 To 2
     errText = ""
     On Error Resume Next
@@ -368,6 +369,14 @@ Function DoVendor(lifnr, ByRef msg)
       If Err.Number <> 0 Then
         errText = "create attachment menu item: " & Err.Description
         Err.Clear
+        ' second way: pick the entry by its text instead of its function code
+        session.findById("wnd[0]/titl/shellcont/shell").selectContextMenuItemByText "Create attachment"
+        If Err.Number <> 0 Then
+          errText = errText & " | by text: " & Err.Description
+          Err.Clear
+        Else
+          errText = ""
+        End If
       End If
     End If
     On Error GoTo 0
