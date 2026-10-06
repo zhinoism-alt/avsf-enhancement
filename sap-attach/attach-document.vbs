@@ -4,7 +4,7 @@
 Option Explicit
 
 ' ===== Settings =====
-Dim VENDOR_FILE, ATTACH_FOLDER, ATTACH_NAME, DRY_RUN, START_ROW, MAX_VENDORS, MAX_FAILS_IN_ROW, WAIT_SECS, LOAD_SECS
+Dim VENDOR_FILE, ATTACH_FOLDER, ATTACH_NAME, DRY_RUN, START_ROW, MAX_VENDORS, MAX_FAILS_IN_ROW, WAIT_SECS, LOAD_SECS, DIALOG_SECS
 VENDOR_FILE = "C:\Users\290158\Downloads\Scripts\Attachment Script.xlsx"   ' Excel file, vendor numbers in column A of the first sheet
 ATTACH_FOLDER = "C:\Users\290158\Downloads\Scripts"
 ATTACH_NAME = "RE_ Suspensiones hasta nuevo aviso.msg"
@@ -13,7 +13,8 @@ START_ROW = 4             ' first Excel row to process (rows 2 and 3 were alread
 MAX_VENDORS = 0           ' 0 = all vendors in the Excel file; use a small number to test
 MAX_FAILS_IN_ROW = 3      ' stop after this many failures in a row
 WAIT_SECS = 120           ' how long to wait for slow SAP screens
-LOAD_SECS = 40            ' seconds to leave the vendor screen alone so SAP can finish loading Services for Object
+LOAD_SECS = 0             ' optional pause after the vendor opens before touching Services for Object (0 = none)
+DIALOG_SECS = 150         ' how long SAP may take to open the Import file dialog after Create attachment is selected
 ' ====================
 
 ' tidy the settings: remove stray quote marks (e.g. from "Copy as path") and trailing backslashes
@@ -257,6 +258,25 @@ Function InstancesRunning()
   InstancesRunning = n
 End Function
 
+' waits for SAP's Import file dialog (it can take over a minute to appear); closes the
+' attachment list if SAP shows that instead. Never confirms anything.
+Function WaitForImportDialog(seconds)
+  Dim t0
+  WaitForImportDialog = False
+  t0 = Timer
+  Do While Timer - t0 < seconds
+    If Not Find("wnd[1]/usr/ctxtDY_PATH") Is Nothing Then
+      WaitForImportDialog = True
+      Exit Function
+    End If
+    If Not Find("wnd[1]") Is Nothing Then
+      If InStr(LCase(PopupTitle(1)), "attachment list") > 0 Then ClosePopup 1
+    End If
+    If Not Find("wnd[2]") Is Nothing Then Exit Function
+    WScript.Sleep 1000
+  Loop
+End Function
+
 Function IsVendorNumber(s)
   Dim re
   Set re = CreateObject("VBScript.RegExp")
@@ -322,24 +342,21 @@ Function DoVendor(lifnr, ByRef msg)
   ' 3. Services for Object > Create attachment. (The "Attachment list" entry only exists for vendors that
   '    already have attachments, so the Create entry is used directly.)
   Trace "vendor screen is open (" & TitleText() & ", " & Int(Timer - t) & " s), opening Services for Object > Create attachment"
-  ' Do not touch the toolbar while SAP is still loading it (a half-loaded menu rejects every item).
-  ' Meanwhile close the attachment list SAP may pop up by itself.
-  Trace "waiting " & LOAD_SECS & " s for SAP to finish loading the vendor"
-  t = Timer
-  Do While Timer - t < LOAD_SECS
-    If Not Find("wnd[1]") Is Nothing Then ClosePopup 1
-    If StatusError() <> "" Then msg = "SAP message: " & StatusError(): Exit Function
-    WScript.Sleep 1000
-  Loop
-  On Error Resume Next
-  Trace "title toolbar object: " & session.findById("wnd[0]/titl/shellcont/shell").Type & " / " & session.findById("wnd[0]/titl/shellcont/shell").SubType
-  Err.Clear
-  On Error GoTo 0
+  ' Optional pause (LOAD_SECS), then select Services for Object > Create attachment ONCE. SAP can be very slow
+  ' to react: it may report an error to the script while it is in fact still starting the dialog. So after
+  ' every attempt the script only waits for the Import file dialog and presses the menu again only if
+  ' nothing has appeared after DIALOG_SECS.
+  If LOAD_SECS > 0 Then
+    Trace "waiting " & LOAD_SECS & " s for SAP to finish loading the vendor"
+    t = Timer
+    Do While Timer - t < LOAD_SECS
+      If Not Find("wnd[1]") Is Nothing Then ClosePopup 1
+      WScript.Sleep 1000
+    Loop
+  End If
 
   ok3 = False
-  errText = ""
-  For i = 1 To 4
-    If Not Find("wnd[1]") Is Nothing And Find("wnd[1]/usr/ctxtDY_PATH") Is Nothing Then ClosePopup 1
+  For i = 1 To 2
     errText = ""
     On Error Resume Next
     session.findById("wnd[0]/titl/shellcont/shell").pressContextButton "%GOS_TOOLBOX"
@@ -355,14 +372,19 @@ Function DoVendor(lifnr, ByRef msg)
     End If
     On Error GoTo 0
     If errText = "" Then
+      Trace "attempt " & i & ": menu item selected, waiting for the Import file dialog"
+    Else
+      Trace "attempt " & i & ": SAP answered '" & errText & "' - waiting anyway, it may still be starting the dialog"
+    End If
+    t = Timer
+    If WaitForImportDialog(DIALOG_SECS) Then
       ok3 = True
+      Trace "Import file dialog opened after " & Int(Timer - t) & " s"
       Exit For
     End If
-    Trace "attempt " & i & " failed: " & errText
-    WScript.Sleep 15000
+    Trace "no Import file dialog after " & DIALOG_SECS & " s"
   Next
-  If Not ok3 Then msg = "Services for Object menu: " & errText: Exit Function
-  If WaitFor("wnd[1]/usr/ctxtDY_PATH", WAIT_SECS) Is Nothing Then msg = "The Import file dialog did not appear": Exit Function
+  If Not ok3 Then msg = "The Import file dialog did not appear (" & errText & ")": Exit Function
 
   If DRY_RUN Then
     msg = "dry run: the Import file dialog opened (nothing attached)"
@@ -377,7 +399,7 @@ Function DoVendor(lifnr, ByRef msg)
     ' 5. wait for SAP's "The attachment was successfully created" message
     ready = False
     t = Timer
-    Do While Timer - t < WAIT_SECS
+    Do While Timer - t < DIALOG_SECS
       If Not Find("wnd[2]") Is Nothing Then msg = "Import file error popup: " & PopupTitle(2): Exit Function
       If Find("wnd[1]/usr/ctxtDY_PATH") Is Nothing Then
         If Not Find("wnd[1]") Is Nothing Then ClosePopup 1
@@ -389,7 +411,7 @@ Function DoVendor(lifnr, ByRef msg)
       End If
       WScript.Sleep 500
     Loop
-    If Not ready Then msg = "No 'attachment created' confirmation within " & WAIT_SECS & " s (status bar: " & StatusText() & ")": Exit Function
+    If Not ready Then msg = "No 'attachment created' confirmation within " & DIALOG_SECS & " s (status bar: " & StatusText() & ")": Exit Function
     msg = "attached (" & StatusText() & ")"
     DoVendor = True
     ' as in the recording: press Save (nothing else changed, so SAP only reports "no changes")
