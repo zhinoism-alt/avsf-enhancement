@@ -14,26 +14,26 @@ New `.xlsx` files in that folder that contain a "Vendor Request No." column are 
 within about 2 minutes. Other Excel files are ignored. Each import is logged in the Audit Log
 and updates the "SAP data: …" chip.
 
-## 2. Record the SAP export once (needed to build the script)
-SAP scripting is already enabled for your user. In SAP GUI Options → Accessibility & Scripting →
-Scripting, **untick "Notify when a script attaches to SAP GUI"** and **"…opens a connection"**,
-otherwise a confirmation window blocks the script every time.
+## 2. Install the export script
+1. Copy `export-vendor-requests.vbs` to a folder on your PC, for example `Documents\avsf-inbox\scripts`.
+2. Open it in Notepad and check the settings at the top: `OUT_DIR` (the inbox folder you connected in
+   the dashboard), `MONTHS_BACK` (default 3) and `TCODE`.
+3. In SAP GUI Options → Accessibility & Scripting → Scripting, **untick** "Notify when a script attaches
+   to SAP GUI" and "...opens a connection", otherwise a confirmation window blocks the script.
+4. **First test:** log in to SAP (any screen) and double-click the script. `DEBUG_POPUPS = True` shows a
+   message after each step. Check that `export.xlsx` appears in the inbox folder and that the dashboard
+   imports it within about 2 minutes ("SAP data" chip updates).
+5. When it works, change `DEBUG_POPUPS` to `False`.
 
-Then record the steps:
-1. In SAP press **Alt+F12 → Script Recording and Playback**, choose a save path/file name
-   (for example `export-vendors.vbs`) and click the **Record** (red dot) button.
-2. Do the export exactly as you do today: run `ZMMVEND_DIS`, set the date range, execute,
-   click the Excel icon, choose "Select from all available formats" → **10 Excel (XLSX)**,
-   confirm, type the file name, save.
-3. Click **Stop**. Send me the `.vbs` file (you can paste it here). I will turn it into a script that:
-   attaches to the open SAP session, sets the date range automatically
-   (first day of 3 months ago → today), and saves to `avsf-inbox\export.xlsx`.
+The script opens `ZMMVEND_DIS` itself (it first goes to the main screen), picks both dates in the SAP calendar
+popups like the recording did, clicks the Excel button, fills SAP's own save dialog
+(Directory / File Name / Generate), waits for the file, closes the copy SAP opens in Excel and returns to the
+main screen. Progress and errors are written to `export-log.txt` in the inbox folder.
 
 ## 3. Schedule it
 Windows Task Scheduler → Create Task → trigger weekdays 08:05 → action
-`wscript.exe "C:\path\to\export-vendors.vbs"`; tick "Run only when user is logged on".
-SAP must be open and logged in at that time (the script can also start SAP if your
-logon uses single sign-on; tell me your system ID and client).
+`wscript.exe "C:\path\to\export-vendor-requests.vbs"`; tick "Run only when user is logged on".
+SAP must be open and logged in at that time and the PC unlocked.
 
 ## Date range
 Use a window of about 3 months, not "first of the month". Requests still open from earlier
