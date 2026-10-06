@@ -122,6 +122,16 @@ Function SendKey(id, key)
   On Error GoTo 0
 End Function
 
+Function StatusText()
+  Dim sb
+  StatusText = ""
+  On Error Resume Next
+  Set sb = session.findById("wnd[0]/sbar")
+  If Err.Number = 0 Then StatusText = sb.text
+  Err.Clear
+  On Error GoTo 0
+End Function
+
 Function StatusError()
   Dim sb
   StatusError = ""
@@ -257,6 +267,7 @@ Function DoVendor(lifnr, ByRef msg)
   Dim grid, before, after, t, ready, i, title, ok3, errText, initScreen, dumped
   DoVendor = False
   msg = ""
+  If Find("wnd[0]") Is Nothing Then WScript.Sleep 5000
   If Find("wnd[0]") Is Nothing Then msg = "SAP session is no longer available (logged off?)": Exit Function
   ClosePopups
 
@@ -288,19 +299,12 @@ Function DoVendor(lifnr, ByRef msg)
   Loop
   If Not ready Then msg = "Vendor Address screen did not open within " & WAIT_SECS & " s (window title: " & TitleText() & ")": Exit Function
 
-  ' 3. Services for Object > Attachment list (the toolbar can load slowly, so retry on errors)
-  Trace "vendor screen is open (" & TitleText() & ", " & Int(Timer - t) & " s), opening Services for Object"
+  ' 3. Services for Object > Create attachment. (The "Attachment list" entry only exists for vendors that
+  '    already have attachments, so the Create entry is used directly.)
+  Trace "vendor screen is open (" & TitleText() & ", " & Int(Timer - t) & " s), opening Services for Object > Create attachment"
   ok3 = False
   errText = ""
-  dumped = False
-  t = Timer
-  Do While Timer - t < WAIT_SECS
-    ' SAP may already have opened the attachment list by itself
-    If Not Find(LIST_SHELL) Is Nothing Then
-      Trace "attachment list is already open"
-      ok3 = True
-      Exit Do
-    End If
+  For i = 1 To 3
     errText = ""
     On Error Resume Next
     session.findById("wnd[0]/titl/shellcont/shell").pressContextButton "%GOS_TOOLBOX"
@@ -308,71 +312,55 @@ Function DoVendor(lifnr, ByRef msg)
       errText = "toolbox button: " & Err.Description
       Err.Clear
     Else
-      session.findById("wnd[0]/titl/shellcont/shell").selectContextMenuItem "%GOS_VIEW_ATTA"
+      session.findById("wnd[0]/titl/shellcont/shell").selectContextMenuItem "%GOS_PCATTA_CREA"
       If Err.Number <> 0 Then
-        errText = "attachment menu item: " & Err.Description
+        errText = "create attachment menu item: " & Err.Description
         Err.Clear
       End If
     End If
     On Error GoTo 0
     If errText = "" Then
       ok3 = True
-      Exit Do
+      Exit For
     End If
     Trace "Services for Object not ready yet: " & errText
-    If Not dumped Then
-      DumpToolbar
-      dumped = True
-    End If
-    WScript.Sleep 3000
-  Loop
+    WScript.Sleep 4000
+  Next
   If Not ok3 Then msg = "Services for Object menu: " & errText: Exit Function
-  Trace "waiting for the attachment list"
-  Set grid = WaitFor(LIST_SHELL, WAIT_SECS)
-  If grid Is Nothing Then msg = "Attachment list did not open within " & WAIT_SECS & " s": Exit Function
-  before = RowCountOf(grid)
+  If WaitFor("wnd[1]/usr/ctxtDY_PATH", WAIT_SECS) Is Nothing Then msg = "The Import file dialog did not appear": Exit Function
 
   If DRY_RUN Then
-    msg = "dry run: attachment list opened (" & before & " existing attachments)"
+    msg = "dry run: the Import file dialog opened (nothing attached)"
     DoVendor = True
   Else
-    ' 4. Create > Create attachment (from PC) > SAP's own "Import file" dialog
-    Trace "creating the attachment"
-    On Error Resume Next
-    grid.pressToolbarContextButton "%ATTA_CREATE"
-    grid.selectContextMenuItem "%GOS_PCATTA_CREA"
-    If Err.Number <> 0 Then
-      msg = "Create attachment menu: " & Err.Description
-      Err.Clear
-      On Error GoTo 0
-      Exit Function
-    End If
-    On Error GoTo 0
-    If WaitFor("wnd[1]/usr/ctxtDY_PATH", WAIT_SECS) Is Nothing Then msg = "The Import file dialog did not appear": Exit Function
+    ' 4. SAP's own "Import file" dialog: Directory + File Name, then OK
+    Trace "filling the Import file dialog"
     If Not SetText("wnd[1]/usr/ctxtDY_PATH", ATTACH_FOLDER) Then msg = gErr: Exit Function
     If Not SetText("wnd[1]/usr/ctxtDY_FILENAME", ATTACH_NAME) Then msg = gErr: Exit Function
     If Not Press("wnd[1]/tbar[0]/btn[0]") Then msg = gErr: Exit Function
 
-    ' 5. wait until the attachment list is back and the file dialog is gone
+    ' 5. wait for SAP's "The attachment was successfully created" message
     ready = False
     t = Timer
     Do While Timer - t < WAIT_SECS
-      If Find("wnd[1]/usr/ctxtDY_PATH") Is Nothing And Not Find(LIST_SHELL) Is Nothing Then
-        ready = True
-        Exit Do
-      End If
       If Not Find("wnd[2]") Is Nothing Then msg = "Import file error popup: " & PopupTitle(2): Exit Function
+      If Find("wnd[1]/usr/ctxtDY_PATH") Is Nothing Then
+        If Not Find("wnd[1]") Is Nothing Then ClosePopup 1
+        If InStr(LCase(StatusText()), "attachment") > 0 And InStr(LCase(StatusText()), "created") > 0 Then
+          ready = True
+          Exit Do
+        End If
+        If StatusError() <> "" Then msg = "SAP message: " & StatusError(): Exit Function
+      End If
       WScript.Sleep 500
     Loop
-    If Not ready Then msg = "Attachment was not confirmed within " & WAIT_SECS & " s": Exit Function
-    after = RowCountOf(Find(LIST_SHELL))
-    If before >= 0 And after >= 0 And after <= before Then msg = "list still shows " & after & " attachments (was " & before & ")": Exit Function
-    msg = "attached (" & before & " -> " & after & " attachments)"
+    If Not ready Then msg = "No 'attachment created' confirmation within " & WAIT_SECS & " s (status bar: " & StatusText() & ")": Exit Function
+    msg = "attached (" & StatusText() & ")"
     DoVendor = True
   End If
 
-  ' 6. close the list and leave XK02 (attachments are stored as soon as they are created)
-  Trace "closing the list and leaving XK02"
+  ' 6. dismiss any dialog and leave XK02 (attachments are stored as soon as they are created)
+  Trace "leaving XK02"
   ClosePopups
   If SetText("wnd[0]/tbar[0]/okcd", "/n") Then SendKey "wnd[0]", 0
   WScript.Sleep 1500
