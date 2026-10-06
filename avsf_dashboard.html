@@ -1028,6 +1028,23 @@
         .q-card[data-swipe="right"] { background:#d1fae5; color:#065f46; } .q-card[data-swipe="right"]::after { left:14px; }
         .q-card[data-swipe="left"] { background:#fef3c7; color:#78350f; } .q-card[data-swipe="left"]::after { right:14px; }
         .q-card[data-swipe] > * { opacity:.35; }
+    
+        /* ── Notifications ──────────────────────────────────────────────── */
+        #bellBtn { position:relative; }
+        #bellCount { position:absolute; top:-6px; right:-6px; min-width:18px; height:18px; border-radius:9px; background:#dc2626; color:#fff; font-size:11px; font-weight:800; display:none; align-items:center; justify-content:center; padding:0 5px; box-sizing:border-box; }
+        #bellCount.on { display:flex; }
+        #notifPanel { position:fixed; top:64px; right:16px; width:min(400px,calc(100vw - 24px)); max-height:70vh; background:var(--bg-card); color:var(--text-primary); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow-xl); z-index:950; display:none; flex-direction:column; overflow:hidden; }
+        #notifPanel.on { display:flex; }
+        .nf-head { padding:12px 14px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px; font-weight:800; font-size:14px; }
+        .nf-list { overflow-y:auto; flex:1; }
+        .nf-row { display:flex; gap:10px; align-items:center; padding:9px 14px; border-bottom:1px solid var(--border-light); cursor:pointer; }
+        .nf-row:hover { background:var(--bg-hover); }
+        .nf-row .m { flex:1; min-width:0; } .nf-row .m b { display:block; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .nf-row .m span { font-size:11.5px; color:var(--text-tertiary); }
+        .nf-age { border-radius:var(--radius-full); padding:2px 9px; font-size:11.5px; font-weight:800; background:#fee2e2; color:#7f1d1d; white-space:nowrap; }
+        .nf-snz { border:1px solid var(--border); background:transparent; color:var(--text-secondary); border-radius:6px; font-size:11px; padding:3px 7px; cursor:pointer; font-family:inherit; }
+        .nf-foot { padding:10px 14px; border-top:1px solid var(--border); background:var(--bg-hover); display:flex; flex-wrap:wrap; gap:8px 12px; align-items:center; font-size:12px; color:var(--text-secondary); }
+        .nf-foot select { padding:3px 6px; border-radius:6px; border:1px solid var(--border); font-size:12px; }
+        @media (max-width:700px) { #notifPanel { top:8px; right:8px; max-height:80vh; } }
     </style>
 </head>
 <body>
@@ -1044,6 +1061,7 @@
                 <div id="syncStatus">&#x25CF; Connecting...</div>
                 <button class="btn-admin" id="hdrSearch" onclick="openCmdk()" title="Search anything (Ctrl+K)">🔍 Search<span class="hdr-hint">Ctrl K</span></button>
                 <button class="btn-admin" id="themeBtn" onclick="toggleTheme()" title="Toggle dark mode">🌙</button>
+                <button class="btn-admin" id="bellBtn" onclick="toggleNotifPanel()" title="Requests stuck for days" aria-label="Notifications">🔔<span id="bellCount"></span></button>
                 <button class="btn-admin" id="installBtn" onclick="installApp()" style="display:none;" title="Install as an app">⬇ Install</button>
                 <button class="btn-admin" onclick="openAdminPanel()">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline;vertical-align:middle;margin-right:3px;"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>Admin
@@ -3019,6 +3037,7 @@ Select a request from the left to preview the email...
         <div id="detailBackdrop" onclick="closeDetail()"></div>
     <aside id="detailPanel" aria-label="AVSF detail" aria-hidden="true"></aside>
     <div id="appToast" role="status"></div>
+    <div id="notifPanel" role="dialog" aria-label="Stuck requests"></div>
     <nav id="bottomNav" aria-label="Main">
         <button data-bn="9" onclick="switchDashTab(9)"><span class="ic">🏠</span>Today</button>
         <button data-bn="1" onclick="switchDashTab(1)"><span class="ic">📋</span>Tracker</button>
@@ -5009,6 +5028,7 @@ AMERBankingValidation@resideo.com`;
             renderQueue(data);
             applyViewMode();
             renderToday();
+            updateNotifications();
             if (_detailNo) renderDetail();
         }
 
@@ -5464,7 +5484,7 @@ AMERBankingValidation@resideo.com`;
             const attention = open.filter(a => mine.includes(a.status) && age(a) >= 3).sort((a, b) => age(b) - age(a));
             const waiting = open.filter(a => a.status === 'ON_HOLD' || a.status === 'PENDING_BUYER').sort((a, b) => age(b) - age(a));
             const doneToday = avsfs.filter(a => a.status === 'COMPLETED' && dayOf(a.completionDate) === today);
-            const overdue = open.filter(a => age(a) >= 7).length;
+            const overdue = open.filter(a => age(a) >= NF.days).length;
             const next = open.filter(a => mine.includes(a.status)).sort((a, b) => age(b) - age(a))[0];
             const me = getEmailFullName();
             const hour = new Date().getHours();
@@ -5486,7 +5506,7 @@ AMERBankingValidation@resideo.com`;
                     <button class="btn btn-primary" onclick="openAddModal()">+ Add AVSF</button></div>
                 <div class="td-tiles">
                     <button class="td-tile" onclick="goQueue('processing')"><div class="l">In my queue</div><div class="v">${avsfs.filter(a => a.status === 'PROCESSING').length}</div></button>
-                    <button class="td-tile" onclick="goQueue('processing')"><div class="l">Overdue (7d+)</div><div class="v" style="color:${overdue ? '#dc2626' : 'inherit'};">${overdue}</div></button>
+                    <button class="td-tile" onclick="goQueue('processing')"><div class="l">Stuck (${NF.days}d+)</div><div class="v" style="color:${overdue ? '#dc2626' : 'inherit'};">${overdue}</div></button>
                     <button class="td-tile" onclick="goQueue('onhold')"><div class="l">Waiting on others</div><div class="v">${waiting.length}</div></button>
                     <button class="td-tile" onclick="goQueue('today')"><div class="l">Completed today</div><div class="v" style="color:#059669;">${doneToday.length}</div></button>
                 </div>
@@ -5583,8 +5603,6 @@ AMERBankingValidation@resideo.com`;
             const tag = (e.target.tagName || '').toLowerCase();
             if (e.key === '/' && !['input', 'textarea', 'select'].includes(tag) && !e.target.isContentEditable && !document.querySelector('.modal.active')) { e.preventDefault(); openCmdk(); }
         });
-
-        switchDashTab(9);
 
         // ══ Audit Log feed, swipe actions, import writer ═══════════════════
         let _auRows = [], _auRange = '7', _auType = 'all', _auLimit = 100;
@@ -5760,6 +5778,105 @@ AMERBankingValidation@resideo.com`;
             return { newCount, updatedCount, skippedCount };
         }
         let lastErr = null;
+
+        // ══ Stuck-request notifications ══════════════════════════════════════
+        const NF = {
+            get days() { try { return Math.max(1, +localStorage.getItem('avsfStuckDays') || 7); } catch (e) { return 7; } },
+            set days(v) { try { localStorage.setItem('avsfStuckDays', String(v)); } catch (e) {} },
+            read(k) { try { return JSON.parse(localStorage.getItem(k) || '{}'); } catch (e) { return {}; } },
+            write(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+        };
+        const BASE_TITLE = document.title;
+
+        function stuckList(includeSnoozed) {
+            const snooze = NF.read('avsfSnooze'), today = todayUTC();
+            return avsfs.filter(a => OPEN_STATUSES.has(a.status) && (ageDays(a) || 0) >= NF.days
+                && (includeSnoozed || !(snooze[a.requestNo] && snooze[a.requestNo] > today)))
+                .sort((a, b) => ageDays(b) - ageDays(a));
+        }
+
+        function updateNotifications() {
+            const list = stuckList(), n = list.length;
+            const c = document.getElementById('bellCount');
+            if (c) { c.textContent = n > 99 ? '99+' : n; c.classList.toggle('on', n > 0); }
+            document.title = n ? `(${n}) ${BASE_TITLE}` : BASE_TITLE;
+            try { if (navigator.setAppBadge) { n ? navigator.setAppBadge(n) : navigator.clearAppBadge(); } } catch (e) {}
+            if (document.getElementById('notifPanel').classList.contains('on')) renderNotifPanel();
+            maybeDesktopNotify(list);
+        }
+
+        function maybeDesktopNotify(list) {
+            if (!list.length || !('Notification' in window) || Notification.permission !== 'granted') return;
+            const seen = NF.read('avsfNotified'), today = todayUTC();
+            const fresh = list.filter(a => seen[a.requestNo] !== today);
+            if (!fresh.length) return;
+            fresh.forEach(a => { seen[a.requestNo] = today; });
+            Object.keys(seen).forEach(k => { if (seen[k] !== today) delete seen[k]; });
+            NF.write('avsfNotified', seen);
+            const top = fresh.slice(0, 3).map(a => `#${formatRequestNumber(a.requestNo)} ${a.vendorName} (${ageDays(a)}d)`).join('\n');
+            try {
+                const n = new Notification(`${fresh.length} request${fresh.length === 1 ? '' : 's'} stuck ${NF.days}+ days`, {
+                    body: top + (fresh.length > 3 ? `\n…and ${fresh.length - 3} more` : ''), tag: 'avsf-stuck', icon: 'icon-192.png'
+                });
+                n.onclick = () => { window.focus(); toggleNotifPanel(true); n.close(); };
+            } catch (e) { console.log('Notification failed', e); }
+        }
+
+        function toggleNotifPanel(force) {
+            const p = document.getElementById('notifPanel');
+            const on = force === true ? true : force === false ? false : !p.classList.contains('on');
+            p.classList.toggle('on', on);
+            if (on) renderNotifPanel();
+        }
+
+        function renderNotifPanel() {
+            const list = stuckList(), all = stuckList(true).length;
+            const perm = !('Notification' in window) ? 'unsupported' : Notification.permission;
+            document.getElementById('notifPanel').innerHTML = `
+                <div class="nf-head"><span style="flex:1;">🔔 Stuck ${NF.days}+ days <span class="q-chip">${list.length}</span></span>
+                    ${list.length ? '<button class="nf-snz" data-nf="snoozeAll">Snooze all 1d</button>' : ''}
+                    <button class="nf-snz" data-nf="close" aria-label="Close">✕</button></div>
+                <div class="nf-list">${list.length ? list.map(a => `<div class="nf-row" data-no="${esc(a.requestNo)}">
+                        <span class="nf-age">${ageDays(a)}d</span>
+                        <div class="m"><b>#${esc(formatRequestNumber(a.requestNo))} · ${esc(a.vendorName)}</b>
+                            <span>${esc(getStatusLabel(a.status))}${a.status === 'ON_HOLD' || a.status === 'PENDING_BUYER' ? ' · waiting on others' : ''} · ${flagOf(a.country)} CC ${esc(a.companyCode || '—')}</span></div>
+                        <button class="nf-snz" data-nf="snooze" title="Hide until tomorrow">Snooze</button></div>`).join('')
+                    : `<div class="q-empty">${all ? `All ${all} stuck request(s) are snoozed until tomorrow.` : `Nothing open for ${NF.days}+ days. 🎉`}</div>`}</div>
+                <div class="nf-foot">
+                    <label>Alert after <select data-nf="days">${[3, 5, 7, 10, 14].map(d => `<option value="${d}" ${d === NF.days ? 'selected' : ''}>${d} days</option>`).join('')}</select></label>
+                    ${perm === 'granted' ? '<span>✅ Desktop alerts on</span>'
+                        : perm === 'denied' ? '<span>🚫 Desktop alerts blocked in browser settings</span>'
+                        : perm === 'unsupported' ? '<span>Desktop alerts not supported here</span>'
+                        : '<button class="nf-snz" data-nf="enable">Enable desktop alerts</button>'}
+                    ${all > list.length ? '<button class="nf-snz" data-nf="unsnooze">Show snoozed</button>' : ''}</div>`;
+        }
+
+        document.getElementById('notifPanel').addEventListener('click', async e => {
+            const act = e.target.closest('[data-nf]');
+            const row = e.target.closest('.nf-row');
+            const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+            if (act) {
+                const k = act.dataset.nf, sn = NF.read('avsfSnooze');
+                if (k === 'close') return toggleNotifPanel(false);
+                if (k === 'snooze') { sn[row.dataset.no] = tomorrow; NF.write('avsfSnooze', sn); return updateNotifications(); }
+                if (k === 'snoozeAll') { stuckList().forEach(a => { sn[a.requestNo] = tomorrow; }); NF.write('avsfSnooze', sn); return updateNotifications(); }
+                if (k === 'unsnooze') { NF.write('avsfSnooze', {}); return updateNotifications(); }
+                if (k === 'enable') { try { await Notification.requestPermission(); } catch (x) {} return updateNotifications(); }
+                return;
+            }
+            if (row) { toggleNotifPanel(false); switchDashTab(1); openDetail(row.dataset.no); }
+        });
+        document.getElementById('notifPanel').addEventListener('change', e => {
+            if (e.target.dataset.nf === 'days') { NF.days = +e.target.value; updateNotifications(); if (typeof renderToday === 'function') renderToday(); }
+        });
+        document.addEventListener('click', e => {
+            const p = document.getElementById('notifPanel');
+            const inside = e.composedPath().some(el => el.id === 'notifPanel' || el.id === 'bellBtn');
+            if (p.classList.contains('on') && !inside) p.classList.remove('on');
+        });
+        setInterval(updateNotifications, 30 * 60 * 1000);
+
+        switchDashTab(9);
 
         // Get status label
         function getStatusLabel(status) {
