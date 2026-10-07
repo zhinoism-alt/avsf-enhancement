@@ -1,18 +1,21 @@
+' Excel (first sheet, row 1 = header): column A = vendor number. Optional column with the header "File" = the full path of the
+' file to attach to that vendor (blank or no such column = the default file in the settings below).
 ' Attaches the same file to a list of vendors in SAP (XK02 > Services for Object > Create attachment).
 ' Built from a recording. SAP GUI must be open and logged in. It uses your first SAP window,
 ' so leave SAP alone while it runs. Results are written to attach-log.txt next to this script.
 Option Explicit
 
 ' ===== Settings =====
+Dim DEFAULT_FOLDER, DEFAULT_NAME
 Dim VENDOR_FILE, ATTACH_FOLDER, ATTACH_NAME, DRY_RUN, START_ROW, MAX_VENDORS, MAX_FAILS_IN_ROW, WAIT_SECS, LOAD_SECS, DIALOG_SECS, MENU_SECS, SKIP_DONE
 VENDOR_FILE = "C:\Users\290158\Downloads\Scripts\Attachment Script.xlsx"   ' Excel file, vendor numbers in column A of the first sheet
-ATTACH_FOLDER = "C:\Users\290158\Downloads\Scripts"
+ATTACH_FOLDER = "C:\Users\290158\Downloads\Scripts"   ' default file, used when the Excel File column is blank (or missing)
 ATTACH_NAME = "RE_ Suspensiones hasta nuevo aviso.msg"
 DRY_RUN = False           ' True = open each vendor and its attachment list but attach NOTHING
 START_ROW = 2             ' first Excel row to process (row 1 is the header)
 MAX_VENDORS = 0           ' 0 = every vendor in the Excel file; use a small number to test
 MAX_FAILS_IN_ROW = 3      ' stop after this many failures in a row
-SKIP_DONE = True          ' skip vendors that already got THIS file name in an earlier run (list in attach-done.txt; delete that file to start over)
+SKIP_DONE = True          ' skip a vendor that already got THIS file TODAY (protects against double runs; a new day always runs again; list in attach-done.txt)
 WAIT_SECS = 120           ' how long to wait for slow SAP screens
 LOAD_SECS = 0             ' optional pause after the vendor opens before touching Services for Object (0 = none)
 MENU_SECS = 45            ' how long SAP may take to fill the Services for Object menu after the button is pressed
@@ -23,6 +26,8 @@ DIALOG_SECS = 150         ' how long SAP may take to open the Import file dialog
 VENDOR_FILE = CleanPath(VENDOR_FILE)
 ATTACH_FOLDER = CleanPath(ATTACH_FOLDER)
 ATTACH_NAME = CleanPath(ATTACH_NAME)
+DEFAULT_FOLDER = ATTACH_FOLDER
+DEFAULT_NAME = ATTACH_NAME
 
 Function CleanPath(p)
   p = Trim(Replace(p, Chr(34), ""))
@@ -321,6 +326,33 @@ Function WaitForImportDialog(seconds)
   Loop
 End Function
 
+' the file for one vendor: a full path from the Excel "File" column; a bare file name is looked up in the default folder;
+' blank = the default file from the settings
+Function ResolveFile(p)
+  p = CleanPath(p)
+  If p = "" Then
+    ResolveFile = DEFAULT_FOLDER & "\" & DEFAULT_NAME
+  ElseIf InStr(p, "\") = 0 And InStr(p, ":") = 0 Then
+    ResolveFile = DEFAULT_FOLDER & "\" & p
+  Else
+    ResolveFile = p
+  End If
+End Function
+
+Function FindFileColumn(ws)
+  Dim c, lastCol, v
+  FindFileColumn = 0
+  lastCol = ws.Cells(1, ws.Columns.Count).End(-4159).Column
+  For c = 1 To lastCol
+    v = LCase(Trim(CStr(ws.Cells(1, c).Value)))
+    If v = "file" Or v = "file path" Or v = "attachment" Or v = "path" Then FindFileColumn = c
+  Next
+End Function
+
+Function TodayStamp()
+  TodayStamp = Year(Date) & "-" & Right("0" & Month(Date), 2) & "-" & Right("0" & Day(Date), 2)
+End Function
+
 Function IsVendorNumber(s)
   Dim re
   Set re = CreateObject("VBScript.RegExp")
@@ -329,7 +361,7 @@ Function IsVendorNumber(s)
 End Function
 
 Function ReadVendors()
-  Dim xl, wb, ws, lastRow, r, v, d
+  Dim xl, wb, ws, lastRow, r, v, d, fileCol, fileVal
   Set d = CreateObject("Scripting.Dictionary")
   Set xl = CreateObject("Excel.Application")
   xl.Visible = False
@@ -337,9 +369,14 @@ Function ReadVendors()
   Set wb = xl.Workbooks.Open(VENDOR_FILE, 0, True)
   Set ws = wb.Worksheets(1)
   lastRow = ws.Cells(ws.Rows.Count, 1).End(-4162).Row
+  fileCol = FindFileColumn(ws)
   For r = 1 To lastRow
     v = Trim(CStr(ws.Cells(r, 1).Value))
-    If IsVendorNumber(v) Then d.Add r, Right("0000000000" & v, 10)
+    If IsVendorNumber(v) Then
+      fileVal = ""
+      If fileCol > 0 Then fileVal = Trim(CStr(ws.Cells(r, fileCol).Value))
+      d.Add r, Right("0000000000" & v, 10) & "|" & fileVal
+    End If
   Next
   wb.Close False
   xl.Quit
@@ -666,8 +703,8 @@ End If
 On Error GoTo 0
 session.findById("wnd[0]").maximize
 
-Dim vendors, k, done, okCount, failCount, fails, msg, started, stoppedEarly, doneDict, doneKey, skipped, tsf, parts
-done = 0: okCount = 0: failCount = 0: fails = 0: stoppedEarly = False
+Dim vendors, k, done, okCount, failCount, fails, msg, started, stoppedEarly, doneDict, doneKey, skipped, tsf, parts, vp, fullPath, failList
+done = 0: okCount = 0: failCount = 0: fails = 0: stoppedEarly = False: failList = ""
 If Not fso.FileExists(VENDOR_FILE) Then
   MsgBox "Vendor file not found: " & VENDOR_FILE, 16, "Attach document"
   WScript.Quit 1
@@ -678,37 +715,48 @@ If SKIP_DONE And fso.FileExists(doneFile) Then
   Set tsf = fso.OpenTextFile(doneFile, 1)
   Do While Not tsf.AtEndOfStream
     parts = Split(tsf.ReadLine, "|")
-    If UBound(parts) >= 1 Then doneDict(parts(0) & "|" & LCase(parts(1))) = True
+    If UBound(parts) >= 2 Then doneDict(parts(0) & "|" & parts(1) & "|" & parts(2)) = True
   Loop
   tsf.Close
 End If
 Set vendors = ReadVendors()
 If DRY_RUN Then runLabel = "DRY RUN" Else runLabel = "REAL RUN"
-Log "===== " & runLabel & ": " & vendors.Count & " vendors in " & VENDOR_FILE & " | file " & ATTACH_FOLDER & "\" & ATTACH_NAME & " ====="
+Log "===== " & runLabel & ": " & vendors.Count & " vendors in " & VENDOR_FILE & " | default file " & DEFAULT_FOLDER & "\" & DEFAULT_NAME & " ====="
 
 For Each k In vendors.Keys
   If k >= START_ROW Then
-    doneKey = vendors(k) & "|" & LCase(ATTACH_NAME)
+    vp = Split(vendors(k), "|")
+    fullPath = ResolveFile(vp(1))
+    doneKey = vp(0) & "|" & LCase(fullPath) & "|" & TodayStamp()
     If SKIP_DONE And doneDict.Exists(doneKey) Then
       skipped = skipped + 1
-      Log "row " & k & "  vendor " & vendors(k) & "  SKIPPED  already attached in an earlier run (attach-done.txt)"
+      Log "row " & k & "  vendor " & vp(0) & "  SKIPPED  already done today with this file (attach-done.txt)"
+    ElseIf Not fso.FileExists(fullPath) Then
+      failCount = failCount + 1
+      Log "row " & k & "  vendor " & vp(0) & "  FAILED   attachment file not found: " & fullPath
+      failList = failList & vbCrLf & "row " & k & "  vendor " & vp(0) & ": attachment file not found: " & fullPath
     Else
       If MAX_VENDORS > 0 And done >= MAX_VENDORS Then Exit For
       done = done + 1
       started = Timer
       msg = ""
-      If DoVendor(vendors(k), msg) Then
+      ATTACH_FOLDER = fso.GetParentFolderName(fullPath)
+      ATTACH_NAME = fso.GetFileName(fullPath)
+      If DoVendor(vp(0), msg) Then
         okCount = okCount + 1
         fails = 0
-        Log "row " & k & "  vendor " & vendors(k) & "  OK   " & msg & "  (" & Int(Timer - started) & " s)"
-        Set tsf = fso.OpenTextFile(doneFile, 8, True)
-        tsf.WriteLine vendors(k) & "|" & ATTACH_NAME & "|" & Now
-        tsf.Close
-        doneDict(doneKey) = True
+        Log "row " & k & "  vendor " & vp(0) & "  OK   [" & ATTACH_NAME & "]  " & msg & "  (" & Int(Timer - started) & " s)"
+        If Not DRY_RUN Then
+          Set tsf = fso.OpenTextFile(doneFile, 8, True)
+          tsf.WriteLine doneKey & "|" & Now
+          tsf.Close
+          doneDict(doneKey) = True
+        End If
       Else
         failCount = failCount + 1
         fails = fails + 1
-        Log "row " & k & "  vendor " & vendors(k) & "  FAILED   " & msg
+        Log "row " & k & "  vendor " & vp(0) & "  FAILED   [" & ATTACH_NAME & "]  " & msg
+        failList = failList & vbCrLf & "row " & k & "  vendor " & vp(0) & ": " & msg
         If InStr(msg, "no longer available") > 0 Then
           stoppedEarly = True
           Log "Stopped: the SAP session is gone."
@@ -726,7 +774,15 @@ For Each k In vendors.Keys
 Next
 
 Log "===== finished: " & okCount & " ok, " & failCount & " failed, " & skipped & " skipped" & IIf2(stoppedEarly) & " ====="
-MsgBox runLabel & " finished." & vbCrLf & okCount & " ok, " & failCount & " failed, " & skipped & " skipped" & IIf2(stoppedEarly) & "." & vbCrLf & "Details: " & logPath, 64, "Attach document"
+Dim summary, icon
+summary = runLabel & " finished." & vbCrLf & okCount & " ok, " & failCount & " failed, " & skipped & " skipped" & IIf2(stoppedEarly) & "."
+icon = 64
+If failCount > 0 Then
+  summary = summary & vbCrLf & vbCrLf & "PROBLEMS - please check:" & failList
+  icon = 16
+End If
+summary = summary & vbCrLf & vbCrLf & "Details: " & logPath
+MsgBox summary, icon, "Attach document"
 
 Function IIf2(flag)
   If flag Then IIf2 = " (stopped early)" Else IIf2 = ""

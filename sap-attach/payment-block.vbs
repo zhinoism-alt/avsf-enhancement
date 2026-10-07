@@ -1,6 +1,7 @@
 ' Payment block + email for a list of vendors (XK02), built from recordings.
 ' Excel (first sheet, row 1 = header):  A = vendor number | B = PBA, the payment block to set (A) -
-' leave it BLANK to remove block A | C = company code (blank = DEFAULT_CC).
+' leave it BLANK to remove block A | C = company code (blank = DEFAULT_CC) | D (header "File") = full path of the
+' file to attach for that vendor (blank = the default file below).
 ' Rules: block "A" is set only when the vendor has no block; block "A" is removed only when it is block A;
 ' any other block, or a block that is already as wanted, is left alone (and reported).
 ' SAP GUI must be open and logged in. It uses your first SAP window, so leave SAP alone while it runs.
@@ -8,9 +9,10 @@
 Option Explicit
 
 ' ===== Settings =====
+Dim DEFAULT_FOLDER, DEFAULT_NAME
 Dim VENDOR_FILE, ATTACH_FOLDER, ATTACH_NAME, ATTACH_EMAIL, DEFAULT_CC, DRY_RUN, START_ROW, MAX_VENDORS, MAX_FAILS_IN_ROW, WAIT_SECS, LOAD_SECS, DIALOG_SECS, MENU_SECS, SKIP_DONE
 VENDOR_FILE = "C:\Users\290158\Downloads\Scripts\PBA 1505.xlsx"
-ATTACH_FOLDER = "C:\Users\290158\Downloads\Scripts"
+ATTACH_FOLDER = "C:\Users\290158\Downloads\Scripts"   ' default file, used when the Excel File column is blank (or missing)
 ATTACH_NAME = "RE_ Suspensiones hasta nuevo aviso.msg"
 ATTACH_EMAIL = True       ' True = also attach the email to every vendor
 DEFAULT_CC = "1505"       ' company code used when column C is blank
@@ -29,6 +31,8 @@ DIALOG_SECS = 150         ' how long SAP may take to open/confirm the Import fil
 VENDOR_FILE = CleanPath(VENDOR_FILE)
 ATTACH_FOLDER = CleanPath(ATTACH_FOLDER)
 ATTACH_NAME = CleanPath(ATTACH_NAME)
+DEFAULT_FOLDER = ATTACH_FOLDER
+DEFAULT_NAME = ATTACH_NAME
 
 Function CleanPath(p)
   p = Trim(Replace(p, Chr(34), ""))
@@ -307,6 +311,29 @@ Function WaitForImportDialog(seconds)
   Loop
 End Function
 
+' the file for one vendor: a full path from the Excel "File" column; a bare file name is looked up in the default folder;
+' blank = the default file from the settings
+Function ResolveFile(p)
+  p = CleanPath(p)
+  If p = "" Then
+    ResolveFile = DEFAULT_FOLDER & "\" & DEFAULT_NAME
+  ElseIf InStr(p, "\") = 0 And InStr(p, ":") = 0 Then
+    ResolveFile = DEFAULT_FOLDER & "\" & p
+  Else
+    ResolveFile = p
+  End If
+End Function
+
+Function FindFileColumn(ws)
+  Dim c, lastCol, v
+  FindFileColumn = 0
+  lastCol = ws.Cells(1, ws.Columns.Count).End(-4159).Column
+  For c = 1 To lastCol
+    v = LCase(Trim(CStr(ws.Cells(1, c).Value)))
+    If v = "file" Or v = "file path" Or v = "attachment" Or v = "path" Then FindFileColumn = c
+  Next
+End Function
+
 Function TodayStamp()
   TodayStamp = Year(Date) & "-" & Right("0" & Month(Date), 2) & "-" & Right("0" & Day(Date), 2)
 End Function
@@ -319,7 +346,7 @@ Function IsVendorNumber(s)
 End Function
 
 Function ReadVendors()
-  Dim xl, wb, ws, lastRow, r, v, d, pbaVal, ccVal
+  Dim xl, wb, ws, lastRow, r, v, d, pbaVal, ccVal, fileCol, fileVal
   Set d = CreateObject("Scripting.Dictionary")
   Set xl = CreateObject("Excel.Application")
   xl.Visible = False
@@ -327,13 +354,16 @@ Function ReadVendors()
   Set wb = xl.Workbooks.Open(VENDOR_FILE, 0, True)
   Set ws = wb.Worksheets(1)
   lastRow = ws.Cells(ws.Rows.Count, 1).End(-4162).Row
+  fileCol = FindFileColumn(ws)
   For r = 1 To lastRow
     v = Trim(CStr(ws.Cells(r, 1).Value))
     If IsVendorNumber(v) Then
       pbaVal = UCase(Trim(CStr(ws.Cells(r, 2).Value)))
       ccVal = Trim(CStr(ws.Cells(r, 3).Value))
       If ccVal = "" Then ccVal = DEFAULT_CC
-      d.Add r, Right("0000000000" & v, 10) & "|" & pbaVal & "|" & ccVal
+      fileVal = ""
+      If fileCol > 0 Then fileVal = Trim(CStr(ws.Cells(r, fileCol).Value))
+      d.Add r, Right("0000000000" & v, 10) & "|" & pbaVal & "|" & ccVal & "|" & fileVal
     End If
   Next
   wb.Close False
@@ -876,7 +906,7 @@ End If
 On Error GoTo 0
 session.findById("wnd[0]").maximize
 
-Dim vendors, k, done, okCount, failCount, fails, msg, started, stoppedEarly, doneDict, doneKey, skipped, tsf, parts, vp, failList, noteList
+Dim vendors, k, done, okCount, failCount, fails, msg, started, stoppedEarly, doneDict, doneKey, skipped, tsf, parts, vp, failList, noteList, fullPath
 done = 0: okCount = 0: failCount = 0: fails = 0: stoppedEarly = False: failList = "": noteList = ""
 If Not fso.FileExists(VENDOR_FILE) Then
   MsgBox "Vendor file not found: " & VENDOR_FILE, 16, "Payment block"
@@ -894,24 +924,34 @@ If SKIP_DONE And fso.FileExists(doneFile) Then
 End If
 Set vendors = ReadVendors()
 If DRY_RUN Then runLabel = "DRY RUN" Else runLabel = "REAL RUN"
-Log "===== " & runLabel & ": " & vendors.Count & " vendors in " & VENDOR_FILE & " | file " & ATTACH_FOLDER & "\" & ATTACH_NAME & " ====="
+Log "===== " & runLabel & ": " & vendors.Count & " vendors in " & VENDOR_FILE & " | default file " & DEFAULT_FOLDER & "\" & DEFAULT_NAME & " ====="
 
 For Each k In vendors.Keys
   If k >= START_ROW Then
     vp = Split(vendors(k), "|")
-    doneKey = vp(0) & "|" & vp(2) & "|" & vp(1) & "|" & LCase(ATTACH_NAME) & "|" & TodayStamp()
+    fullPath = ""
+    If ATTACH_EMAIL Then fullPath = ResolveFile(vp(3))
+    doneKey = vp(0) & "|" & vp(2) & "|" & vp(1) & "|" & LCase(fullPath) & "|" & TodayStamp()
     If SKIP_DONE And doneDict.Exists(doneKey) Then
       skipped = skipped + 1
       Log "row " & k & "  vendor " & vp(0) & "  SKIPPED  already done today (payment-block-done.txt)"
+    ElseIf ATTACH_EMAIL And Not fso.FileExists(fullPath) Then
+      failCount = failCount + 1
+      Log "row " & k & "  vendor " & vp(0) & "  FAILED   attachment file not found: " & fullPath
+      failList = failList & vbCrLf & "row " & k & "  vendor " & vp(0) & ": attachment file not found: " & fullPath
     Else
       If MAX_VENDORS > 0 And done >= MAX_VENDORS Then Exit For
       done = done + 1
       started = Timer
       msg = ""
+      If ATTACH_EMAIL Then
+        ATTACH_FOLDER = fso.GetParentFolderName(fullPath)
+        ATTACH_NAME = fso.GetFileName(fullPath)
+      End If
       If DoVendor(vp(0), vp(1), vp(2), msg) Then
         okCount = okCount + 1
         fails = 0
-        Log "row " & k & "  vendor " & vp(0) & "  OK   " & msg & "  (" & Int(Timer - started) & " s)"
+        Log "row " & k & "  vendor " & vp(0) & "  OK   [" & ATTACH_NAME & "]  " & msg & "  (" & Int(Timer - started) & " s)"
         If InStr(msg, "left unchanged") > 0 Then noteList = noteList & vbCrLf & "row " & k & "  vendor " & vp(0) & ": " & msg
         If Not DRY_RUN Then
           Set tsf = fso.OpenTextFile(doneFile, 8, True)

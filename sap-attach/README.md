@@ -45,3 +45,9 @@ then `MAX_VENDORS = 0` for the whole list.
 
 Weekly use: change the Excel (PBA `A` to block, blank to remove block A) and run it again. A vendor is only skipped if it was
 already completed **today** with the same block, company code and file (`payment-block-done.txt`); on a new day it runs again.
+
+## Different file per vendor (both scripts)
+Add a column with the header **File** to the Excel and put the **full path** of the file for each vendor, for example
+`C:\Users\290158\Downloads\Scripts\Another email.msg`. A blank cell (or no File column) uses the default file from the script settings.
+A bare file name (no folder) is looked up in the default folder. If a file does not exist, that vendor is reported as FAILED
+without touching SAP. See the `examples` folder for the layout.
