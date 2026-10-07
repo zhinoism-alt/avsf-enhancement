@@ -18,7 +18,7 @@ DRY_RUN = False           ' True = look only: opens each vendor, reads its payme
 START_ROW = 2             ' first Excel row to process (row 1 is the header)
 MAX_VENDORS = 0           ' 0 = every vendor in the Excel file; use 1 to test with a single vendor
 MAX_FAILS_IN_ROW = 3      ' stop after this many failures in a row
-SKIP_DONE = True          ' skip vendors already completed with the same block/company code/file (payment-block-done.txt; delete it to start over)
+SKIP_DONE = True          ' skip a vendor already completed TODAY with the same block/company code/file (protects against double runs; a new day always runs again; list in payment-block-done.txt)
 WAIT_SECS = 120           ' how long to wait for slow SAP screens
 LOAD_SECS = 0             ' optional pause after the vendor opens (0 = none)
 MENU_SECS = 45            ' how long SAP may take to fill a menu
@@ -305,6 +305,10 @@ Function WaitForImportDialog(seconds)
     If Not Find("wnd[2]") Is Nothing Then Exit Function
     WScript.Sleep 1000
   Loop
+End Function
+
+Function TodayStamp()
+  TodayStamp = Year(Date) & "-" & Right("0" & Month(Date), 2) & "-" & Right("0" & Day(Date), 2)
 End Function
 
 Function IsVendorNumber(s)
@@ -883,7 +887,7 @@ If SKIP_DONE And fso.FileExists(doneFile) Then
   Set tsf = fso.OpenTextFile(doneFile, 1)
   Do While Not tsf.AtEndOfStream
     parts = Split(tsf.ReadLine, "|")
-    If UBound(parts) >= 3 Then doneDict(parts(0) & "|" & parts(1) & "|" & parts(2) & "|" & parts(3)) = True
+    If UBound(parts) >= 4 Then doneDict(parts(0) & "|" & parts(1) & "|" & parts(2) & "|" & parts(3) & "|" & parts(4)) = True
   Loop
   tsf.Close
 End If
@@ -894,10 +898,10 @@ Log "===== " & runLabel & ": " & vendors.Count & " vendors in " & VENDOR_FILE & 
 For Each k In vendors.Keys
   If k >= START_ROW Then
     vp = Split(vendors(k), "|")
-    doneKey = vp(0) & "|" & vp(2) & "|" & vp(1) & "|" & LCase(ATTACH_NAME)
+    doneKey = vp(0) & "|" & vp(2) & "|" & vp(1) & "|" & LCase(ATTACH_NAME) & "|" & TodayStamp()
     If SKIP_DONE And doneDict.Exists(doneKey) Then
       skipped = skipped + 1
-      Log "row " & k & "  vendor " & vp(0) & "  SKIPPED  already done in an earlier run (payment-block-done.txt)"
+      Log "row " & k & "  vendor " & vp(0) & "  SKIPPED  already done today (payment-block-done.txt)"
     Else
       If MAX_VENDORS > 0 And done >= MAX_VENDORS Then Exit For
       done = done + 1

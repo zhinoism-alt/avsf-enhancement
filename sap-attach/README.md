@@ -42,3 +42,6 @@ presses Enter to reach the Payment transactions screen, reads the Payment block 
 
 First run: `DRY_RUN = True`, `MAX_VENDORS = 1` (reads and reports only). Then `DRY_RUN = False` for the one test vendor,
 then `MAX_VENDORS = 0` for the whole list.
+
+Weekly use: change the Excel (PBA `A` to block, blank to remove block A) and run it again. A vendor is only skipped if it was
+already completed **today** with the same block, company code and file (`payment-block-done.txt`); on a new day it runs again.
