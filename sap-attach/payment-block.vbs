@@ -359,6 +359,40 @@ Function OpenList()
   Set OpenList = g
 End Function
 
+' XK02 remembers the last view selection, so every view checkbox is set explicitly:
+' ONLY Address (general data, D0110) and Payment transactions (company code data, D0215) are ticked.
+Sub SetViewChecks(node)
+  Dim i, n, c, cid, want
+  On Error Resume Next
+  If node.Type = "GuiCheckBox" Then
+    cid = node.Id
+    want = (InStr(cid, "RF02K-D0110") > 0 Or InStr(cid, "RF02K-D0215") > 0)
+    node.selected = want
+    Err.Clear
+  Else
+    n = node.Children.Count
+    If Err.Number = 0 Then
+      For i = 0 To n - 1
+        Set c = node.Children(CLng(i))
+        SetViewChecks c
+      Next
+    End If
+    Err.Clear
+  End If
+  On Error GoTo 0
+End Sub
+
+Function IsTicked(id)
+  Dim o
+  IsTicked = False
+  Set o = Find(id)
+  If o Is Nothing Then Exit Function
+  On Error Resume Next
+  IsTicked = (o.selected = True)
+  Err.Clear
+  On Error GoTo 0
+End Function
+
 Function SelectMenu(id)
   SelectMenu = False
   On Error Resume Next
@@ -544,8 +578,12 @@ Function DoVendor(lifnr, pba, cc, ByRef msg)
     If Not SendKey("wnd[0]", 8) Then msg = gErr: Exit Function
     If WaitFor("wnd[0]/usr/chkRF02K-D0215", 20) Is Nothing Then msg = "the company code Payment transactions checkbox did not appear": Exit Function
   End If
-  If Not SetChecked("wnd[0]/usr/chkRF02K-D0110", True) Then msg = gErr: Exit Function
-  If Not SetChecked("wnd[0]/usr/chkRF02K-D0215", True) Then msg = gErr: Exit Function
+  SetViewChecks session.findById("wnd[0]/usr")
+  If Not IsTicked("wnd[0]/usr/chkRF02K-D0110") Or Not IsTicked("wnd[0]/usr/chkRF02K-D0215") Then
+    msg = "could not tick the Address and company code Payment transactions views on the XK02 start screen"
+    Exit Function
+  End If
+  Trace "views selected: only Address and company code Payment transactions"
   If Not SetText("wnd[0]/usr/ctxtRF02K-BUKRS", cc) Then msg = gErr: Exit Function
   If Not SendKey("wnd[0]", 0) Then msg = gErr: Exit Function
 
