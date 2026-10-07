@@ -14,9 +14,9 @@ ATTACH_FOLDER = "C:\Users\290158\Downloads\Scripts"
 ATTACH_NAME = "RE_ Suspensiones hasta nuevo aviso.msg"
 ATTACH_EMAIL = True       ' True = also attach the email to every vendor
 DEFAULT_CC = "1505"       ' company code used when column C is blank
-DRY_RUN = True            ' True = look only: opens each vendor, reads its payment block and reports what WOULD change; changes/attaches NOTHING
+DRY_RUN = False           ' True = look only: opens each vendor, reads its payment block and reports what WOULD change; changes/attaches NOTHING
 START_ROW = 2             ' first Excel row to process (row 1 is the header)
-MAX_VENDORS = 1           ' 0 = every vendor in the Excel file; keep 1 for the first test
+MAX_VENDORS = 0           ' 0 = every vendor in the Excel file; use 1 to test with a single vendor
 MAX_FAILS_IN_ROW = 3      ' stop after this many failures in a row
 SKIP_DONE = True          ' skip vendors already completed with the same block/company code/file (payment-block-done.txt; delete it to start over)
 WAIT_SECS = 120           ' how long to wait for slow SAP screens
