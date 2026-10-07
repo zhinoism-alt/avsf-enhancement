@@ -225,6 +225,27 @@ Sub BringSapToFront()
   WScript.Sleep 500
 End Sub
 
+' XK02 remembers the last view selection AND the company code, so the start screen is reset every time:
+' ONLY Address (general data, D0110) is ticked; company code and purchasing org are cleared.
+Sub SetViewChecks(node)
+  Dim i, n, c
+  On Error Resume Next
+  If node.Type = "GuiCheckBox" Then
+    node.selected = (InStr(node.Id, "RF02K-D0110") > 0)
+    Err.Clear
+  Else
+    n = node.Children.Count
+    If Err.Number = 0 Then
+      For i = 0 To n - 1
+        Set c = node.Children(CLng(i))
+        SetViewChecks c
+      Next
+    End If
+    Err.Clear
+  End If
+  On Error GoTo 0
+End Sub
+
 Function ScreenNo()
   ScreenNo = ""
   On Error Resume Next
@@ -362,7 +383,10 @@ Function DoVendor(lifnr, ByRef msg)
   If Not SendKey("wnd[0]", 0) Then msg = gErr: Exit Function
   If WaitFor("wnd[0]/usr/ctxtRF02K-LIFNR", 60) Is Nothing Then msg = "XK02 start screen did not appear": Exit Function
   initScreen = ScreenNo()
+  SetViewChecks session.findById("wnd[0]/usr")
   If Not SetChecked("wnd[0]/usr/chkRF02K-D0110", True) Then msg = gErr: Exit Function
+  SetText "wnd[0]/usr/ctxtRF02K-BUKRS", ""
+  SetText "wnd[0]/usr/ctxtRF02K-EKORG", ""
   If Not SetText("wnd[0]/usr/ctxtRF02K-LIFNR", lifnr) Then msg = gErr: Exit Function
   If Not SendKey("wnd[0]", 0) Then msg = gErr: Exit Function
 

@@ -589,6 +589,7 @@ Function DoVendor(lifnr, pba, cc, ByRef msg)
   End If
   Trace "views selected: only Address and company code Payment transactions"
   If Not SetText("wnd[0]/usr/ctxtRF02K-BUKRS", cc) Then msg = gErr: Exit Function
+  SetText "wnd[0]/usr/ctxtRF02K-EKORG", ""
   If Not SendKey("wnd[0]", 0) Then msg = gErr: Exit Function
 
   ' 2. wait for the vendor screen (can take ~30 s). SAP may show the "Attachment list" popup by itself.
