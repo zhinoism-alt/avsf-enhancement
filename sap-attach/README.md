@@ -48,6 +48,8 @@ already completed **today** with the same block, company code and file (`payment
 
 ## Different file per vendor (both scripts)
 Add a column with the header **File** to the Excel and put the **full path** of the file for each vendor, for example
-`C:\Users\290158\Downloads\Scripts\Another email.msg`. A blank cell (or no File column) uses the default file from the script settings.
+`C:\Users\290158\Downloads\Scripts\Another email.msg`. In `attach-document.vbs` a blank cell (or no File column) uses the default file from the script settings. In `payment-block.vbs` a blank cell means
+**no attachment for that vendor (the payment block is still done)**; set `BLANK_FILE_USES_DEFAULT = True` to attach the default file instead,
+or `ATTACH_EMAIL = False` to never attach anything.
 A bare file name (no folder) is looked up in the default folder. If a file does not exist, that vendor is reported as FAILED
 without touching SAP. See the `examples` folder for the layout.

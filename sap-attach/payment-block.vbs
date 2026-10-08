@@ -1,7 +1,8 @@
 ' Payment block + email for a list of vendors (XK02), built from recordings.
 ' Excel (first sheet, row 1 = header):  A = vendor number | B = PBA, the payment block to set (A) -
-' leave it BLANK to remove block A | C = company code (blank = DEFAULT_CC) | D (header "File") = full path of the
-' file to attach for that vendor (blank = the default file below).
+' leave it BLANK to remove block A | C = company code (blank = DEFAULT_CC) | D (header "File") = the file to attach
+' for that vendor (full path, or just a file name in this folder). A BLANK File cell = no attachment for that vendor
+' (the payment block is still done) unless BLANK_FILE_USES_DEFAULT = True.
 ' Rules: block "A" is set only when the vendor has no block; block "A" is removed only when it is block A;
 ' any other block, or a block that is already as wanted, is left alone (and reported).
 ' SAP GUI must be open and logged in. It uses your first SAP window, so leave SAP alone while it runs.
@@ -10,11 +11,12 @@ Option Explicit
 
 ' ===== Settings =====
 Dim DEFAULT_FOLDER, DEFAULT_NAME
-Dim VENDOR_FILE, ATTACH_FOLDER, ATTACH_NAME, ATTACH_EMAIL, DEFAULT_CC, DRY_RUN, CHECK_ONLY, START_ROW, MAX_VENDORS, MAX_FAILS_IN_ROW, WAIT_SECS, LOAD_SECS, DIALOG_SECS, MENU_SECS, SKIP_DONE
+Dim VENDOR_FILE, ATTACH_FOLDER, ATTACH_NAME, ATTACH_EMAIL, BLANK_FILE_USES_DEFAULT, DEFAULT_CC, DRY_RUN, CHECK_ONLY, START_ROW, MAX_VENDORS, MAX_FAILS_IN_ROW, WAIT_SECS, LOAD_SECS, DIALOG_SECS, MENU_SECS, SKIP_DONE
 VENDOR_FILE = "PBA 1505.xlsx"   ' Excel list; a name without a folder is looked up in the folder of this script
-ATTACH_FOLDER = ""   ' folder of the default attachment ("" = the folder this script is in); used when the Excel File column is blank
+ATTACH_FOLDER = ""   ' folder of the default attachment ("" = the folder this script is in); only used if BLANK_FILE_USES_DEFAULT = True
 ATTACH_NAME = "RE_ Suspensiones hasta nuevo aviso.msg"
-ATTACH_EMAIL = True       ' True = also attach the email to every vendor
+ATTACH_EMAIL = True       ' False = never attach anything (block changes only), whatever the File column says
+BLANK_FILE_USES_DEFAULT = False   ' False = a blank File cell means NO attachment for that vendor; True = attach the default file named above
 DEFAULT_CC = "1505"       ' company code used when column C is blank
 DRY_RUN = False           ' True = look only: opens each vendor, reads its payment block and reports what WOULD change; changes/attaches NOTHING
 CHECK_ONLY = False        ' True = only run the start-up check (SAP, Excel, files) and show a report; touches nothing in SAP
@@ -60,15 +62,16 @@ Function MakeAbsolute(p)
   End If
 End Function
 
-Function NeedsFile()
-  NeedsFile = ATTACH_EMAIL
+' does this vendor get an attachment? (File cell filled in, or blank + BLANK_FILE_USES_DEFAULT)
+Function WantsFile(fileCell)
+  WantsFile = ATTACH_EMAIL And (Trim(fileCell) <> "" Or BLANK_FILE_USES_DEFAULT)
 End Function
 
 Const LIST_SHELL = "wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell"
 Const ZAHLS = "wnd[0]/usr/ctxtLFB1-ZAHLS"   ' Payment block field (company code Payment transactions screen)
 Const TOOLBOX = "wnd[0]/shellcont/shell"   ' toolbar with CREATE_ATTA, VIEW_ATTA, ... shown by System > Services for Object
 
-Dim fso, session, application, connection, SapGuiAuto, logPath, doneFile, gErr, runLabel, gSapInfo
+Dim fso, session, application, connection, SapGuiAuto, logPath, doneFile, gErr, runLabel, gSapInfo, gDoAttach
 Set fso = CreateObject("Scripting.FileSystemObject")
 logPath = fso.BuildPath(fso.GetParentFolderName(WScript.ScriptFullName), "payment-block-log.txt")
 doneFile = fso.BuildPath(fso.GetParentFolderName(WScript.ScriptFullName), "payment-block-done.txt")
@@ -295,6 +298,14 @@ Sub ClosePopups()
   Next
 End Sub
 
+Function AttachLabel()
+  If gDoAttach Then
+    AttachLabel = ATTACH_NAME
+  Else
+    AttachLabel = "no attachment"
+  End If
+End Function
+
 ' ---- start-up check: tells the user in plain words what to fix before anything touches SAP ----
 Function Preflight()
   Dim problems, xl, tf, usr, lng, sysName, clientNo, cnt, wtxt, bad
@@ -392,29 +403,28 @@ End Function
 
 ' report for CHECK_ONLY = True: SAP and Excel are fine, how many vendors, which attachment files are missing
 Sub CheckOnlyReport()
-  Dim vend, kk, vpp, full, missing, total, txt
+  Dim vend, kk, vpp, full, missing, total, txt, withFile
   Set vend = ReadVendors()
   total = vend.Count
   missing = ""
-  If NeedsFile() Then
-    For Each kk In vend.Keys
-      vpp = Split(vend(kk), "|")
+  withFile = 0
+  For Each kk In vend.Keys
+    vpp = Split(vend(kk), "|")
+    If WantsFile(vpp(UBound(vpp))) Then
+      withFile = withFile + 1
       full = ResolveFile(vpp(UBound(vpp)))
       If Not fso.FileExists(full) Then missing = missing & vbCrLf & "  row " & kk & ": " & full
-    Next
-  End If
-  txt = "All checks passed." & vbCrLf & vbCrLf & gSapInfo & vbCrLf & "Vendor list: " & VENDOR_FILE & " (" & total & " vendors)"
+    End If
+  Next
+  txt = "All checks passed." & vbCrLf & vbCrLf & gSapInfo & vbCrLf & "Vendor list: " & VENDOR_FILE & " (" & total & " vendors; " & withFile & " with an attachment, " & (total - withFile) & " block only)"
   If missing <> "" Then
     txt = txt & vbCrLf & vbCrLf & "ATTACHMENT FILES NOT FOUND:" & missing & vbCrLf & "(put the files there, or fix the File column)"
     MsgBox txt, 48, "Payment block"
+    Log "Check only: " & gSapInfo & "; " & total & " vendors; ATTACHMENT FILES MISSING:" & missing
   Else
     txt = txt & vbCrLf & vbCrLf & "Nothing was changed in SAP. Set CHECK_ONLY = False to run the script."
     MsgBox txt, 64, "Payment block"
-  End If
-  If missing <> "" Then
-    Log "Check only: " & gSapInfo & "; " & total & " vendors; ATTACHMENT FILES MISSING:" & missing
-  Else
-    Log "Check only: " & gSapInfo & "; " & total & " vendors; all attachment files found"
+    Log "Check only: " & gSapInfo & "; " & total & " vendors (" & withFile & " with an attachment); all attachment files found"
   End If
 End Sub
 
@@ -785,7 +795,7 @@ Function DoVendor(lifnr, pba, cc, ByRef msg)
   Loop
   If Not ready Then msg = "Vendor Address screen did not open within " & WAIT_SECS & " s (window title: " & TitleText() & ")": Exit Function
 
-  If ATTACH_EMAIL Then
+  If gDoAttach Then
   ' 3. Services for Object > Create attachment. (The "Attachment list" entry only exists for vendors that
   '    already have attachments, so the Create entry is used directly.)
   Trace "vendor screen is open (" & TitleText() & ", " & Int(Timer - t) & " s), opening Services for Object > Create attachment"
@@ -1071,12 +1081,13 @@ For Each k In vendors.Keys
   If k >= START_ROW Then
     vp = Split(vendors(k), "|")
     fullPath = ""
-    If ATTACH_EMAIL Then fullPath = ResolveFile(vp(3))
+    gDoAttach = WantsFile(vp(3))
+    If gDoAttach Then fullPath = ResolveFile(vp(3))
     doneKey = vp(0) & "|" & vp(2) & "|" & vp(1) & "|" & LCase(fullPath) & "|" & TodayStamp()
     If SKIP_DONE And doneDict.Exists(doneKey) Then
       skipped = skipped + 1
       Log "row " & k & "  vendor " & vp(0) & "  SKIPPED  already done today (payment-block-done.txt)"
-    ElseIf ATTACH_EMAIL And Not fso.FileExists(fullPath) Then
+    ElseIf gDoAttach And Not fso.FileExists(fullPath) Then
       failCount = failCount + 1
       Log "row " & k & "  vendor " & vp(0) & "  FAILED   attachment file not found: " & fullPath
       failList = failList & vbCrLf & "row " & k & "  vendor " & vp(0) & ": attachment file not found: " & fullPath
@@ -1085,14 +1096,14 @@ For Each k In vendors.Keys
       done = done + 1
       started = Timer
       msg = ""
-      If ATTACH_EMAIL Then
+      If gDoAttach Then
         ATTACH_FOLDER = fso.GetParentFolderName(fullPath)
         ATTACH_NAME = fso.GetFileName(fullPath)
       End If
       If DoVendor(vp(0), vp(1), vp(2), msg) Then
         okCount = okCount + 1
         fails = 0
-        Log "row " & k & "  vendor " & vp(0) & "  OK   [" & ATTACH_NAME & "]  " & msg & "  (" & Int(Timer - started) & " s)"
+        Log "row " & k & "  vendor " & vp(0) & "  OK   [" & AttachLabel() & "]  " & msg & "  (" & Int(Timer - started) & " s)"
         If InStr(msg, "left unchanged") > 0 Then noteList = noteList & vbCrLf & "row " & k & "  vendor " & vp(0) & ": " & msg
         If Not DRY_RUN Then
           Set tsf = fso.OpenTextFile(doneFile, 8, True)
