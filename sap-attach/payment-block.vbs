@@ -10,13 +10,14 @@ Option Explicit
 
 ' ===== Settings =====
 Dim DEFAULT_FOLDER, DEFAULT_NAME
-Dim VENDOR_FILE, ATTACH_FOLDER, ATTACH_NAME, ATTACH_EMAIL, DEFAULT_CC, DRY_RUN, START_ROW, MAX_VENDORS, MAX_FAILS_IN_ROW, WAIT_SECS, LOAD_SECS, DIALOG_SECS, MENU_SECS, SKIP_DONE
-VENDOR_FILE = "C:\Users\290158\Downloads\Scripts\PBA 1505.xlsx"
-ATTACH_FOLDER = "C:\Users\290158\Downloads\Scripts"   ' default file, used when the Excel File column is blank (or missing)
+Dim VENDOR_FILE, ATTACH_FOLDER, ATTACH_NAME, ATTACH_EMAIL, DEFAULT_CC, DRY_RUN, CHECK_ONLY, START_ROW, MAX_VENDORS, MAX_FAILS_IN_ROW, WAIT_SECS, LOAD_SECS, DIALOG_SECS, MENU_SECS, SKIP_DONE
+VENDOR_FILE = "PBA 1505.xlsx"   ' Excel list; a name without a folder is looked up in the folder of this script
+ATTACH_FOLDER = ""   ' folder of the default attachment ("" = the folder this script is in); used when the Excel File column is blank
 ATTACH_NAME = "RE_ Suspensiones hasta nuevo aviso.msg"
 ATTACH_EMAIL = True       ' True = also attach the email to every vendor
 DEFAULT_CC = "1505"       ' company code used when column C is blank
 DRY_RUN = False           ' True = look only: opens each vendor, reads its payment block and reports what WOULD change; changes/attaches NOTHING
+CHECK_ONLY = False        ' True = only run the start-up check (SAP, Excel, files) and show a report; touches nothing in SAP
 START_ROW = 2             ' first Excel row to process (row 1 is the header)
 MAX_VENDORS = 0           ' 0 = every vendor in the Excel file; use 1 to test with a single vendor
 MAX_FAILS_IN_ROW = 3      ' stop after this many failures in a row
@@ -28,8 +29,8 @@ DIALOG_SECS = 150         ' how long SAP may take to open/confirm the Import fil
 ' ====================
 
 ' tidy the settings: remove stray quote marks (e.g. from "Copy as path") and trailing backslashes
-VENDOR_FILE = CleanPath(VENDOR_FILE)
-ATTACH_FOLDER = CleanPath(ATTACH_FOLDER)
+VENDOR_FILE = MakeAbsolute(VENDOR_FILE)
+ATTACH_FOLDER = MakeAbsolute(ATTACH_FOLDER)
 ATTACH_NAME = CleanPath(ATTACH_NAME)
 DEFAULT_FOLDER = ATTACH_FOLDER
 DEFAULT_NAME = ATTACH_NAME
@@ -42,11 +43,32 @@ Function CleanPath(p)
   CleanPath = p
 End Function
 
+Function ScriptDir()
+  ScriptDir = CreateObject("Scripting.FileSystemObject").GetParentFolderName(WScript.ScriptFullName)
+End Function
+
+' relative paths and empty values are resolved against the folder this script is in, so the whole
+' folder can be copied to another PC or user without editing anything
+Function MakeAbsolute(p)
+  p = CleanPath(p)
+  If p = "" Then
+    MakeAbsolute = ScriptDir()
+  ElseIf InStr(p, ":") = 0 And Left(p, 2) <> "\\" Then
+    MakeAbsolute = ScriptDir() & "\" & p
+  Else
+    MakeAbsolute = p
+  End If
+End Function
+
+Function NeedsFile()
+  NeedsFile = ATTACH_EMAIL
+End Function
+
 Const LIST_SHELL = "wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell"
 Const ZAHLS = "wnd[0]/usr/ctxtLFB1-ZAHLS"   ' Payment block field (company code Payment transactions screen)
 Const TOOLBOX = "wnd[0]/shellcont/shell"   ' toolbar with CREATE_ATTA, VIEW_ATTA, ... shown by System > Services for Object
 
-Dim fso, session, application, connection, SapGuiAuto, logPath, doneFile, gErr, runLabel
+Dim fso, session, application, connection, SapGuiAuto, logPath, doneFile, gErr, runLabel, gSapInfo
 Set fso = CreateObject("Scripting.FileSystemObject")
 logPath = fso.BuildPath(fso.GetParentFolderName(WScript.ScriptFullName), "payment-block-log.txt")
 doneFile = fso.BuildPath(fso.GetParentFolderName(WScript.ScriptFullName), "payment-block-done.txt")
@@ -271,6 +293,129 @@ Sub ClosePopups()
   For i = 4 To 1 Step -1
     ClosePopup i
   Next
+End Sub
+
+' ---- start-up check: tells the user in plain words what to fix before anything touches SAP ----
+Function Preflight()
+  Dim problems, xl, tf, usr, lng, sysName, clientNo, cnt, wtxt, bad
+  problems = ""
+  gSapInfo = ""
+
+  ' 1. the script folder must be writable (log and done list are written next to the script)
+  On Error Resume Next
+  Set tf = fso.OpenTextFile(logPath, 8, True)
+  If Err.Number <> 0 Then
+    problems = problems & vbCrLf & "- The folder of this script is read-only. Unzip the files into a normal folder (for example C:\SAP-scripts) and run the script from there."
+    Err.Clear
+  Else
+    tf.Close
+  End If
+
+  ' 2. Excel is needed to read the vendor list
+  Set xl = Nothing
+  Set xl = CreateObject("Excel.Application")
+  If Err.Number <> 0 Then
+    problems = problems & vbCrLf & "- Excel is not available on this PC (the script reads the vendor list through Excel)."
+    Err.Clear
+  Else
+    xl.Quit
+  End If
+  Set xl = Nothing
+  On Error GoTo 0
+
+  ' 3. the vendor list
+  If Not fso.FileExists(VENDOR_FILE) Then
+    problems = problems & vbCrLf & "- The vendor Excel file was not found: " & VENDOR_FILE & vbCrLf & "  Put it in the same folder as the script with that name, or change VENDOR_FILE at the top of the script."
+  End If
+
+  ' 4. SAP GUI, scripting, logon, language
+  On Error Resume Next
+  Set SapGuiAuto = Nothing
+  Set SapGuiAuto = GetObject("SAPGUI")
+  If Err.Number <> 0 Or SapGuiAuto Is Nothing Then
+    Err.Clear
+    problems = problems & vbCrLf & "- SAP GUI is not running. Open SAP Logon, log on, then start the script."
+  Else
+    Set application = Nothing
+    Set application = SapGuiAuto.GetScriptingEngine
+    bad = False
+    If Err.Number <> 0 Then
+      bad = True
+      Err.Clear
+    End If
+    If application Is Nothing Then bad = True
+    If bad Then
+      problems = problems & vbCrLf & "- SAP GUI scripting is switched off on this PC. In SAP press Alt+F12, choose Options > Accessibility & Scripting > Scripting, tick 'Enable scripting' and untick the two 'Notify when...' boxes. If the option is greyed out, ask IT."
+    Else
+      cnt = 0
+      cnt = application.Children.Count
+      Err.Clear
+      If cnt = 0 Then
+        problems = problems & vbCrLf & "- No SAP system is open. Log on to SAP first."
+      Else
+        Set connection = application.Children(0)
+        cnt = 0
+        cnt = connection.Children.Count
+        Err.Clear
+        If cnt = 0 Then
+          problems = problems & vbCrLf & "- No SAP session is open. Log on to SAP first."
+        Else
+          Set session = connection.Children(0)
+          wtxt = ""
+          wtxt = session.findById("wnd[0]").Text
+          If Err.Number <> 0 Then
+            Err.Clear
+            problems = problems & vbCrLf & "- SAP does not accept scripts (scripting may be disabled for your user on the SAP server). Ask your SAP administrator."
+          Else
+            usr = ""
+            usr = session.info.user
+            lng = ""
+            lng = UCase(session.info.language)
+            sysName = session.info.systemName
+            clientNo = session.info.client
+            Err.Clear
+            If usr = "" Then
+              problems = problems & vbCrLf & "- You are not logged on in SAP (the logon screen is open). Log on first."
+            ElseIf lng <> "EN" Then
+              problems = problems & vbCrLf & "- SAP is logged on in language " & lng & ". The script recognises English screens only. Log off and log on again with language EN."
+            Else
+              gSapInfo = "SAP user " & usr & ", system " & sysName & " client " & clientNo & ", language " & lng
+            End If
+          End If
+        End If
+      End If
+    End If
+  End If
+  On Error GoTo 0
+  Preflight = problems
+End Function
+
+' report for CHECK_ONLY = True: SAP and Excel are fine, how many vendors, which attachment files are missing
+Sub CheckOnlyReport()
+  Dim vend, kk, vpp, full, missing, total, txt
+  Set vend = ReadVendors()
+  total = vend.Count
+  missing = ""
+  If NeedsFile() Then
+    For Each kk In vend.Keys
+      vpp = Split(vend(kk), "|")
+      full = ResolveFile(vpp(UBound(vpp)))
+      If Not fso.FileExists(full) Then missing = missing & vbCrLf & "  row " & kk & ": " & full
+    Next
+  End If
+  txt = "All checks passed." & vbCrLf & vbCrLf & gSapInfo & vbCrLf & "Vendor list: " & VENDOR_FILE & " (" & total & " vendors)"
+  If missing <> "" Then
+    txt = txt & vbCrLf & vbCrLf & "ATTACHMENT FILES NOT FOUND:" & missing & vbCrLf & "(put the files there, or fix the File column)"
+    MsgBox txt, 48, "Payment block"
+  Else
+    txt = txt & vbCrLf & vbCrLf & "Nothing was changed in SAP. Set CHECK_ONLY = False to run the script."
+    MsgBox txt, 64, "Payment block"
+  End If
+  If missing <> "" Then
+    Log "Check only: " & gSapInfo & "; " & total & " vendors; ATTACHMENT FILES MISSING:" & missing
+  Else
+    Log "Check only: " & gSapInfo & "; " & total & " vendors; all attachment files found"
+  End If
 End Sub
 
 ' how many copies of this script are running right now (including this one)
@@ -887,23 +1032,19 @@ If InstancesRunning() > 1 Then
   WScript.Quit 1
 End If
 
-' ---- attach to the running SAP session ----
-On Error Resume Next
-Set SapGuiAuto = GetObject("SAPGUI")
-If Err.Number <> 0 Then
-  Log "ERROR: SAP GUI is not running."
-  MsgBox "SAP GUI is not running. Open SAP and log in first.", 16, "Payment block"
+' ---- start-up check (also attaches to the SAP session) ----
+Dim pfProblems
+pfProblems = Preflight()
+If pfProblems <> "" Then
+  Log "START-UP CHECK FAILED:" & pfProblems
+  MsgBox "The script cannot start yet. Please fix:" & vbCrLf & pfProblems, 48, "Payment block"
   WScript.Quit 1
 End If
-Set application = SapGuiAuto.GetScriptingEngine
-Set connection = application.Children(0)
-Set session = connection.Children(0)
-If Err.Number <> 0 Then
-  Log "ERROR: could not attach to a logged-in SAP session."
-  MsgBox "Could not attach to a logged-in SAP session.", 16, "Payment block"
-  WScript.Quit 1
+Log "Start-up check passed: " & gSapInfo
+If CHECK_ONLY Then
+  CheckOnlyReport
+  WScript.Quit 0
 End If
-On Error GoTo 0
 session.findById("wnd[0]").maximize
 
 Dim vendors, k, done, okCount, failCount, fails, msg, started, stoppedEarly, doneDict, doneKey, skipped, tsf, parts, vp, failList, noteList, fullPath
