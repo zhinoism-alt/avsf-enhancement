@@ -1,4 +1,5 @@
-' Excel (first sheet, row 1 = header): column A = vendor number. Optional column with the header "File" = the full path of the
+' Excel (first sheet, row 1 = header): column A = vendor number. Optional column with the header "CC" = company code of the
+' vendor (SAP then also checks that the vendor exists in that company code; blank = no company code). Optional column with the header "File" = the full path of the
 ' file to attach to that vendor (blank or no such column = the default file in the settings below).
 ' Attaches a file to a list of vendors in SAP: the vendor is opened in display mode (XK03, nothing can be changed and
 ' the vendor is not locked), then Services for Object > Create attachment. Set TCODE = "XK02" to use change mode instead.
@@ -8,11 +9,12 @@ Option Explicit
 
 ' ===== Settings =====
 Dim DEFAULT_FOLDER, DEFAULT_NAME
-Dim VENDOR_FILE, ATTACH_FOLDER, ATTACH_NAME, DRY_RUN, CHECK_ONLY, TCODE, START_ROW, MAX_VENDORS, MAX_FAILS_IN_ROW, WAIT_SECS, LOAD_SECS, DIALOG_SECS, MENU_SECS, SKIP_DONE
+Dim VENDOR_FILE, ATTACH_FOLDER, ATTACH_NAME, DRY_RUN, CHECK_ONLY, TCODE, DEFAULT_CC, START_ROW, MAX_VENDORS, MAX_FAILS_IN_ROW, WAIT_SECS, LOAD_SECS, DIALOG_SECS, MENU_SECS, SKIP_DONE
 VENDOR_FILE = "Attachment Script.xlsx"   ' Excel list; a name without a folder is looked up in the folder of this script
 ATTACH_FOLDER = ""   ' folder of the default attachment ("" = the folder this script is in); used when the Excel File column is blank
 ATTACH_NAME = "RE_ Suspensiones hasta nuevo aviso.msg"
 DRY_RUN = False           ' True = open each vendor and its attachment list but attach NOTHING
+DEFAULT_CC = ""           ' company code used when the CC column is blank or missing ("" = open the vendor without a company code)
 TCODE = "XK03"           ' transaction used to open each vendor: XK03 = display (recommended), XK02 = change
 CHECK_ONLY = False        ' True = only run the start-up check (SAP, Excel, files) and show a report; touches nothing in SAP
 START_ROW = 2             ' first Excel row to process (row 1 is the header)
@@ -486,6 +488,16 @@ Function ResolveFile(p)
   End If
 End Function
 
+Function FindCCColumn(ws)
+  Dim c, lastCol, v
+  FindCCColumn = 0
+  lastCol = ws.Cells(1, ws.Columns.Count).End(-4159).Column
+  For c = 1 To lastCol
+    v = LCase(Trim(CStr(ws.Cells(1, c).Value)))
+    If v = "cc" Or v = "company code" Or v = "company" Or v = "bukrs" Or v = "co code" Then FindCCColumn = c
+  Next
+End Function
+
 Function FindFileColumn(ws)
   Dim c, lastCol, v
   FindFileColumn = 0
@@ -494,6 +506,14 @@ Function FindFileColumn(ws)
     v = LCase(Trim(CStr(ws.Cells(1, c).Value)))
     If v = "file" Or v = "file path" Or v = "attachment" Or v = "path" Then FindFileColumn = c
   Next
+End Function
+
+Function IIfCC(cc)
+  If cc = "" Then
+    IIfCC = ""
+  Else
+    IIfCC = " (CC " & cc & ")"
+  End If
 End Function
 
 Function TodayStamp()
@@ -508,7 +528,7 @@ Function IsVendorNumber(s)
 End Function
 
 Function ReadVendors()
-  Dim xl, wb, ws, lastRow, r, v, d, fileCol, fileVal
+  Dim xl, wb, ws, lastRow, r, v, d, fileCol, fileVal, ccCol, ccVal
   Set d = CreateObject("Scripting.Dictionary")
   Set xl = CreateObject("Excel.Application")
   xl.Visible = False
@@ -517,12 +537,17 @@ Function ReadVendors()
   Set ws = wb.Worksheets(1)
   lastRow = ws.Cells(ws.Rows.Count, 1).End(-4162).Row
   fileCol = FindFileColumn(ws)
+  ccCol = FindCCColumn(ws)
   For r = 1 To lastRow
     v = Trim(CStr(ws.Cells(r, 1).Value))
     If IsVendorNumber(v) Then
       fileVal = ""
       If fileCol > 0 Then fileVal = Trim(CStr(ws.Cells(r, fileCol).Value))
-      d.Add r, Right("0000000000" & v, 10) & "|" & fileVal
+      ccVal = DEFAULT_CC
+      If ccCol > 0 Then
+        If Trim(CStr(ws.Cells(r, ccCol).Value)) <> "" Then ccVal = Trim(CStr(ws.Cells(r, ccCol).Value))
+      End If
+      d.Add r, Right("0000000000" & v, 10) & "|" & ccVal & "|" & fileVal
     End If
   Next
   wb.Close False
@@ -591,7 +616,7 @@ Function OpenList()
 End Function
 
 ' Returns True when the file was attached (or, in dry run, when the attachment list opened).
-Function DoVendor(lifnr, ByRef msg)
+Function DoVendor(lifnr, cc, ByRef msg)
   Dim grid, before, after, t, ready, i, title, ok3, errText, initScreen, dumped, lastLogged, picked, viaList, k, g2
   DoVendor = False
   msg = ""
@@ -599,7 +624,7 @@ Function DoVendor(lifnr, ByRef msg)
   If Find("wnd[0]") Is Nothing Then msg = "SAP session is no longer available (logged off?)": Exit Function
   ClosePopups
 
-  Trace "opening " & TCODE & " for vendor " & lifnr
+  Trace "opening " & TCODE & " for vendor " & lifnr & IIfCC(cc)
   ' 1. start screen of the transaction, vendor number, Address view (as recorded)
   If Not SetText("wnd[0]/tbar[0]/okcd", "/n" & TCODE) Then msg = gErr: Exit Function
   If Not SendKey("wnd[0]", 0) Then msg = gErr: Exit Function
@@ -607,7 +632,7 @@ Function DoVendor(lifnr, ByRef msg)
   initScreen = ScreenNo()
   SetViewChecks session.findById("wnd[0]/usr")
   If Not SetChecked("wnd[0]/usr/chkRF02K-D0110", True) Then msg = gErr: Exit Function
-  SetText "wnd[0]/usr/ctxtRF02K-BUKRS", ""
+  SetText "wnd[0]/usr/ctxtRF02K-BUKRS", cc
   SetText "wnd[0]/usr/ctxtRF02K-EKORG", ""
   If Not SetText("wnd[0]/usr/ctxtRF02K-LIFNR", lifnr) Then msg = gErr: Exit Function
   If Not SendKey("wnd[0]", 0) Then msg = gErr: Exit Function
@@ -892,7 +917,7 @@ If SKIP_DONE And fso.FileExists(doneFile) Then
   Set tsf = fso.OpenTextFile(doneFile, 1)
   Do While Not tsf.AtEndOfStream
     parts = Split(tsf.ReadLine, "|")
-    If UBound(parts) >= 2 Then doneDict(parts(0) & "|" & parts(1) & "|" & parts(2)) = True
+    If UBound(parts) >= 3 Then doneDict(parts(0) & "|" & parts(1) & "|" & parts(2) & "|" & parts(3)) = True
   Loop
   tsf.Close
 End If
@@ -903,8 +928,8 @@ Log "===== " & runLabel & ": " & vendors.Count & " vendors in " & VENDOR_FILE & 
 For Each k In vendors.Keys
   If k >= START_ROW Then
     vp = Split(vendors(k), "|")
-    fullPath = ResolveFile(vp(1))
-    doneKey = vp(0) & "|" & LCase(fullPath) & "|" & TodayStamp()
+    fullPath = ResolveFile(vp(2))
+    doneKey = vp(0) & "|" & vp(1) & "|" & LCase(fullPath) & "|" & TodayStamp()
     If SKIP_DONE And doneDict.Exists(doneKey) Then
       skipped = skipped + 1
       Log "row " & k & "  vendor " & vp(0) & "  SKIPPED  already done today with this file (attach-done.txt)"
@@ -919,10 +944,10 @@ For Each k In vendors.Keys
       msg = ""
       ATTACH_FOLDER = fso.GetParentFolderName(fullPath)
       ATTACH_NAME = fso.GetFileName(fullPath)
-      If DoVendor(vp(0), msg) Then
+      If DoVendor(vp(0), vp(1), msg) Then
         okCount = okCount + 1
         fails = 0
-        Log "row " & k & "  vendor " & vp(0) & "  OK   [" & ATTACH_NAME & "]  " & msg & "  (" & Int(Timer - started) & " s)"
+        Log "row " & k & "  vendor " & vp(0) & "  OK   " & IIfCC(vp(1)) & " [" & ATTACH_NAME & "]  " & msg & "  (" & Int(Timer - started) & " s)"
         If Not DRY_RUN Then
           Set tsf = fso.OpenTextFile(doneFile, 8, True)
           tsf.WriteLine doneKey & "|" & Now
@@ -932,7 +957,7 @@ For Each k In vendors.Keys
       Else
         failCount = failCount + 1
         fails = fails + 1
-        Log "row " & k & "  vendor " & vp(0) & "  FAILED   [" & ATTACH_NAME & "]  " & msg
+        Log "row " & k & "  vendor " & vp(0) & "  FAILED   " & IIfCC(vp(1)) & " [" & ATTACH_NAME & "]  " & msg
         failList = failList & vbCrLf & "row " & k & "  vendor " & vp(0) & ": " & msg
         If InStr(msg, "no longer available") > 0 Then
           stoppedEarly = True

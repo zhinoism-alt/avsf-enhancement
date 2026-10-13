@@ -59,3 +59,10 @@ without touching SAP. See the `examples` folder for the layout.
 for other users. Setting `TCODE = "XK02"` switches back to change mode (then it also presses Save like the original recording).
 The System > Services for Object menu is found by its text, because the menu bar of XK03 has no Edit menu.
 `payment-block.vbs` stays on XK02 because it must change the payment block.
+
+## Company code in the attach-only script
+`attach-document.vbs` reads an optional column headed **CC** (also accepted: `Company Code`, `Company`, `BUKRS`). When it is filled in, that
+company code is entered on the XK03 start screen, so SAP also checks that the vendor exists in that company code (otherwise the vendor
+is reported as FAILED with SAP's message, e.g. "Vendor ... has not been created for company code ..."). A blank cell, or no such column,
+opens the vendor without a company code (`DEFAULT_CC` in the settings can supply one for blank cells). The done list now includes the
+company code, so the same vendor in two company codes counts as two separate jobs.

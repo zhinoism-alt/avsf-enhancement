@@ -13,7 +13,8 @@ change is recorded under your user, exactly as if you had done it by hand.
 4. **Excel** must be installed. Close the vendor Excel file before running the script.
 
 ## Prepare the vendor list (Excel, first sheet, row 1 = header)
-- `attach-document.vbs`: column A = vendor number. Optional column with header **File** = full path of the file for that vendor.
+- `attach-document.vbs`: column A = vendor number. Optional column **Company Code** (or `CC`) = the vendor's company code (SAP then checks the vendor exists in it).
+  Optional column with header **File** = file for that vendor (a full path, or just a file name if it is in this folder).
 - `payment-block.vbs`: A = vendor number, B = **PBA** (`A` to block, blank to remove block A), C = company code, optional **File**.
   A **blank File cell = no attachment** for that vendor (the block is still done). Use just the file name if the file is in this folder.
 - See the `examples` folder. Save the list in this folder with the name shown at the top of the script (`VENDOR_FILE`),
