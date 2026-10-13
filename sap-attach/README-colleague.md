@@ -1,6 +1,6 @@
 # SAP scripts: how to run them (one page)
 
-These scripts do repetitive vendor work in SAP for you: **attach a file to many vendors** (`attach-document.vbs`) and
+These scripts do repetitive vendor work in SAP for you: **attach a file to many vendors** (`attach-document.vbs`, vendors are opened in display mode XK03, so nothing can change) and
 **set or remove a payment block + attach a file** (`payment-block.vbs`). They use **your own SAP login**: whatever they
 change is recorded under your user, exactly as if you had done it by hand.
 

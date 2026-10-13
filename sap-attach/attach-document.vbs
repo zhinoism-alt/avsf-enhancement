@@ -1,17 +1,19 @@
 ' Excel (first sheet, row 1 = header): column A = vendor number. Optional column with the header "File" = the full path of the
 ' file to attach to that vendor (blank or no such column = the default file in the settings below).
-' Attaches the same file to a list of vendors in SAP (XK02 > Services for Object > Create attachment).
+' Attaches a file to a list of vendors in SAP: the vendor is opened in display mode (XK03, nothing can be changed and
+' the vendor is not locked), then Services for Object > Create attachment. Set TCODE = "XK02" to use change mode instead.
 ' Built from a recording. SAP GUI must be open and logged in. It uses your first SAP window,
 ' so leave SAP alone while it runs. Results are written to attach-log.txt next to this script.
 Option Explicit
 
 ' ===== Settings =====
 Dim DEFAULT_FOLDER, DEFAULT_NAME
-Dim VENDOR_FILE, ATTACH_FOLDER, ATTACH_NAME, DRY_RUN, CHECK_ONLY, START_ROW, MAX_VENDORS, MAX_FAILS_IN_ROW, WAIT_SECS, LOAD_SECS, DIALOG_SECS, MENU_SECS, SKIP_DONE
+Dim VENDOR_FILE, ATTACH_FOLDER, ATTACH_NAME, DRY_RUN, CHECK_ONLY, TCODE, START_ROW, MAX_VENDORS, MAX_FAILS_IN_ROW, WAIT_SECS, LOAD_SECS, DIALOG_SECS, MENU_SECS, SKIP_DONE
 VENDOR_FILE = "Attachment Script.xlsx"   ' Excel list; a name without a folder is looked up in the folder of this script
 ATTACH_FOLDER = ""   ' folder of the default attachment ("" = the folder this script is in); used when the Excel File column is blank
 ATTACH_NAME = "RE_ Suspensiones hasta nuevo aviso.msg"
 DRY_RUN = False           ' True = open each vendor and its attachment list but attach NOTHING
+TCODE = "XK03"           ' transaction used to open each vendor: XK03 = display (recommended), XK02 = change
 CHECK_ONLY = False        ' True = only run the start-up check (SAP, Excel, files) and show a report; touches nothing in SAP
 START_ROW = 2             ' first Excel row to process (row 1 is the header)
 MAX_VENDORS = 0           ' 0 = every vendor in the Excel file; use a small number to test
@@ -252,7 +254,7 @@ Sub BringSapToFront()
   WScript.Sleep 500
 End Sub
 
-' XK02 remembers the last view selection AND the company code, so the start screen is reset every time:
+' XK02/XK03 remember the last view selection AND the company code, so the start screen is reset every time:
 ' ONLY Address (general data, D0110) is ticked; company code and purchasing org are cleared.
 Sub SetViewChecks(node)
   Dim i, n, c
@@ -528,15 +530,53 @@ Function ReadVendors()
   Set ReadVendors = d
 End Function
 
+' System > Services for Object, found by its TEXT: in XK03 (display) the menu bar has no Edit menu, so the
+' position of the System menu differs from XK02.
+Function SelectServicesMenu()
+  Dim bar, i, n, m, j, k, it
+  SelectServicesMenu = False
+  On Error Resume Next
+  Set bar = Nothing
+  Set bar = session.findById("wnd[0]/mbar")
+  If Err.Number <> 0 Or bar Is Nothing Then
+    gErr = "could not read the menu bar"
+    Err.Clear
+    On Error GoTo 0
+    Exit Function
+  End If
+  n = bar.Children.Count
+  For i = 0 To n - 1
+    Set m = bar.Children(CLng(i))
+    If LCase(Trim(m.Text)) = "system" Then
+      k = m.Children.Count
+      For j = 0 To k - 1
+        Set it = m.Children(CLng(j))
+        If LCase(Trim(it.Text)) = "services for object" Then
+          Err.Clear
+          it.select
+          If Err.Number <> 0 Then
+            gErr = "menu System > Services for Object: " & Err.Description
+            Err.Clear
+          Else
+            SelectServicesMenu = True
+          End If
+          On Error GoTo 0
+          Exit Function
+        End If
+      Next
+    End If
+  Next
+  gErr = "menu System > Services for Object was not found"
+  Err.Clear
+  On Error GoTo 0
+End Function
+
 ' opens the Attachment list (System > Services for Object if the toolbox is not open yet); returns the grid or Nothing
 Function OpenList()
   Dim g
   Set g = Nothing
   If Find(TOOLBOX) Is Nothing Then
-    On Error Resume Next
-    session.findById("wnd[0]/mbar/menu[5]/menu[6]").select
-    Err.Clear
-    On Error GoTo 0
+    SelectServicesMenu
     If WaitFor(TOOLBOX, 40) Is Nothing Then
       Set OpenList = Nothing
       Exit Function
@@ -559,11 +599,11 @@ Function DoVendor(lifnr, ByRef msg)
   If Find("wnd[0]") Is Nothing Then msg = "SAP session is no longer available (logged off?)": Exit Function
   ClosePopups
 
-  Trace "opening XK02 for vendor " & lifnr
-  ' 1. XK02 start screen, vendor number, Address view (as recorded)
-  If Not SetText("wnd[0]/tbar[0]/okcd", "/nXK02") Then msg = gErr: Exit Function
+  Trace "opening " & TCODE & " for vendor " & lifnr
+  ' 1. start screen of the transaction, vendor number, Address view (as recorded)
+  If Not SetText("wnd[0]/tbar[0]/okcd", "/n" & TCODE) Then msg = gErr: Exit Function
   If Not SendKey("wnd[0]", 0) Then msg = gErr: Exit Function
-  If WaitFor("wnd[0]/usr/ctxtRF02K-LIFNR", 60) Is Nothing Then msg = "XK02 start screen did not appear": Exit Function
+  If WaitFor("wnd[0]/usr/ctxtRF02K-LIFNR", 60) Is Nothing Then msg = TCODE & " start screen did not appear": Exit Function
   initScreen = ScreenNo()
   SetViewChecks session.findById("wnd[0]/usr")
   If Not SetChecked("wnd[0]/usr/chkRF02K-D0110", True) Then msg = gErr: Exit Function
@@ -619,13 +659,7 @@ Function DoVendor(lifnr, ByRef msg)
     ' 1. System > Services for Object (a normal menu click) shows the toolbox toolbar
     If Find(TOOLBOX) Is Nothing Then
       Trace "attempt " & i & ": opening System > Services for Object"
-      On Error Resume Next
-      session.findById("wnd[0]/mbar/menu[5]/menu[6]").select
-      If Err.Number <> 0 Then
-        errText = "menu System > Services for Object: " & Err.Description
-        Err.Clear
-      End If
-      On Error GoTo 0
+      If Not SelectServicesMenu() Then errText = gErr
       If errText = "" Then
         If WaitFor(TOOLBOX, 40) Is Nothing Then errText = "the Services for Object toolbar did not appear"
       End If
@@ -806,16 +840,18 @@ Function DoVendor(lifnr, ByRef msg)
       msg = "attached (" & StatusText() & ")"
     End If
     DoVendor = True
-    ' as in the recording: press Save (nothing else changed, so SAP only reports "no changes")
-    Trace "closing the attachment list (if open), then pressing Save as in the recording"
+    Trace "closing the attachment list (if open)"
     ClosePopups
-    Press "wnd[0]/tbar[0]/btn[11]"
-    WScript.Sleep 1500
-    ClosePopups
+    If UCase(TCODE) = "XK02" Then
+      ' change mode, as in the recording: press Save (nothing else changed, so SAP only reports "no changes")
+      Press "wnd[0]/tbar[0]/btn[11]"
+      WScript.Sleep 1500
+      ClosePopups
+    End If
   End If
 
-  ' 6. dismiss any dialog and leave XK02 (attachments are stored as soon as they are created)
-  Trace "leaving XK02"
+  ' 6. dismiss any dialog and leave the transaction (attachments are stored as soon as they are created)
+  Trace "leaving " & TCODE
   ClosePopups
   If SetText("wnd[0]/tbar[0]/okcd", "/n") Then SendKey "wnd[0]", 0
   WScript.Sleep 1500

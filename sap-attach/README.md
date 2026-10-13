@@ -53,3 +53,9 @@ Add a column with the header **File** to the Excel and put the **full path** of 
 or `ATTACH_EMAIL = False` to never attach anything.
 A bare file name (no folder) is looked up in the default folder. If a file does not exist, that vendor is reported as FAILED
 without touching SAP. See the `examples` folder for the layout.
+
+## Attach-only script opens vendors in display mode (XK03)
+`attach-document.vbs` now opens each vendor with **XK03** (display): nothing in the vendor can be changed and the vendor is not locked
+for other users. Setting `TCODE = "XK02"` switches back to change mode (then it also presses Save like the original recording).
+The System > Services for Object menu is found by its text, because the menu bar of XK03 has no Edit menu.
+`payment-block.vbs` stays on XK02 because it must change the payment block.
