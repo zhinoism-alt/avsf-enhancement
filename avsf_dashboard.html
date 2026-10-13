@@ -2299,6 +2299,7 @@ Example formats accepted:
                                 </div>
                                 <div>
                                     <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:5px;">📋 Select AVSF / Vendor</label>
+                                    <input type="search" id="tab6AVSFSelectSearch" class="form-input" placeholder="Type to search: request #, vendor name or vendor #" autocomplete="off" style="font-size:13px;margin-bottom:6px;width:100%;box-sizing:border-box;" oninput="emailSelectSearch('tab6AVSFSelect', tab6PopulateSelect, tab6BuildPreview)" onkeydown="emailSelectSearchKey(event,'tab6AVSFSelect', tab6BuildPreview)">
                                     <select id="tab6AVSFSelect" class="form-select" style="font-size:13px;" onchange="tab6BuildPreview()">
                                         <option value="">-- Select a request --</option>
                                     </select>
@@ -2931,6 +2932,7 @@ Select a request from the left to preview the email...
                         </div>
                         <div>
                             <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:5px;">Select AVSF / Vendor</label>
+                            <input type="search" id="emailAVSFSelectSearch" class="form-input" placeholder="Type to search: request #, vendor name or vendor #" autocomplete="off" style="font-size:13px;margin-bottom:6px;width:100%;box-sizing:border-box;" oninput="emailSelectSearch('emailAVSFSelect', populateEmailAVSFSelect, buildEmailPreview)" onkeydown="emailSelectSearchKey(event,'emailAVSFSelect', buildEmailPreview)">
                             <select id="emailAVSFSelect" class="form-select" style="font-size:13px;" onchange="buildEmailPreview()">
                                 <option value="">-- Select a request --</option>
                             </select>
@@ -4173,18 +4175,50 @@ Select a request from the left to preview the email...
         }
 
 
+        // ── Search box for the request dropdowns (email templates) ──────────
+        function emailSelectQuery(selId) {
+            const el = document.getElementById(selId + 'Search');
+            return el ? el.value.trim().toLowerCase() : '';
+        }
+        function emailSelectMatches(text, q) {
+            const t = String(text).toLowerCase();
+            return q.split(/\s+/).every(w => t.includes(w));
+        }
+        function emailSelectSearch(selId, populateFn, buildFn) {
+            const sel = document.getElementById(selId);
+            if (!sel) return;
+            sel.value = '';
+            populateFn();
+            // exactly one match: pick it so the preview shows straight away
+            if (sel.options.length === 2) {
+                sel.selectedIndex = 1;
+                buildFn();
+            }
+        }
+        function emailSelectSearchKey(ev, selId, buildFn) {
+            if (ev.key !== 'Enter') return;
+            ev.preventDefault();
+            const sel = document.getElementById(selId);
+            if (sel && sel.options.length > 1) {
+                sel.selectedIndex = 1;
+                buildFn();
+            }
+        }
+
         // ── Email Template Functions ──────────────────────────────────────────
         function populateEmailAVSFSelect() {
             const sel = document.getElementById('emailAVSFSelect');
             if (!sel) return;
             const cur = sel.value;
             sel.innerHTML = '<option value="">-- Select a request --</option>';
+            const q = emailSelectQuery('emailAVSFSelect');
             (avsfs || []).forEach((avsf, idx) => {
                 const opt = document.createElement('option');
                 opt.value = idx;
                 const reqFmt = formatRequestNumber(avsf.requestNo);
                 const vn = avsf.vendorNumber ? ' · ' + avsf.vendorNumber : '';
                 opt.textContent = `${reqFmt} - ${avsf.vendorName}${vn}`;
+                if (q && !emailSelectMatches(opt.textContent + ' ' + (avsf.requestNo || ''), q) && String(idx) !== cur) return;
                 sel.appendChild(opt);
             });
             if (cur) sel.value = cur;
@@ -4400,11 +4434,13 @@ ${from}`;
             if (!sel) return;
             const cur = sel.value;
             sel.innerHTML = '<option value="">-- Select a request --</option>';
+            const q = emailSelectQuery('tab6AVSFSelect');
             (avsfs || []).forEach((avsf, idx) => {
                 const opt = document.createElement('option');
                 opt.value = idx;
                 const vn = avsf.vendorNumber ? ' · ' + avsf.vendorNumber : '';
                 opt.textContent = `${formatRequestNumber(avsf.requestNo)} - ${avsf.vendorName}${vn}`;
+                if (q && !emailSelectMatches(opt.textContent + ' ' + (avsf.requestNo || ''), q) && String(idx) !== cur) return;
                 sel.appendChild(opt);
             });
             if (cur) sel.value = cur;
