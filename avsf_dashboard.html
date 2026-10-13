@@ -1188,6 +1188,7 @@
                             <option value="COMPLETED">Completed</option>
                             <option value="REJECTED">Rejected</option>
                             <option value="PROCESSING">Processing</option>
+                            <option value="WAITING_OTHERS">Waiting on others</option>
                             <option value="PENDING_BUYER">Pending Buyer</option>
                             <option value="IDOC_ERROR">IDOC Error</option>
                             <option value="ON_HOLD">On Hold</option>
@@ -5051,7 +5052,7 @@ AMERBankingValidation@resideo.com`;
             const total = avsfs.length;
             const completed = avsfs.filter(a => a.status === 'COMPLETED').length;
             const rejected = avsfs.filter(a => a.status === 'REJECTED').length;
-            const processing = avsfs.filter(a => a.status === 'PROCESSING').length;
+            const processing = avsfs.filter(a => a.status === 'PROCESSING' && !withOtherApprover(a)).length;
             const pendingBuyer = avsfs.filter(a => a.status === 'PENDING_BUYER').length;
             const idocError = avsfs.filter(a => a.status === 'IDOC_ERROR').length;
 
@@ -5159,7 +5160,8 @@ AMERBankingValidation@resideo.com`;
         let _queueTab = 'processing', _lastRendered = [], _detailNo = null, _toastTimer = null;
 
         const QUEUE_TABS = [
-            { id: 'processing', label: 'Processing',      match: a => a.status === 'PROCESSING' },
+            { id: 'processing', label: 'Processing',      match: a => a.status === 'PROCESSING' && !withOtherApprover(a) },
+            { id: 'others',     label: 'Waiting on others', match: a => isWaitingOnOthers(a) && isOpenReq(a) },
             { id: 'onhold',     label: 'On hold',         match: a => a.status === 'ON_HOLD' },
             { id: 'buyer',      label: 'Pending buyer',   match: a => a.status === 'PENDING_BUYER' },
             { id: 'idoc',       label: 'IDOC error',      match: a => a.status === 'IDOC_ERROR' },
@@ -5210,7 +5212,7 @@ AMERBankingValidation@resideo.com`;
                 `<button class="q-tab ${t.id === _queueTab ? 'on' : ''}" onclick="setQueueTab('${t.id}')">${t.label}<span class="n">${data.filter(t.match).length}</span></button>`).join('');
             const tab = QUEUE_TABS.find(t => t.id === _queueTab) || QUEUE_TABS[0];
             let list = data.filter(tab.match);
-            if (['processing', 'onhold', 'buyer', 'idoc'].includes(tab.id)) {
+            if (['processing', 'others', 'onhold', 'buyer', 'idoc'].includes(tab.id)) {
                 list = [...list].sort((a, b) => String(a.entryDate || '9999') < String(b.entryDate || '9999') ? -1 : 1);
             }
             const shown = list.slice(0, 200);
@@ -6413,7 +6415,10 @@ AMERBankingValidation@resideo.com`;
 
             // Status
             if (statusFilter) {
-                filtered = filtered.filter(a => a.status === statusFilter);
+                // Processing = ours; requests SAP shows with another approver are listed under "Waiting on others"
+                if (statusFilter === 'PROCESSING') filtered = filtered.filter(a => a.status === 'PROCESSING' && !withOtherApprover(a));
+                else if (statusFilter === 'WAITING_OTHERS') filtered = filtered.filter(isWaitingOnOthers);
+                else filtered = filtered.filter(a => a.status === statusFilter);
             }
 
             // Completed By
