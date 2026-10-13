@@ -621,12 +621,20 @@ Function IsVendorNumber(s)
 End Function
 
 Function ReadVendors()
-  Dim xl, wb, ws, lastRow, r, v, d, pbaVal, ccVal, fileCol, fileVal
+  Dim xl, wb, ws, lastRow, r, v, d, pbaVal, ccVal, fileCol, fileVal, tmpCopy, openPath
   Set d = CreateObject("Scripting.Dictionary")
   Set xl = CreateObject("Excel.Application")
   xl.Visible = False
   xl.DisplayAlerts = False
-  Set wb = xl.Workbooks.Open(VENDOR_FILE, 0, True)
+  ' read a private copy in the temp folder: avoids OneDrive sync locks and the file being open in another Excel
+  tmpCopy = fso.BuildPath(fso.GetSpecialFolder(2).Path, "avsf-list-" & Int(Timer * 100) & "." & fso.GetExtensionName(VENDOR_FILE))
+  openPath = VENDOR_FILE
+  On Error Resume Next
+  fso.CopyFile VENDOR_FILE, tmpCopy, True
+  If Err.Number = 0 Then openPath = tmpCopy
+  Err.Clear
+  On Error GoTo 0
+  Set wb = xl.Workbooks.Open(openPath, 0, True)
   Set ws = wb.Worksheets(1)
   lastRow = ws.Cells(ws.Rows.Count, 1).End(-4162).Row
   fileCol = FindFileColumn(ws)
@@ -643,6 +651,10 @@ Function ReadVendors()
   Next
   wb.Close False
   xl.Quit
+  On Error Resume Next
+  If openPath <> VENDOR_FILE Then fso.DeleteFile openPath, True
+  Err.Clear
+  On Error GoTo 0
   Set ReadVendors = d
 End Function
 
