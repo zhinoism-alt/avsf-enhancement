@@ -1064,6 +1064,7 @@ If failCount > 0 Then
   summary = summary & vbCrLf & vbCrLf & "PROBLEMS - please check:" & failList
   icon = 16
 End If
+If skipped > 0 Then summary = summary & vbCrLf & vbCrLf & "Skipped = already done TODAY with the same settings. To repeat, delete logs\attach-done.txt" & " or set SKIP_DONE = False."
 summary = summary & vbCrLf & vbCrLf & "Details: " & logPath
 MsgBox summary, icon, "Attach document"
 

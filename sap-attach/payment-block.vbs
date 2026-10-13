@@ -1225,6 +1225,7 @@ If noteList <> "" Then
   summary = summary & vbCrLf & vbCrLf & "Left unchanged on purpose (another block is in place):" & noteList
   If icon = 64 Then icon = 48
 End If
+If skipped > 0 Then summary = summary & vbCrLf & vbCrLf & "Skipped = already done TODAY with the same settings. To repeat, delete logs\payment-block-done.txt" & " or set SKIP_DONE = False."
 summary = summary & vbCrLf & vbCrLf & "Details: " & logPath
 MsgBox summary, icon, "Payment block"
 
