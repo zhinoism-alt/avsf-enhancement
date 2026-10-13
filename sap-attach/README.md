@@ -66,3 +66,16 @@ company code is entered on the XK03 start screen, so SAP also checks that the ve
 is reported as FAILED with SAP's message, e.g. "Vendor ... has not been created for company code ..."). A blank cell, or no such column,
 opens the vendor without a company code (`DEFAULT_CC` in the settings can supply one for blank cells). The done list now includes the
 company code, so the same vendor in two company codes counts as two separate jobs.
+
+## Folder layout (scripts, lists, attachments and logs apart)
+```
+SAP-scripts\
+  scripts\       attach-document.vbs, payment-block.vbs          (the scripts)
+  lists\         the Excel vendor lists                          (VENDOR_FILE is searched here first)
+  attachments\   the files to attach (.msg ...)                  (bare names in the File column are looked up here)
+  logs\          attach-log.txt, payment-block-log.txt and the done lists (created automatically)
+```
+The base folder is the parent of the folder called `scripts`; if the script is not in a folder called `scripts` the base is the script folder.
+Old layout (everything in one folder) still works: files are also looked for next to the script. Settings: `VENDOR_FILE`, `ATTACH_FOLDER`
+(default attachment folder; "" = `attachments`) and `LOG_FOLDER` (default `logs`; "" = next to the script). A File cell may be a bare file
+name (searched in `attachments`, then the base folder, then next to the script) or a full path.

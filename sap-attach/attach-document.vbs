@@ -9,10 +9,12 @@ Option Explicit
 
 ' ===== Settings =====
 Dim DEFAULT_FOLDER, DEFAULT_NAME
+Dim LOG_FOLDER
 Dim VENDOR_FILE, ATTACH_FOLDER, ATTACH_NAME, DRY_RUN, CHECK_ONLY, TCODE, DEFAULT_CC, START_ROW, MAX_VENDORS, MAX_FAILS_IN_ROW, WAIT_SECS, LOAD_SECS, DIALOG_SECS, MENU_SECS, SKIP_DONE
-VENDOR_FILE = "Attachment Script.xlsx"   ' Excel list; a name without a folder is looked up in the folder of this script
-ATTACH_FOLDER = ""   ' folder of the default attachment ("" = the folder this script is in); used when the Excel File column is blank
+VENDOR_FILE = "Attachment Script.xlsx"   ' Excel list: searched in the "lists" folder, then next to the script; or give a full path
+ATTACH_FOLDER = ""   ' default attachment folder ("" = the "attachments" folder, or the base folder if there is none)
 ATTACH_NAME = "RE_ Suspensiones hasta nuevo aviso.msg"
+LOG_FOLDER = "logs"      ' folder for the log and the done list (relative to the base folder; created when missing; "" = the folder of this script)
 DRY_RUN = False           ' True = open each vendor and its attachment list but attach NOTHING
 DEFAULT_CC = ""           ' company code used when the CC column is blank or missing ("" = open the vendor without a company code)
 TCODE = "XK03"           ' transaction used to open each vendor: XK03 = display (recommended), XK02 = change
@@ -28,8 +30,8 @@ DIALOG_SECS = 150         ' how long SAP may take to open the Import file dialog
 ' ====================
 
 ' tidy the settings: remove stray quote marks (e.g. from "Copy as path") and trailing backslashes
-VENDOR_FILE = MakeAbsolute(VENDOR_FILE)
-ATTACH_FOLDER = MakeAbsolute(ATTACH_FOLDER)
+VENDOR_FILE = FindListFile(VENDOR_FILE)
+ATTACH_FOLDER = DefaultAttachFolder(ATTACH_FOLDER)
 ATTACH_NAME = CleanPath(ATTACH_NAME)
 DEFAULT_FOLDER = ATTACH_FOLDER
 DEFAULT_NAME = ATTACH_NAME
@@ -46,16 +48,83 @@ Function ScriptDir()
   ScriptDir = CreateObject("Scripting.FileSystemObject").GetParentFolderName(WScript.ScriptFullName)
 End Function
 
-' relative paths and empty values are resolved against the folder this script is in, so the whole
-' folder can be copied to another PC or user without editing anything
-Function MakeAbsolute(p)
+' ---- folder layout: scripts\ lists\ attachments\ logs\ (the old "everything in one folder" layout still works) ----
+Function FsoGet()
+  Set FsoGet = CreateObject("Scripting.FileSystemObject")
+End Function
+
+Function IsAbsolutePath(p)
+  IsAbsolutePath = (InStr(p, ":") > 0 Or Left(p, 2) = "\\")
+End Function
+
+' base folder: the parent of the folder this script is in when that folder is called "scripts", else the script folder itself
+Function BaseDir()
+  Dim sd
+  sd = ScriptDir()
+  If LCase(Mid(sd, InStrRev(sd, "\") + 1)) = "scripts" Then
+    BaseDir = FsoGet().GetParentFolderName(sd)
+  Else
+    BaseDir = sd
+  End If
+End Function
+
+' the vendor list: a full path is used as it is; otherwise it is searched in <base>\lists, <base> and the script folder
+Function FindListFile(p)
+  Dim f, c, i
+  p = CleanPath(p)
+  If IsAbsolutePath(p) Then
+    FindListFile = p
+    Exit Function
+  End If
+  Set f = FsoGet()
+  c = Array(BaseDir() & "\lists\" & p, BaseDir() & "\" & p, ScriptDir() & "\" & p)
+  For i = 0 To UBound(c)
+    If f.FileExists(c(i)) Then
+      FindListFile = c(i)
+      Exit Function
+    End If
+  Next
+  FindListFile = c(0)
+End Function
+
+' default folder of the attachments: <base>\attachments when it exists, else the base folder
+Function DefaultAttachFolder(p)
   p = CleanPath(p)
   If p = "" Then
-    MakeAbsolute = ScriptDir()
-  ElseIf InStr(p, ":") = 0 And Left(p, 2) <> "\\" Then
-    MakeAbsolute = ScriptDir() & "\" & p
+    If FsoGet().FolderExists(BaseDir() & "\attachments") Then
+      DefaultAttachFolder = BaseDir() & "\attachments"
+    Else
+      DefaultAttachFolder = BaseDir()
+    End If
+  ElseIf IsAbsolutePath(p) Then
+    DefaultAttachFolder = p
   Else
-    MakeAbsolute = p
+    DefaultAttachFolder = BaseDir() & "\" & p
+  End If
+End Function
+
+' folder for the log and the done list (created when missing; falls back to the script folder)
+Function ResolveLogDir(p)
+  Dim d, f
+  p = CleanPath(p)
+  Set f = FsoGet()
+  If p = "" Then
+    ResolveLogDir = ScriptDir()
+    Exit Function
+  End If
+  If IsAbsolutePath(p) Then
+    d = p
+  Else
+    d = BaseDir() & "\" & p
+  End If
+  On Error Resume Next
+  If Not f.FolderExists(d) Then f.CreateFolder d
+  If Err.Number <> 0 Then Err.Clear
+  On Error GoTo 0
+  If f.FolderExists(d) Then
+    ResolveLogDir = d
+  Else
+    ResolveLogDir = ScriptDir()
   End If
 End Function
 
@@ -66,10 +135,11 @@ End Function
 Const LIST_SHELL = "wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell"
 Const TOOLBOX = "wnd[0]/shellcont/shell"   ' toolbar with CREATE_ATTA, VIEW_ATTA, ... shown by System > Services for Object
 
-Dim fso, session, application, connection, SapGuiAuto, logPath, doneFile, gErr, runLabel, gSapInfo
+Dim fso, session, application, connection, SapGuiAuto, logPath, doneFile, gErr, runLabel, gSapInfo, logDir
 Set fso = CreateObject("Scripting.FileSystemObject")
-logPath = fso.BuildPath(fso.GetParentFolderName(WScript.ScriptFullName), "attach-log.txt")
-doneFile = fso.BuildPath(fso.GetParentFolderName(WScript.ScriptFullName), "attach-done.txt")
+logDir = ResolveLogDir(LOG_FOLDER)
+logPath = fso.BuildPath(logDir, "attach-log.txt")
+doneFile = fso.BuildPath(logDir, "attach-done.txt")
 gErr = ""
 
 Sub Log(msg)
@@ -324,7 +394,7 @@ Function Preflight()
   On Error Resume Next
   Set tf = fso.OpenTextFile(logPath, 8, True)
   If Err.Number <> 0 Then
-    problems = problems & vbCrLf & "- The folder of this script is read-only. Unzip the files into a normal folder (for example C:\SAP-scripts) and run the script from there."
+    problems = problems & vbCrLf & "- The folder of this script is read-only. Unzip the files into a normal folder (for example C:\SAP-scripts) and run the script from there. (Log folder: " & logDir & ")"
     Err.Clear
   Else
     tf.Close
@@ -344,7 +414,7 @@ Function Preflight()
 
   ' 3. the vendor list
   If Not fso.FileExists(VENDOR_FILE) Then
-    problems = problems & vbCrLf & "- The vendor Excel file was not found: " & VENDOR_FILE & vbCrLf & "  Put it in the same folder as the script with that name, or change VENDOR_FILE at the top of the script."
+    problems = problems & vbCrLf & "- The vendor Excel file was not found: " & VENDOR_FILE & vbCrLf & "  Put it in the ""lists"" folder (or next to the script) with that name, or change VENDOR_FILE at the top of the script."
   End If
 
   ' 4. SAP GUI, scripting, logon, language
@@ -422,7 +492,7 @@ Sub CheckOnlyReport()
       If Not fso.FileExists(full) Then missing = missing & vbCrLf & "  row " & kk & ": " & full
     Next
   End If
-  txt = "All checks passed." & vbCrLf & vbCrLf & gSapInfo & vbCrLf & "Vendor list: " & VENDOR_FILE & " (" & total & " vendors)"
+  txt = "All checks passed." & vbCrLf & vbCrLf & gSapInfo & vbCrLf & "Attachments folder: " & DEFAULT_FOLDER & vbCrLf & "Logs folder: " & logDir & vbCrLf & "Vendor list: " & VENDOR_FILE & " (" & total & " vendors)"
   If missing <> "" Then
     txt = txt & vbCrLf & vbCrLf & "ATTACHMENT FILES NOT FOUND:" & missing & vbCrLf & "(put the files there, or fix the File column)"
     MsgBox txt, 48, "Attach document"
@@ -478,14 +548,25 @@ End Function
 ' the file for one vendor: a full path from the Excel "File" column; a bare file name is looked up in the default folder;
 ' blank = the default file from the settings
 Function ResolveFile(p)
+  Dim f, c, i
   p = CleanPath(p)
   If p = "" Then
     ResolveFile = DEFAULT_FOLDER & "\" & DEFAULT_NAME
-  ElseIf InStr(p, "\") = 0 And InStr(p, ":") = 0 Then
-    ResolveFile = DEFAULT_FOLDER & "\" & p
-  Else
-    ResolveFile = p
+    Exit Function
   End If
+  If IsAbsolutePath(p) Then
+    ResolveFile = p
+    Exit Function
+  End If
+  Set f = FsoGet()
+  c = Array(DEFAULT_FOLDER & "\" & p, BaseDir() & "\attachments\" & p, BaseDir() & "\" & p, ScriptDir() & "\" & p)
+  For i = 0 To UBound(c)
+    If f.FileExists(c(i)) Then
+      ResolveFile = c(i)
+      Exit Function
+    End If
+  Next
+  ResolveFile = c(0)
 End Function
 
 Function FindCCColumn(ws)

@@ -1,8 +1,18 @@
 # SAP scripts: how to run them (one page)
 
-These scripts do repetitive vendor work in SAP for you: **attach a file to many vendors** (`attach-document.vbs`, vendors are opened in display mode XK03, so nothing can change) and
-**set or remove a payment block + attach a file** (`payment-block.vbs`). They use **your own SAP login**: whatever they
-change is recorded under your user, exactly as if you had done it by hand.
+These scripts do repetitive vendor work in SAP for you: **attach a file to many vendors** (`attach-document.vbs`, vendors are opened
+in display mode XK03, so nothing can change) and **set or remove a payment block + attach a file** (`payment-block.vbs`).
+They use **your own SAP login**: whatever they change is recorded under your user, exactly as if you had done it by hand.
+
+## Folders (everything has its place)
+```
+SAP-scripts\
+  scripts\       the two scripts
+  lists\         your Excel vendor lists
+  attachments\   the files to attach (emails .msg, PDFs ...)
+  logs\          logs and "done" lists (created by the script)
+```
+Keep the folders together. The scripts find the others by themselves (the base folder is the parent of `scripts`).
 
 ## One-time setup (about 5 minutes)
 1. **Copy this whole folder** to your PC, for example `C:\SAP-scripts` (not inside a zip, not on a read-only drive).
@@ -12,26 +22,25 @@ change is recorded under your user, exactly as if you had done it by hand.
 3. **Log on to SAP in English** (language `EN` on the SAP logon screen). The scripts recognise English screens.
 4. **Excel** must be installed. Close the vendor Excel file before running the script.
 
-## Prepare the vendor list (Excel, first sheet, row 1 = header)
-- `attach-document.vbs`: column A = vendor number. Optional column **Company Code** (or `CC`) = the vendor's company code (SAP then checks the vendor exists in it).
-  Optional column with header **File** = file for that vendor (a full path, or just a file name if it is in this folder).
+## Prepare the vendor list (Excel, first sheet, row 1 = header) and save it in `lists\`
+- `attach-document.vbs`: column A = vendor number. Optional **Company Code** (or `CC`) column = the vendor's company code (SAP then checks the
+  vendor exists in it). Optional **File** column = file for that vendor: just the file name (it is looked up in `attachments\`) or a full path.
 - `payment-block.vbs`: A = vendor number, B = **PBA** (`A` to block, blank to remove block A), C = company code, optional **File**.
-  A **blank File cell = no attachment** for that vendor (the block is still done). Use just the file name if the file is in this folder.
-- See the `examples` folder. Save the list in this folder with the name shown at the top of the script (`VENDOR_FILE`),
-  or change that line.
+  A **blank File cell = no attachment** for that vendor (the block is still done).
+- See the examples in `lists\`. The list name is set at the top of the script (`VENDOR_FILE`).
 
 ## First run: check everything without touching SAP
 1. Open the script in Notepad and change `CHECK_ONLY = False` to `CHECK_ONLY = True`, save.
 2. Log on to SAP, leave it on the main screen, double-click the script.
-3. A message tells you what to fix, or "All checks passed" with your SAP user, the number of vendors and any missing files.
+3. A message tells you what to fix, or "All checks passed" with your SAP user, the folders, the number of vendors and any missing files.
 
 ## Run it for real
 1. Set `CHECK_ONLY = False`. For a first try also set `DRY_RUN = True` and `MAX_VENDORS = 1` (looks only, changes nothing).
 2. Double-click the script and **leave SAP alone** (no clicking, keep SAP in front) until the final message box appears.
-3. Read the message box and `...-log.txt` (next to the script). Every problem is listed there.
+3. Read the message box and the log in `logs\`. Every problem is listed there.
 4. When the dry run looks right: `DRY_RUN = False`, `MAX_VENDORS = 0` (all vendors).
 
 ## Good to know
 - Only one copy may run at a time. If it says another copy is running: Ctrl+Shift+Esc, end every `wscript.exe`, start again.
-- The same vendor is skipped if it already got the same thing **today** (list in `...-done.txt`). Delete that file to repeat.
+- The same vendor is skipped if it already got the same thing **today** (list in `logs\...-done.txt`). Delete that file to repeat.
 - Changing vendor master data should be approved by your controls team.
