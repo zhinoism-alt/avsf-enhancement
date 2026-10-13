@@ -434,14 +434,39 @@ Function Preflight()
       If cnt = 0 Then
         problems = problems & vbCrLf & "- No SAP system is open. Log on to SAP first."
       Else
-        Set connection = application.Children(0)
-        cnt = 0
-        cnt = connection.Children.Count
+        ' look at every connection and session, prefer one that is logged on
+        Dim ci, si, nConn, nSess, cand, firstSess
+        Set session = Nothing
+        Set firstSess = Nothing
+        nConn = application.Children.Count
+        nSess = 0
+        For ci = 0 To nConn - 1
+          Set connection = Nothing
+          Set connection = application.Children(CLng(ci))
+          If Err.Number = 0 Then
+            cnt = 0
+            cnt = connection.Children.Count
+            For si = 0 To cnt - 1
+              Set cand = Nothing
+              Set cand = connection.Children(CLng(si))
+              If Err.Number = 0 Then
+                nSess = nSess + 1
+                If firstSess Is Nothing Then Set firstSess = cand
+                If session Is Nothing Then
+                  If cand.info.user <> "" Then Set session = cand
+                End If
+              End If
+              Err.Clear
+            Next
+          End If
+          Err.Clear
+        Next
+        If session Is Nothing Then Set session = firstSess
+        cnt = nSess
         Err.Clear
         If cnt = 0 Then
-          problems = problems & vbCrLf & "- No SAP session is open. Log on to SAP first."
+          problems = problems & vbCrLf & "- No SAP session is open (SAP sees " & nConn & " connection(s) and 0 sessions). Log on to SAP first and wait until the SAP Easy Access screen shows. If you are already logged on, close the SAP window, open SAP Logon again and log on again (a stale connection is the usual cause)."
         Else
-          Set session = connection.Children(0)
           wtxt = ""
           wtxt = session.findById("wnd[0]").Text
           If Err.Number <> 0 Then
