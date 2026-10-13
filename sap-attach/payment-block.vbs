@@ -585,6 +585,16 @@ Function ResolveFile(p)
     Exit Function
   End If
   If IsAbsolutePath(p) Then
+    ' a full path written on another PC (other user name / OneDrive folder): look for the same file name here
+    If Not FsoGet().FileExists(p) Then
+      c = Array(DEFAULT_FOLDER & "\" & FsoGet().GetFileName(p), BaseDir() & "\attachments\" & FsoGet().GetFileName(p), BaseDir() & "\" & FsoGet().GetFileName(p), ScriptDir() & "\" & FsoGet().GetFileName(p))
+      For i = 0 To UBound(c)
+        If FsoGet().FileExists(c(i)) Then
+          ResolveFile = c(i)
+          Exit Function
+        End If
+      Next
+    End If
     ResolveFile = p
     Exit Function
   End If
