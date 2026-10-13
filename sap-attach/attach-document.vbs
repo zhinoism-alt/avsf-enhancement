@@ -487,7 +487,7 @@ Function Preflight()
         cnt = nSess
         Err.Clear
         If cnt = 0 Then
-          problems = problems & vbCrLf & "- No SAP session is open (SAP sees " & nConn & " connection(s) and 0 sessions; ActiveSession: " & sessErr & "). Log on to SAP first and wait until the SAP Easy Access screen shows. If you are already logged on, close the SAP window, open SAP Logon again and log on again (a stale connection is the usual cause)."
+          problems = problems & vbCrLf & "- No SAP session is open (SAP sees " & nConn & " connection(s) and 0 sessions; ActiveSession: " & sessErr & "). Log on to SAP first and wait until the SAP Easy Access screen shows. If you are already logged on, close the SAP window, open SAP Logon again and log on again (a stale connection is the usual cause). If SAP is open and logged on and you still get this, scripting is probably blocked for your SAP user on the server: ask SAP security to give your user the authorization S_SCR (activity 16, scripting) or to allow scripting on the system."
         Else
           wtxt = ""
           wtxt = session.findById("wnd[0]").Text
