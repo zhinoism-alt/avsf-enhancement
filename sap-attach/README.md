@@ -79,3 +79,15 @@ The base folder is the parent of the folder called `scripts`; if the script is n
 Old layout (everything in one folder) still works: files are also looked for next to the script. Settings: `VENDOR_FILE`, `ATTACH_FOLDER`
 (default attachment folder; "" = `attachments`) and `LOG_FOLDER` (default `logs`; "" = next to the script). A File cell may be a bare file
 name (searched in `attachments`, then the base folder, then next to the script) or a full path.
+
+## Same file more than once, and the results list (attach-document.vbs)
+
+- **Identical rows are separate copies.** If the Excel has the same vendor + company code + file on 3 rows, the
+  script uploads 3 copies (SAP keeps duplicates). Each upload is checked by counting the attachments before and after.
+  Rerunning the same day skips copies already done (copy 1, 2, 3 are tracked one by one), so add more rows to upload more.
+- **Results list for every run:** `logs\attach-results-<date-time>.csv` (opens in Excel) has one row per Excel row:
+  Time, Excel row, Vendor, Company code, File name, File path, Status, Attachments (before -> after), Message, Seconds.
+  Status is `OK`, `FAILED`, `SKIPPED` (already done today), `DRY RUN OK` or `NOT RUN` (script stopped early).
+  Filter the Status column for anything not OK.
+- `logs\attach-results-history.csv` keeps all runs appended, and the same table is printed at the end of `attach-log.txt`
+  under `RESULT LIST`. The final popup shows the counts (ok / failed / skipped / not run).

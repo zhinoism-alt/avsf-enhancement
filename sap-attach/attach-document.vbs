@@ -135,7 +135,7 @@ End Function
 Const LIST_SHELL = "wnd[1]/usr/cntlCONTAINER_0100/shellcont/shell"
 Const TOOLBOX = "wnd[0]/shellcont/shell"   ' toolbar with CREATE_ATTA, VIEW_ATTA, ... shown by System > Services for Object
 
-Dim fso, session, application, connection, SapGuiAuto, logPath, doneFile, gErr, runLabel, gSapInfo, logDir
+Dim fso, session, application, connection, SapGuiAuto, logPath, doneFile, gErr, runLabel, gSapInfo, logDir, gBefore, gAfter, resultsFile, historyFile, resultLines
 Set fso = CreateObject("Scripting.FileSystemObject")
 logDir = ResolveLogDir(LOG_FOLDER)
 logPath = fso.BuildPath(logDir, "attach-log.txt")
@@ -597,6 +597,44 @@ Function IIfCC(cc)
   End If
 End Function
 
+Function Pad(v, n)
+  Dim t
+  t = CStr(v)
+  If Len(t) >= n Then
+    Pad = Left(t, n - 1) & " "
+  Else
+    Pad = t & Space(n - Len(t))
+  End If
+End Function
+
+Function Q(v)
+  Q = Chr(34) & Replace(CStr(v), Chr(34), Chr(34) & Chr(34)) & Chr(34)
+End Function
+
+Sub WriteCsvLine(path, line)
+  Dim f
+  On Error Resume Next
+  Set f = fso.OpenTextFile(path, 8, True, -1)
+  If Err.Number = 0 Then
+    f.WriteLine line
+    f.Close
+  Else
+    Err.Clear
+  End If
+  On Error GoTo 0
+End Sub
+
+' one line per Excel row in the results list (a CSV that opens in Excel) and in the log
+Sub AddResult(rowNo, lifnr, cc, fullFile, status, bef, aft, note, secs)
+  Dim counts, line
+  counts = ""
+  If bef >= 0 And aft >= 0 Then counts = bef & " -> " & aft
+  line = Q(Now) & "," & Q(rowNo) & "," & Q(lifnr) & "," & Q(cc) & "," & Q(fso.GetFileName(fullFile)) & "," & Q(fullFile) & "," & Q(status) & "," & Q(counts) & "," & Q(note) & "," & Q(secs)
+  WriteCsvLine resultsFile, line
+  WriteCsvLine historyFile, line
+  resultLines = resultLines & vbCrLf & Pad(status, 10) & Pad("row " & rowNo, 8) & Pad(lifnr, 12) & Pad("CC " & cc, 9) & Pad(counts, 9) & fso.GetFileName(fullFile)
+End Sub
+
 Function TodayStamp()
   TodayStamp = Year(Date) & "-" & Right("0" & Month(Date), 2) & "-" & Right("0" & Day(Date), 2)
 End Function
@@ -787,6 +825,7 @@ Function DoVendor(lifnr, cc, ByRef msg)
       If Not grid Is Nothing Then
         Trace "attachment list is open, opening its Create menu"
         before = RowCountOf(grid)
+        gBefore = before
         BringSapToFront
         On Error Resume Next
         grid.pressToolbarContextButton "%ATTA_CREATE"
@@ -940,6 +979,7 @@ Function DoVendor(lifnr, cc, ByRef msg)
       Loop
       If Not ready Then msg = "No 'attachment created' confirmation within " & DIALOG_SECS & " s (status bar: " & StatusText() & ")": Exit Function
     End If
+    gAfter = after
     If viaList Then
       msg = "attached via the attachment list (" & before & " -> " & after & " attachments)"
     Else
@@ -986,7 +1026,7 @@ If CHECK_ONLY Then
 End If
 session.findById("wnd[0]").maximize
 
-Dim vendors, k, done, okCount, failCount, fails, msg, started, stoppedEarly, doneDict, doneKey, skipped, tsf, parts, vp, fullPath, failList
+Dim vendors, k, done, okCount, failCount, fails, msg, started, stoppedEarly, doneDict, doneKey, skipped, tsf, parts, vp, fullPath, failList, occ, occKey, occN, processed, stampNow, histHeader, notRun
 done = 0: okCount = 0: failCount = 0: fails = 0: stoppedEarly = False: failList = ""
 If Not fso.FileExists(VENDOR_FILE) Then
   MsgBox "Vendor file not found: " & VENDOR_FILE, 16, "Attach document"
@@ -998,38 +1038,63 @@ If SKIP_DONE And fso.FileExists(doneFile) Then
   Set tsf = fso.OpenTextFile(doneFile, 1)
   Do While Not tsf.AtEndOfStream
     parts = Split(tsf.ReadLine, "|")
-    If UBound(parts) >= 3 Then doneDict(parts(0) & "|" & parts(1) & "|" & parts(2) & "|" & parts(3)) = True
+    If UBound(parts) >= 4 Then doneDict(parts(0) & "|" & parts(1) & "|" & parts(2) & "|" & parts(3) & "|" & parts(4)) = True
   Loop
   tsf.Close
 End If
 Set vendors = ReadVendors()
 If DRY_RUN Then runLabel = "DRY RUN" Else runLabel = "REAL RUN"
+' results list: one CSV per run plus a running history of all runs (both open in Excel)
+stampNow = Year(Date) & Right("0" & Month(Date), 2) & Right("0" & Day(Date), 2) & "-" & Right("0" & Hour(Now), 2) & Right("0" & Minute(Now), 2) & Right("0" & Second(Now), 2)
+resultsFile = fso.BuildPath(logDir, "attach-results-" & stampNow & ".csv")
+historyFile = fso.BuildPath(logDir, "attach-results-history.csv")
+histHeader = "Time,Excel row,Vendor,Company code,File name,File path,Status,Attachments (before -> after),Message,Seconds"
+WriteCsvLine resultsFile, histHeader
+If Not fso.FileExists(historyFile) Then WriteCsvLine historyFile, histHeader
+resultLines = ""
+Set occ = CreateObject("Scripting.Dictionary")
+Set processed = CreateObject("Scripting.Dictionary")
 Log "===== " & runLabel & ": " & vendors.Count & " vendors in " & VENDOR_FILE & " | default file " & DEFAULT_FOLDER & "\" & DEFAULT_NAME & " ====="
 
 For Each k In vendors.Keys
+  vp = Split(vendors(k), "|")
+  fullPath = ResolveFile(vp(2))
+  ' the same vendor + company code + file may appear several times (several copies): each occurrence is its own job
+  occKey = vp(0) & "|" & vp(1) & "|" & LCase(fullPath)
+  occN = 1
+  If occ.Exists(occKey) Then occN = occ(occKey) + 1
+  occ(occKey) = occN
   If k >= START_ROW Then
-    vp = Split(vendors(k), "|")
-    fullPath = ResolveFile(vp(2))
-    doneKey = vp(0) & "|" & vp(1) & "|" & LCase(fullPath) & "|" & TodayStamp()
+    doneKey = occKey & "|" & occN & "|" & TodayStamp()
     If SKIP_DONE And doneDict.Exists(doneKey) Then
       skipped = skipped + 1
-      Log "row " & k & "  vendor " & vp(0) & "  SKIPPED  already done today with this file (attach-done.txt)"
+      processed(k) = True
+      Log "row " & k & "  vendor " & vp(0) & "  SKIPPED  already done today with this file (copy " & occN & ")"
+      AddResult k, vp(0), vp(1), fullPath, "SKIPPED", -1, -1, "already done today (copy " & occN & " of this vendor/company code/file)", 0
     ElseIf Not fso.FileExists(fullPath) Then
       failCount = failCount + 1
+      processed(k) = True
       Log "row " & k & "  vendor " & vp(0) & "  FAILED   attachment file not found: " & fullPath
       failList = failList & vbCrLf & "row " & k & "  vendor " & vp(0) & ": attachment file not found: " & fullPath
+      AddResult k, vp(0), vp(1), fullPath, "FAILED", -1, -1, "attachment file not found", 0
     Else
       If MAX_VENDORS > 0 And done >= MAX_VENDORS Then Exit For
       done = done + 1
+      processed(k) = True
       started = Timer
       msg = ""
+      gBefore = -1
+      gAfter = -1
       ATTACH_FOLDER = fso.GetParentFolderName(fullPath)
       ATTACH_NAME = fso.GetFileName(fullPath)
       If DoVendor(vp(0), vp(1), msg) Then
         okCount = okCount + 1
         fails = 0
         Log "row " & k & "  vendor " & vp(0) & "  OK   " & IIfCC(vp(1)) & " [" & ATTACH_NAME & "]  " & msg & "  (" & Int(Timer - started) & " s)"
-        If Not DRY_RUN Then
+        If DRY_RUN Then
+          AddResult k, vp(0), vp(1), fullPath, "DRY RUN OK", gBefore, gAfter, msg, Int(Timer - started)
+        Else
+          AddResult k, vp(0), vp(1), fullPath, "OK", gBefore, gAfter, msg, Int(Timer - started)
           Set tsf = fso.OpenTextFile(doneFile, 8, True)
           tsf.WriteLine doneKey & "|" & Now
           tsf.Close
@@ -1040,6 +1105,7 @@ For Each k In vendors.Keys
         fails = fails + 1
         Log "row " & k & "  vendor " & vp(0) & "  FAILED   " & IIfCC(vp(1)) & " [" & ATTACH_NAME & "]  " & msg
         failList = failList & vbCrLf & "row " & k & "  vendor " & vp(0) & ": " & msg
+        AddResult k, vp(0), vp(1), fullPath, "FAILED", gBefore, gAfter, msg, Int(Timer - started)
         If InStr(msg, "no longer available") > 0 Then
           stoppedEarly = True
           Log "Stopped: the SAP session is gone."
@@ -1056,16 +1122,27 @@ For Each k In vendors.Keys
   End If
 Next
 
-Log "===== finished: " & okCount & " ok, " & failCount & " failed, " & skipped & " skipped" & IIf2(stoppedEarly) & " ====="
+' rows that were not reached (stopped early or MAX_VENDORS) are listed too, so the list is complete
+notRun = 0
+For Each k In vendors.Keys
+  If k >= START_ROW And Not processed.Exists(k) Then
+    vp = Split(vendors(k), "|")
+    notRun = notRun + 1
+    AddResult k, vp(0), vp(1), ResolveFile(vp(2)), "NOT RUN", -1, -1, "not reached (run stopped early or MAX_VENDORS reached)", 0
+  End If
+Next
+
+Log "RESULT LIST (" & runLabel & "):" & vbCrLf & Pad("STATUS", 10) & Pad("ROW", 8) & Pad("VENDOR", 12) & Pad("COMPANY", 9) & Pad("ATTACHED", 9) & "FILE" & resultLines
+Log "===== finished: " & okCount & " ok, " & failCount & " failed, " & skipped & " skipped, " & notRun & " not run" & IIf2(stoppedEarly) & " ====="
 Dim summary, icon
-summary = runLabel & " finished." & vbCrLf & okCount & " ok, " & failCount & " failed, " & skipped & " skipped" & IIf2(stoppedEarly) & "."
+summary = runLabel & " finished." & vbCrLf & okCount & " ok, " & failCount & " failed, " & skipped & " skipped, " & notRun & " not run" & IIf2(stoppedEarly) & "."
 icon = 64
 If failCount > 0 Then
   summary = summary & vbCrLf & vbCrLf & "PROBLEMS - please check:" & failList
   icon = 16
 End If
-If skipped > 0 Then summary = summary & vbCrLf & vbCrLf & "Skipped = already done TODAY with the same settings. To repeat, delete logs\attach-done.txt" & " or set SKIP_DONE = False."
-summary = summary & vbCrLf & vbCrLf & "Details: " & logPath
+If skipped > 0 Then summary = summary & vbCrLf & vbCrLf & "Skipped = already done TODAY with the same settings. To repeat, delete logs\attach-done.txt" & " or set SKIP_DONE = False. (Several identical rows are fine: each row is its own copy.)"
+summary = summary & vbCrLf & vbCrLf & "Result list (open in Excel): " & resultsFile & vbCrLf & "Log: " & logPath
 MsgBox summary, icon, "Attach document"
 
 Function IIf2(flag)

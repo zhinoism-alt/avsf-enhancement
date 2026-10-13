@@ -44,3 +44,8 @@ Keep the folders together. The scripts find the others by themselves (the base f
 - Only one copy may run at a time. If it says another copy is running: Ctrl+Shift+Esc, end every `wscript.exe`, start again.
 - The same vendor is skipped if it already got the same thing **today** (list in `logs\...-done.txt`). Delete that file to repeat.
 - Changing vendor master data should be approved by your controls team.
+
+## Checking that everything went through (attachments script)
+After a run open `logs\attach-results-<date>.csv` in Excel. One row per vendor/company code with Status
+(OK / FAILED / SKIPPED / NOT RUN) and the attachment count before -> after. Anything not OK needs a look.
+The same file can appear several times in the list: each row uploads one more copy.
