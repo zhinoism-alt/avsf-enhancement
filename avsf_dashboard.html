@@ -4440,7 +4440,7 @@ ${from}`;
                 const opt = document.createElement('option');
                 opt.value = idx;
                 const vn = avsf.vendorNumber ? ' · ' + avsf.vendorNumber : '';
-                opt.textContent = `${formatRequestNumber(avsf.requestNo)} - ${avsf.vendorName}${vn}`;
+                opt.textContent = `${formatRequestNumber(avsf.requestNo)}${avsf.requestType ? ' (' + avsf.requestType + ')' : ''} - ${avsf.vendorName}${vn}`;
                 if (q && !emailSelectMatches(opt.textContent + ' ' + (avsf.requestNo || ''), q) && String(idx) !== cur) return;
                 sel.appendChild(opt);
             });
@@ -4473,9 +4473,10 @@ ${from}`;
             const vendName = document.getElementById('tab6VendorName')?.value || (avsf?.vendorName   || '');
             const cc       = document.getElementById('tab6CC')?.value         || (avsf?.companyCode  || '');
             const reqNo    = avsf?.requestNo || '';
+            const reqType  = String(avsf?.requestType || '').toUpperCase().trim();
             const country  = (avsf?.country || '').toUpperCase().trim();
             const ccRegion = (cc || '1').charAt(0); // '1'=Americas '2'=EMEA '3'=APAC
-            return { from, initials, fullName, vendNum, vendName, cc, reqNo, country, ccRegion, avsf };
+            return { from, initials, fullName, vendNum, vendName, cc, reqNo, reqType, country, ccRegion, avsf };
         }
 
         const TAB6_TEMPLATE_META = {
@@ -4538,7 +4539,7 @@ ${f.from}`;
                 const isUS   = f.country === 'US'  || f.country === 'USA' || f.country === 'UNITED STATES';
                 const isEMEA = f.ccRegion === '2';
                 const isAPAC = f.ccRegion === '3';
-                const reqRef = f.reqNo ? `AVSF ${f.reqNo} ` : '';
+                const reqRef = f.reqNo ? `AVSF ${f.reqNo}${f.reqType ? ' (' + f.reqType + ')' : ''} ` : '';
 
                 // Base doc always shown (no DPS), plus country-specific additions
                 let docs = `  • [ ] VAT Certificate / Tax document`;
@@ -4750,7 +4751,7 @@ AMERBankingValidation@resideo.com`;
                 return;
             }
 
-            const avsf_part = f.reqNo ? `AVSF ${f.reqNo} ` : '';
+            const avsf_part = f.reqNo ? `AVSF ${f.reqNo}${f.reqType ? ' (' + f.reqType + ')' : ''} ` : '';
             const subject = `${f.initials} - ${avsf_part}Vendor ${f.vendNum} ${f.vendName} CC ${f.cc}`;
             const body = tab6BuildBody(f);
 
@@ -4778,7 +4779,7 @@ AMERBankingValidation@resideo.com`;
         function tab6OpenOutlook() {
             const f = tab6GetFields();
             const previewEl = document.getElementById('tab6PreviewBox');
-            const avsf_part = f.reqNo ? `AVSF ${f.reqNo} ` : '';
+            const avsf_part = f.reqNo ? `AVSF ${f.reqNo}${f.reqType ? ' (' + f.reqType + ')' : ''} ` : '';
             const subject   = `${f.initials} - ${avsf_part}Vendor ${f.vendNum} ${f.vendName} CC ${f.cc}`;
             const toAddr    = tab6GetTO(f);
             const fromAddr  = tab6GetFROM(f);
@@ -4818,7 +4819,7 @@ AMERBankingValidation@resideo.com`;
         function tab6CopySubject() {
             const f = tab6GetFields();
             if (!f.vendName) { alert('Select a request first.'); return; }
-            const avsf_part = f.reqNo ? `AVSF ${f.reqNo} ` : '';
+            const avsf_part = f.reqNo ? `AVSF ${f.reqNo}${f.reqType ? ' (' + f.reqType + ')' : ''} ` : '';
             const subject = `${f.initials} - ${avsf_part}Vendor ${f.vendNum} ${f.vendName} CC ${f.cc}`;
             navigator.clipboard.writeText(subject).then(() => {
                 const btn = event.target; const orig = btn.textContent;
