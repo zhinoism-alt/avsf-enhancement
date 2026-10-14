@@ -2251,7 +2251,11 @@ Example formats accepted:
                                     </button>
                                     <button id="tplBtn_no_payments" onclick="selectEmailTemplate('no_payments')"
                                             style="text-align:left;padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:white;color:var(--text-primary);font-size:12px;cursor:pointer;font-weight:600;line-height:1.3;">
-                                        💤 No Recent Payments<br><span style="font-weight:400;font-size:11px;color:var(--text-tertiary);">Request Tax ID + bank proof (no payments in 1+ year)</span>
+                                        💤 No Recent Payments 🇺🇸<br><span style="font-weight:400;font-size:11px;color:var(--text-tertiary);">Request Tax ID + bank proof (no payments in 1+ year)</span>
+                                    </button>
+                                    <button id="tplBtn_no_payments_es" onclick="selectEmailTemplate('no_payments_es')"
+                                            style="text-align:left;padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:white;color:var(--text-primary);font-size:12px;cursor:pointer;font-weight:600;line-height:1.3;">
+                                        💤 No Recent Payments 🇲🇽<br><span style="font-weight:400;font-size:11px;color:var(--text-tertiary);">Solicitar constancia fiscal y carátula bancaria</span>
                                     </button>
                                     <button id="tplBtn_req_received" onclick="selectEmailTemplate('req_received')"
                                             style="text-align:left;padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:white;color:var(--text-primary);font-size:12px;cursor:pointer;font-weight:600;line-height:1.3;">
@@ -2295,6 +2299,7 @@ Example formats accepted:
                             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
                                 <div>
                                     <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:5px;">📬 From Mailbox</label>
+                                    <label style="font-size:11px;color:var(--text-secondary);display:flex;align-items:center;gap:5px;margin-bottom:6px;cursor:pointer;"><input type="checkbox" id="tab6SigCheck" checked onchange="tab6SigToggle(this.checked)"> Add my signature (name, title, phone)</label>
                                     <select id="tab6FromSelect" class="form-select" style="font-size:13px;" onchange="tab6BuildPreview()">
                                         <option value="USMXVendorMaintenance@resideo.com">🌎 USMXVendorMaintenance@resideo.com</option>
                                         <option value="VendorMaintenance_EMEA@resideo.com">🇪🇺 VendorMaintenance_EMEA@resideo.com</option>
@@ -4435,6 +4440,8 @@ ${from}`;
         let _tab6Template = 'extend';
 
         function tab6PopulateSelect() {
+            const sigBox = document.getElementById('tab6SigCheck');
+            if (sigBox) sigBox.checked = tab6SigEnabled();
             const sel = document.getElementById('tab6AVSFSelect');
             if (!sel) return;
             const cur = sel.value;
@@ -4453,7 +4460,7 @@ ${from}`;
 
         function selectEmailTemplate(type) {
             _tab6Template = type;
-            ['extend','create','docs_missing_en','docs_missing_es','req_completed','req_received','no_payments','validation_en','validation_es'].forEach(t => {
+            ['extend','create','docs_missing_en','docs_missing_es','req_completed','req_received','no_payments','no_payments_es','validation_en','validation_es'].forEach(t => {
                 const btn = document.getElementById('tplBtn_' + t);
                 if (!btn) return;
                 const active = t === type;
@@ -4491,6 +4498,7 @@ ${from}`;
             req_completed:  { to: 'requestor',                           label: 'Requestor — Completed' },
             req_received:   { to: 'requestor',                           label: 'Requestor — Received' },
             no_payments:    { to: 'requestor',                           label: 'Requestor — No Recent Payments' },
+            no_payments_es: { to: 'requestor',                           label: 'Requestor — No Recent Payments (ES)' },
             validation_en:  { to: 'vendor', from: 'AMERBankingValidation@resideo.com', label: 'Vendor — Banking Validation (EN)' },
             validation_es:  { to: 'vendor', from: 'AMERBankingValidation@resideo.com', label: 'Vendor — Banking Validation (ES)' },
         };
@@ -4506,7 +4514,25 @@ ${from}`;
             return meta.from || f.from;
         }
 
+        // Plain-text signature (mailto cannot carry the logo/disclaimer image; Outlook adds those if it appends your default signature)
+        const TAB6_SIGNATURES = {
+            Brandon: 'Brandon L. Ramos (he/him)\nVendor Master Data Analyst\n\nM: +1 972-536-0617'
+        };
+        function tab6SigEnabled() {
+            try { return localStorage.getItem('avsfUseSignature') !== '0'; } catch (e) { return true; }
+        }
+        function tab6SigToggle(on) {
+            try { localStorage.setItem('avsfUseSignature', on ? '1' : '0'); } catch (e) {}
+            tab6BuildPreview();
+        }
         function tab6BuildBody(f) {
+            const body = tab6BuildBodyRaw(f);
+            const sig = TAB6_SIGNATURES[getCurrentUser()];
+            if (!sig || !tab6SigEnabled()) return body;
+            return body.replace(/(Best regards|Saludos),\n[^\n]*\nVendor Master Team \| Resideo\n[^\n]*$/, '$1,\n' + sig);
+        }
+
+        function tab6BuildBodyRaw(f) {
             const reqName = f.avsf?.requestorName || 'Team';
             const firstName = reqName.split(' ')[0];
 
@@ -4629,6 +4655,30 @@ Unfortunately, we are unable to proceed with the request until this documentatio
 Thank you for your support, and we look forward to receiving the requested document.
 
 Best regards,
+${f.fullName}
+Vendor Master Team | Resideo
+${f.from}`;
+            }
+            if (_tab6Template === 'no_payments_es') {
+                const ref = f.reqNo ? `la solicitud de proveedor AVSF ${formatRequestNumber(f.reqNo)}` : 'su solicitud de proveedor';
+                return `Hola ${firstName},
+
+Gracias por enviar ${ref} para ${f.vendNum ? f.vendNum + ' – ' : ''}${f.vendName} (Company Code ${f.cc}).
+
+Como parte de nuestro proceso de validación, notamos que no ha habido actividad de pagos en esta cuenta de proveedor por más de un año. Para asegurar que los pagos futuros no se envíen a una cuenta bancaria desactualizada o incorrecta, necesitamos documentación vigente que confirme la información bancaria y fiscal del proveedor.
+
+¿Podría proporcionarnos los siguientes documentos?
+
+* Constancia de situación fiscal
+* Carátula bancaria con la CLABE interbancaria
+
+Esta información es necesaria para verificar que los datos que tenemos registrados en nuestro sistema siguen siendo válidos y están actualizados.
+
+Lamentablemente, no podemos continuar con la solicitud hasta recibir y validar esta documentación.
+
+Gracias por su apoyo, quedamos atentos a recibir los documentos solicitados.
+
+Saludos,
 ${f.fullName}
 Vendor Master Team | Resideo
 ${f.from}`;
