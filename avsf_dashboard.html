@@ -2362,6 +2362,9 @@ Select a request from the left to preview the email...
                                 <button onclick="tab6OpenOutlook()" class="btn btn-primary" style="flex:2;font-size:13px;font-weight:600;">
                                     📧 Open in Outlook
                                 </button>
+                                <button onclick="tab6OpenAndCopy(event)" class="btn btn-primary" style="flex:2;font-size:13px;font-weight:600;" title="Opens Outlook with To/Cc/Subject only (Outlook adds your full signature) and copies the body: paste it with Ctrl+V above the signature">
+                                    📧 Open + copy body
+                                </button>
                                 <button onclick="tab6CopyClipboard()" class="btn btn-secondary" style="flex:1;font-size:13px;">
                                     📋 Copy Text
                                 </button>
@@ -4878,6 +4881,52 @@ AMERBankingValidation@resideo.com`;
                 '?cc=' + encodeURIComponent(fromAddr) +
                 '&subject=' + encodeURIComponent(subject) +
                 '&body=' + encodeURIComponent(body);
+            window.open(mailto, '_blank');
+        }
+
+        // Opens Outlook with To/Cc/Subject only, so Outlook adds your full signature (logo + disclaimer),
+        // and copies the body (without the sign-off lines) to the clipboard to paste above the signature.
+        function tab6OpenAndCopy(ev) {
+            const f = tab6GetFields();
+            const previewEl = document.getElementById('tab6PreviewBox');
+            if (!f.vendName) { alert('Please select an AVSF request first.'); return; }
+            const avsf_part = f.reqNo ? `AVSF ${f.reqNo}${f.reqType ? ' (' + f.reqType + ')' : ''} ` : '';
+            const subject   = `${f.initials} - ${avsf_part}Vendor ${f.vendNum} ${f.vendName} CC ${f.cc}`;
+            const toAddr    = tab6GetTO(f);
+            const fromAddr  = tab6GetFROM(f);
+
+            let body;
+            if (_tab6EditMode && previewEl) {
+                body = (previewEl.innerText || previewEl.textContent).split('\n').slice(5).join('\n');
+            } else {
+                body = tab6BuildBodyRaw(f);
+            }
+            // drop the typed sign-off block (name / team / mailbox): Outlook's signature replaces it
+            body = body.replace(/\s*\n(Best regards|Saludos),\n[^\n]*\nVendor Master Team \| Resideo\n[^\n]*\s*$/, '\n\n$1,');
+            const plain = stripBodyMarkers(body).replace(/\n/g, '\r\n');
+            const html  = '<div style="font-family:Calibri,Arial,sans-serif;font-size:11pt;">' +
+                          renderBodyHTML(body).replace(/\n/g, '<br>') + '</div>';
+
+            const btn = ev && ev.currentTarget; const orig = btn ? btn.textContent : '';
+            const done = () => { if (btn) { btn.textContent = '✅ Copied: press Ctrl+V'; setTimeout(() => btn.textContent = orig, 3500); } };
+            const fallback = () => {
+                const ta = document.createElement('textarea');
+                ta.value = plain; document.body.appendChild(ta);
+                ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+                done();
+            };
+            try {
+                if (navigator.clipboard && window.ClipboardItem) {
+                    navigator.clipboard.write([new ClipboardItem({
+                        'text/html':  new Blob([html],  { type: 'text/html' }),
+                        'text/plain': new Blob([plain], { type: 'text/plain' })
+                    })]).then(done).catch(fallback);
+                } else { fallback(); }
+            } catch (e) { fallback(); }
+
+            const mailto = 'mailto:' + encodeURIComponent(toAddr) +
+                '?cc=' + encodeURIComponent(fromAddr) +
+                '&subject=' + encodeURIComponent(subject);
             window.open(mailto, '_blank');
         }
 
