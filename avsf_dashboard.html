@@ -2222,6 +2222,10 @@ Example formats accepted:
                                             style="text-align:left;padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:white;color:var(--text-primary);font-size:12px;cursor:pointer;font-weight:600;line-height:1.3;">
                                         ✅ Create Vendor<br><span style="font-weight:400;font-size:11px;color:var(--text-tertiary);">IBAN found on VAT website</span>
                                     </button>
+                                    <button id="tplBtn_unblock_validated" onclick="selectEmailTemplate('unblock_validated')"
+                                            style="text-align:left;padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:white;color:var(--text-primary);font-size:12px;cursor:pointer;font-weight:600;line-height:1.3;">
+                                        📞 Unblock after Validation<br><span style="font-weight:400;font-size:11px;color:var(--text-tertiary);">Bank details validated by phone/email → unblock</span>
+                                    </button>
                                     <div style="padding:8px 10px;border-radius:6px;border:1px dashed var(--border);font-size:12px;color:var(--text-tertiary);line-height:1.3;cursor:default;">
                                         🔒 Missing Info Request<br><span style="font-size:11px;">Coming soon</span>
                                     </div>
@@ -2277,6 +2281,14 @@ Example formats accepted:
                                     <button id="tplBtn_validation_es" onclick="selectEmailTemplate('validation_es')"
                                             style="text-align:left;padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:white;color:var(--text-primary);font-size:12px;cursor:pointer;font-weight:600;line-height:1.3;">
                                         🇲🇽 Validación Bancaria (ES)<br><span style="font-weight:400;font-size:11px;color:var(--text-tertiary);">Confirmar datos bancarios con proveedor</span>
+                                    </button>
+                                    <button id="tplBtn_contact_supplier_en" onclick="selectEmailTemplate('contact_supplier_en')"
+                                            style="text-align:left;padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:white;color:var(--text-primary);font-size:12px;cursor:pointer;font-weight:600;line-height:1.3;">
+                                        🙋 Ask Supplier for Contact (EN)<br><span style="font-weight:400;font-size:11px;color:var(--text-tertiary);">Request a contact to validate bank details</span>
+                                    </button>
+                                    <button id="tplBtn_contact_supplier_es" onclick="selectEmailTemplate('contact_supplier_es')"
+                                            style="text-align:left;padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:white;color:var(--text-primary);font-size:12px;cursor:pointer;font-weight:600;line-height:1.3;">
+                                        🙋 Solicitar Contacto (ES)<br><span style="font-weight:400;font-size:11px;color:var(--text-tertiary);">Pedir contacto de CxC / Tesorería</span>
                                     </button>
                                 </div>
                             </div>
@@ -4465,7 +4477,7 @@ ${from}`;
 
         function selectEmailTemplate(type) {
             _tab6Template = type;
-            ['extend','create','docs_missing_en','docs_missing_es','req_completed','req_received','no_payments','no_payments_es','validation_en','validation_es'].forEach(t => {
+            ['extend','create','docs_missing_en','docs_missing_es','req_completed','req_received','no_payments','no_payments_es','unblock_validated','contact_supplier_en','contact_supplier_es','validation_en','validation_es'].forEach(t => {
                 const btn = document.getElementById('tplBtn_' + t);
                 if (!btn) return;
                 const active = t === type;
@@ -4504,6 +4516,9 @@ ${from}`;
             req_received:   { to: 'requestor',                           label: 'Requestor — Received' },
             no_payments:    { to: 'requestor',                           label: 'Requestor — No Recent Payments' },
             no_payments_es: { to: 'requestor',                           label: 'Requestor — No Recent Payments (ES)' },
+            unblock_validated: { to: 'VendorMaintenanceAudit@resideo.com', label: 'Audit Team — Unblock after validation' },
+            contact_supplier_en: { to: 'vendor', from: 'AMERBankingValidation@resideo.com', label: 'Vendor — Ask for contact (EN)' },
+            contact_supplier_es: { to: 'vendor', from: 'AMERBankingValidation@resideo.com', label: 'Vendor — Ask for contact (ES)' },
             validation_en:  { to: 'vendor', from: 'AMERBankingValidation@resideo.com', label: 'Vendor — Banking Validation (EN)' },
             validation_es:  { to: 'vendor', from: 'AMERBankingValidation@resideo.com', label: 'Vendor — Banking Validation (ES)' },
         };
@@ -4545,7 +4560,7 @@ ${from}`;
             const avsf_part = f.reqNo ? `AVSF ${f.reqNo}${f.reqType ? ' (' + f.reqType + ')' : ''} ` : '';
             return `${f.initials} - ${avsf_part}Vendor ${f.vendNum} ${f.vendName} CC ${f.cc}`;
         }
-        const TAB6_SIGNOFF_RE = /\s*\n(Best regards|Saludos),\n[^\n]*\nVendor Master Team \| Resideo\n[^\n]*\s*$/;
+        const TAB6_SIGNOFF_RE = /\s*\n(Best regards|Saludos cordiales|Saludos),\n[^\n]*\nVendor Master Team \| Resideo\n[^\n]*\s*$/;
         // body with the typed sign-off removed (keeps "Best regards,"/"Saludos," only when the user's style has one)
         function tab6StripSignoff(body, keepClosing) {
             return body.replace(TAB6_SIGNOFF_RE, keepClosing ? '\n\n$1,' : '');
@@ -4563,7 +4578,7 @@ ${from}`;
             if (!u || !tab6SigEnabled()) return body;
             const m = body.match(TAB6_SIGNOFF_RE);
             if (!m) return body;
-            const closing = u.closing ? (m[1] === 'Saludos' ? 'Saludos,' : u.closing) : '';
+            const closing = u.closing ? (/^Saludos/.test(m[1]) ? m[1] + ',' : u.closing) : '';
             return body.replace(TAB6_SIGNOFF_RE, '\n\n' + (closing ? closing + '\n' : '') + u.signature);
         }
 
@@ -4690,6 +4705,48 @@ Unfortunately, we are unable to proceed with the request until this documentatio
 Thank you for your support, and we look forward to receiving the requested document.
 
 Best regards,
+${f.fullName}
+Vendor Master Team | Resideo
+${f.from}`;
+            }
+            if (_tab6Template === 'unblock_validated') {
+                return `Hi Audit team,
+
+We received the request to validate vendor ${f.vendNum || '[vendor number]'} ${f.vendName} and spoke with [contact name] at [phone number], who validated the banking details via phone and email. Can you please proceed with the unblocking process?
+
+If anything else is needed, please let me know.
+
+Best regards,
+${f.fullName}
+Vendor Master Team | Resideo
+${f.from}`;
+            }
+            if (_tab6Template === 'contact_supplier_en') {
+                return `Hi,
+
+My name is ${f.fullName.split(' ')[0]}, and I am with the Accounts Payable Department at Resideo. I am reaching out to confirm the banking information we recently received.
+
+Could you please provide a phone number or contact person I can reach to complete this bank validation process? Until we can audit the account, no payments can be issued.
+
+Thank you in advance.
+
+Best regards,
+${f.fullName}
+Vendor Master Team | Resideo
+${f.from}`;
+            }
+            if (_tab6Template === 'contact_supplier_es') {
+                return `Buenos días,
+
+Mi nombre es ${f.fullName} y formo parte del departamento de Cuentas por Pagar de Resideo / Electrónica BRK.
+
+La razón de mi correo es solicitar su apoyo para proporcionarnos un contacto con quien podamos validar la información bancaria registrada para el pago de sus facturas. De ser posible, agradeceríamos que nos compartieran el nombre, correo electrónico y/o número telefónico de la persona responsable de Cuentas por Cobrar o Tesorería.
+
+Esta validación es necesaria para confirmar que la información bancaria sea correcta y evitar inconvenientes en el procesamiento de los pagos. De acuerdo con nuestro proceso, no podremos procesar pagos hasta completar dicha validación.
+
+Agradezco de antemano su apoyo y quedo atento a la información.
+
+Saludos cordiales,
 ${f.fullName}
 Vendor Master Team | Resideo
 ${f.from}`;
