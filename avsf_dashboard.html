@@ -4528,10 +4528,10 @@ ${from}`;
         // Short label after "//" in Rosana's subjects: which documents are being requested
         function tab6SubjectSuffix(f) {
             if (_tab6Template === 'docs_missing_en' || _tab6Template === 'docs_missing_es') {
-                if (f.country === 'MX' || f.country === 'MEXICO') return 'CSF & BD';
+                if (f.country === 'MX' || f.country === 'MEXICO') return 'CSF Y CB';
                 if (f.country === 'US' || f.country === 'USA' || f.country === 'UNITED STATES') return 'W9 & BD';
                 if (f.ccRegion === '2') return 'IBAN & VAT';
-                return 'BD';
+                return 'BD/TAX ID';
             }
             if (_tab6Template === 'no_payments' || _tab6Template === 'no_payments_es') return 'TAX ID & BD';
             return '';
