@@ -3114,6 +3114,8 @@ Select a request from the left to preview the email...
             document.getElementById('userDropdown').style.display = 'none';
             document.body.setAttribute('data-user', val);
             saveCurrentUser();
+            // email templates: subject style, sign-off and signature follow the user
+            if (typeof tab6BuildPreview === 'function') { try { tab6BuildPreview(); } catch (e) {} }
         }
         document.addEventListener('click', function(e) {
             const pill = document.getElementById('userPill');
@@ -4482,7 +4484,7 @@ ${from}`;
             const from = (document.getElementById('tab6FromSelect') || {}).value || 'USMXVendorMaintenance@resideo.com';
             const u = getCurrentUser();
             const initials = u === 'Brandon' ? 'BR' : u === 'Yannick' ? 'YR' : 'RM';
-            const fullName = u === 'Brandon' ? 'Brandon Ramos' : u === 'Yannick' ? 'Yannick Rojas' : 'Rosana Munoz';
+            const fullName = u === 'Brandon' ? 'Brandon Ramos' : u === 'Yannick' ? 'Yannick Rojas' : 'Rosana Muñoz';
             const vendNum  = document.getElementById('tab6VendorNum')?.value  || (avsf?.vendorNumber  || '');
             const vendName = document.getElementById('tab6VendorName')?.value || (avsf?.vendorName   || '');
             const cc       = document.getElementById('tab6CC')?.value         || (avsf?.companyCode  || '');
@@ -4517,10 +4519,37 @@ ${from}`;
             return meta.from || f.from;
         }
 
+        // ── Per-user email style: subject format + signature ─────────────────
         // Plain-text signature (mailto cannot carry the logo/disclaimer image; Outlook adds those if it appends your default signature)
-        const TAB6_SIGNATURES = {
-            Brandon: 'Brandon L. Ramos (he/him)\nVendor Master Data Analyst\n\nM: +1 972-536-0617'
+        const TAB6_USERS = {
+            Brandon: { closing: 'Best regards,', signature: 'Brandon L. Ramos (he/him)\nVendor Master Data Analyst\n\nM: +1 972-536-0617' },
+            Rosana:  { closing: '',              signature: 'Rosana Muñoz | Vendor Maintenance Analyst' }
         };
+        // Short label after "//" in Rosana's subjects: which documents are being requested
+        function tab6SubjectSuffix(f) {
+            if (_tab6Template === 'docs_missing_en' || _tab6Template === 'docs_missing_es') {
+                if (f.country === 'MX' || f.country === 'MEXICO') return 'CSF & BD';
+                if (f.country === 'US' || f.country === 'USA' || f.country === 'UNITED STATES') return 'W9 & BD';
+                if (f.ccRegion === '2') return 'IBAN & VAT';
+                return 'BD';
+            }
+            if (_tab6Template === 'no_payments' || _tab6Template === 'no_payments_es') return 'TAX ID & BD';
+            return '';
+        }
+        function tab6Subject(f) {
+            if (getCurrentUser() === 'Rosana') {
+                const ref = f.reqNo ? `AVSF#${formatRequestNumber(f.reqNo)}${f.reqType ? ' (' + f.reqType + ')' : ''} ` : '';
+                const suf = tab6SubjectSuffix(f);
+                return `${f.initials} ${ref}V#${f.vendNum} ${f.vendName}${suf ? ' // ' + suf : ''}`;
+            }
+            const avsf_part = f.reqNo ? `AVSF ${f.reqNo}${f.reqType ? ' (' + f.reqType + ')' : ''} ` : '';
+            return `${f.initials} - ${avsf_part}Vendor ${f.vendNum} ${f.vendName} CC ${f.cc}`;
+        }
+        const TAB6_SIGNOFF_RE = /\s*\n(Best regards|Saludos),\n[^\n]*\nVendor Master Team \| Resideo\n[^\n]*\s*$/;
+        // body with the typed sign-off removed (keeps "Best regards,"/"Saludos," only when the user's style has one)
+        function tab6StripSignoff(body, keepClosing) {
+            return body.replace(TAB6_SIGNOFF_RE, keepClosing ? '\n\n$1,' : '');
+        }
         function tab6SigEnabled() {
             try { return localStorage.getItem('avsfUseSignature') !== '0'; } catch (e) { return true; }
         }
@@ -4530,9 +4559,12 @@ ${from}`;
         }
         function tab6BuildBody(f) {
             const body = tab6BuildBodyRaw(f);
-            const sig = TAB6_SIGNATURES[getCurrentUser()];
-            if (!sig || !tab6SigEnabled()) return body;
-            return body.replace(/(Best regards|Saludos),\n[^\n]*\nVendor Master Team \| Resideo\n[^\n]*$/, '$1,\n' + sig);
+            const u = TAB6_USERS[getCurrentUser()];
+            if (!u || !tab6SigEnabled()) return body;
+            const m = body.match(TAB6_SIGNOFF_RE);
+            if (!m) return body;
+            const closing = u.closing ? (m[1] === 'Saludos' ? 'Saludos,' : u.closing) : '';
+            return body.replace(TAB6_SIGNOFF_RE, '\n\n' + (closing ? closing + '\n' : '') + u.signature);
         }
 
         function tab6BuildBodyRaw(f) {
@@ -4834,7 +4866,7 @@ AMERBankingValidation@resideo.com`;
             }
 
             const avsf_part = f.reqNo ? `AVSF ${f.reqNo}${f.reqType ? ' (' + f.reqType + ')' : ''} ` : '';
-            const subject = `${f.initials} - ${avsf_part}Vendor ${f.vendNum} ${f.vendName} CC ${f.cc}`;
+            const subject = tab6Subject(f);
             const body = tab6BuildBody(f);
 
             if (badgeEl) badgeEl.textContent = 'Subject: ' + subject;
@@ -4862,7 +4894,7 @@ AMERBankingValidation@resideo.com`;
             const f = tab6GetFields();
             const previewEl = document.getElementById('tab6PreviewBox');
             const avsf_part = f.reqNo ? `AVSF ${f.reqNo}${f.reqType ? ' (' + f.reqType + ')' : ''} ` : '';
-            const subject   = `${f.initials} - ${avsf_part}Vendor ${f.vendNum} ${f.vendName} CC ${f.cc}`;
+            const subject   = tab6Subject(f);
             const toAddr    = tab6GetTO(f);
             const fromAddr  = tab6GetFROM(f);
 
@@ -4891,7 +4923,7 @@ AMERBankingValidation@resideo.com`;
             const previewEl = document.getElementById('tab6PreviewBox');
             if (!f.vendName) { alert('Please select an AVSF request first.'); return; }
             const avsf_part = f.reqNo ? `AVSF ${f.reqNo}${f.reqType ? ' (' + f.reqType + ')' : ''} ` : '';
-            const subject   = `${f.initials} - ${avsf_part}Vendor ${f.vendNum} ${f.vendName} CC ${f.cc}`;
+            const subject   = tab6Subject(f);
             const toAddr    = tab6GetTO(f);
             const fromAddr  = tab6GetFROM(f);
 
@@ -4902,7 +4934,8 @@ AMERBankingValidation@resideo.com`;
                 body = tab6BuildBodyRaw(f);
             }
             // drop the typed sign-off block (name / team / mailbox): Outlook's signature replaces it
-            body = body.replace(/\s*\n(Best regards|Saludos),\n[^\n]*\nVendor Master Team \| Resideo\n[^\n]*\s*$/, '\n\n$1,');
+            const uu = TAB6_USERS[getCurrentUser()];
+            body = tab6StripSignoff(body, !uu || !!uu.closing);
             const plain = stripBodyMarkers(body).replace(/\n/g, '\r\n');
             const html  = '<div style="font-family:Calibri,Arial,sans-serif;font-size:11pt;">' +
                           renderBodyHTML(body).replace(/\n/g, '<br>') + '</div>';
@@ -4948,7 +4981,7 @@ AMERBankingValidation@resideo.com`;
             const f = tab6GetFields();
             if (!f.vendName) { alert('Select a request first.'); return; }
             const avsf_part = f.reqNo ? `AVSF ${f.reqNo}${f.reqType ? ' (' + f.reqType + ')' : ''} ` : '';
-            const subject = `${f.initials} - ${avsf_part}Vendor ${f.vendNum} ${f.vendName} CC ${f.cc}`;
+            const subject = tab6Subject(f);
             navigator.clipboard.writeText(subject).then(() => {
                 const btn = event.target; const orig = btn.textContent;
                 btn.textContent = '✅ Copied!'; setTimeout(() => btn.textContent = orig, 2000);
