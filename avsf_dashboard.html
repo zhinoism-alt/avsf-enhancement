@@ -4502,9 +4502,10 @@ ${from}`;
             const cc       = document.getElementById('tab6CC')?.value         || (avsf?.companyCode  || '');
             const reqNo    = avsf?.requestNo || '';
             const reqType  = String(avsf?.requestType || '').toUpperCase().trim();
+            const fem      = (u === 'Rosana'); // feminine wording in Spanish templates
             const country  = (avsf?.country || '').toUpperCase().trim();
             const ccRegion = (cc || '1').charAt(0); // '1'=Americas '2'=EMEA '3'=APAC
-            return { from, initials, fullName, vendNum, vendName, cc, reqNo, reqType, country, ccRegion, avsf };
+            return { from, initials, fullName, vendNum, vendName, cc, reqNo, reqType, fem, country, ccRegion, avsf };
         }
 
         const TAB6_TEMPLATE_META = {
@@ -4744,7 +4745,7 @@ La razón de mi correo es solicitar su apoyo para proporcionarnos un contacto co
 
 Esta validación es necesaria para confirmar que la información bancaria sea correcta y evitar inconvenientes en el procesamiento de los pagos. De acuerdo con nuestro proceso, no podremos procesar pagos hasta completar dicha validación.
 
-Agradezco de antemano su apoyo y quedo atento a la información.
+Agradezco de antemano su apoyo y quedo ${f.fem ? 'atenta' : 'atento'} a la información.
 
 Saludos cordiales,
 ${f.fullName}
