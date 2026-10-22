@@ -149,8 +149,21 @@ Sub Log(msg)
   f.Close
 End Sub
 
+' Trace lines carry the seconds since the vendor started (+total) and since the previous trace line (+step), to find slow steps
+Dim gT0, gTLast
+gT0 = Timer: gTLast = Timer
+Function Elapsed(since)
+  Dim d
+  d = Timer - since
+  If d < 0 Then d = d + 86400
+  Elapsed = Int(d * 10) / 10
+End Function
+
 Sub Trace(m)
-  Log "      " & m
+  Dim stamp
+  stamp = "[+" & Elapsed(gT0) & " s total, +" & Elapsed(gTLast) & " s step]"
+  gTLast = Timer
+  Log "      " & stamp & " " & m
 End Sub
 
 Function Find(id)
@@ -800,6 +813,7 @@ Function DoVendor(lifnr, cc, ByRef msg)
   Dim grid, before, after, t, ready, i, title, ok3, errText, initScreen, dumped, lastLogged, picked, viaList, k, g2
   DoVendor = False
   msg = ""
+  gT0 = Timer: gTLast = Timer
   If Find("wnd[0]") Is Nothing Then WScript.Sleep 5000
   If Find("wnd[0]") Is Nothing Then msg = "SAP session is no longer available (logged off?)": Exit Function
   ClosePopups
